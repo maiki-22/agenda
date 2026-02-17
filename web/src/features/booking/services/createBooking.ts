@@ -27,8 +27,10 @@ export function createBookingService(input: unknown): Booking {
   });
 
   if (!ok) {
-    const err = new Error("Horario no disponible");
-    (err as any).code = "SLOT_TAKEN";
+    type SlotTakenError = Error & { code: "SLOT_TAKEN" };
+    const err: SlotTakenError = Object.assign(new Error("Horario no disponible"), {
+      code: "SLOT_TAKEN" as const,
+      });
     throw err;
   }
 

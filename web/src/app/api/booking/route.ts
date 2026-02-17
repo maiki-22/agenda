@@ -24,12 +24,14 @@ export async function POST(req: Request) {
     const body = await req.json();
     const booking = createBookingService(body);
     return NextResponse.json({ bookingId: booking.id, booking }, { status: 201 });
-  } catch (e: any) {
-    const code = e?.code;
-    const status = code === "SLOT_TAKEN" ? 409 : 400;
-    return NextResponse.json(
-      { error: e?.message ?? "Bad Request", code: code ?? "BAD_REQUEST" },
-      { status }
-    );
-  }
+  } catch (e: unknown) {
+  const err = e instanceof Error ? e : new Error("Bad Request");
+  const code = (e as { code?: string }).code;
+  const status = code === "SLOT_TAKEN" ? 409 : 400;
+
+  return NextResponse.json(
+    { error: err.message, code: code ?? "BAD_REQUEST" },
+    { status }
+  );
+}
 }

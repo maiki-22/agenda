@@ -29,7 +29,7 @@ export default function ReservarPage() {
     if (step === 4) return !!s.time;
     if (step === 5) return !!s.customerName && phoneLooksValid;
     return true;
-  }, [step, s]);
+  }, [step, s, phoneLooksValid]);
 
   async function onConfirm() {
     setError("");
