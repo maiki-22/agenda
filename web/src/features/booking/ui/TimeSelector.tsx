@@ -64,28 +64,50 @@ export function TimeSelector({
 
   return (
     <div className="space-y-3">
-      <h2 className="text-xl font-semibold">Selecciona la hora</h2>
+      <div>
+        <div className="text-xs tracking-widest text-[rgb(var(--muted))] uppercase">
+          Selecciona hora
+        </div>
+        <div className="text-xl font-semibold">Hora</div>
+      </div>
 
       {loading ? (
-        <p className="text-sm text-gray-500">Cargando horarios...</p>
+        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 text-sm text-[rgb(var(--muted))]">
+          Cargando horarios...
+        </div>
       ) : slots.length === 0 ? (
-        <p className="text-sm text-gray-500">No hay horarios disponibles.</p>
+        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 text-sm text-[rgb(var(--muted))]">
+          No hay horarios disponibles para este día.
+        </div>
       ) : (
-        <div className="grid gap-2 sm:grid-cols-4">
-          {slots.map((t) => (
-            <button
-              key={t}
-              onClick={() => onChange(t)}
-              className={[
-                "rounded-xl border px-3 py-2 text-center",
-                value === t ? "border-black" : "border-gray-200",
-              ].join(" ")}
-            >
-              {t}
-            </button>
-          ))}
+        <div className="grid grid-cols-3 gap-2">
+          {slots.map((t) => {
+            const selected = value === t;
+
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => onChange(t)}
+                className={[
+                  "rounded-2xl px-3 py-3 text-sm font-semibold transition",
+                  "border border-[rgb(var(--border))] bg-[rgb(var(--surface))]",
+                  "hover:brightness-110 active:scale-[0.99]",
+                  selected
+                    ? "bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))] border-[rgb(var(--primary))]"
+                    : "text-[rgb(var(--fg))]",
+                ].join(" ")}
+              >
+                {t}
+              </button>
+            );
+          })}
         </div>
       )}
+
+      <p className="text-sm text-[rgb(var(--muted))]">
+        Los bloques son de 30 min. Corte + barba ocupa 1 hora.
+      </p>
     </div>
   );
 }

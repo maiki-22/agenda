@@ -1,7 +1,7 @@
 "use client";
 
 import { BARBERS } from "../domain/booking.logic";
-
+import SelectCard from "@/components/ui/SelectCard";
 export function BarberSelector({
   value,
   onChange,
@@ -14,17 +14,13 @@ export function BarberSelector({
       <h2 className="text-xl font-semibold">Selecciona un barbero</h2>
       <div className="grid gap-2 sm:grid-cols-2">
         {BARBERS.filter((b) => b.isActive).map((b) => (
-          <button
+          <SelectCard
             key={b.id}
+            title={b.name}
+            subtitle="Disponible"
+            selected={value === b.id}
             onClick={() => onChange(b.id)}
-            className={[
-              "rounded-xl border px-4 py-3 text-left",
-              value === b.id ? "border-black" : "border-gray-200",
-            ].join(" ")}
-          >
-            <div className="font-medium">{b.name}</div>
-            <div className="text-sm text-gray-500">Disponible</div>
-          </button>
+          />
         ))}
       </div>
     </div>

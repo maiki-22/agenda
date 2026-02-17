@@ -2,6 +2,7 @@
 
 import { SERVICES } from "../domain/booking.logic";
 import type { ServiceType } from "../domain/booking.types";
+import SelectCard from "@/components/ui/SelectCard";
 
 export function ServiceSelector({
   value,
@@ -15,17 +16,13 @@ export function ServiceSelector({
       <h2 className="text-xl font-semibold">Selecciona el servicio</h2>
       <div className="grid gap-2 sm:grid-cols-3">
         {SERVICES.map((s) => (
-          <button
+          <SelectCard
             key={s.id}
+            title={s.label}
+            subtitle={`${s.durationMinutes} min`}
+            selected={value === s.id}
             onClick={() => onChange(s.id)}
-            className={[
-              "rounded-xl border px-4 py-3 text-left",
-              value === s.id ? "border-black" : "border-gray-200",
-            ].join(" ")}
-          >
-            <div className="font-medium">{s.label}</div>
-            <div className="text-sm text-gray-500">{s.durationMinutes} min</div>
-          </button>
+          />
         ))}
       </div>
     </div>

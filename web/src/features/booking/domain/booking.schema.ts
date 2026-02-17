@@ -11,6 +11,5 @@ export const BookingDraftSchema = z.object({
   customerName: z.string().min(2, "Ingresa tu nombre"),
   customerPhone: z
     .string()
-    .transform((v) => normalizePhone(v))
-    .refine((v) => v.length >= 8, "Ingresa un número de teléfono válido"),
+    .regex(/^\+569\d{8}$/, "Ingresa un móvil válido: +569XXXXXXXX"),
 });
