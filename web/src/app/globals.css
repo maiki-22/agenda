@@ -1,24 +1,34 @@
 @import "tailwindcss";
 
-/* Design tokens (RGB) */
 :root {
-  --bg: 248 246 246;
-  --fg: 15 23 42;
-  --surface: 255 255 255;
-  --muted: 100 116 139;
-  --border: 226 232 240;
-  --primary: 212 17 50;               /* #d41132 */
-  --primary-foreground: 255 255 255;
+  /* Light: fondo cálido + contraste más alto */
+  --bg: 250 248 244;          /* warm ivory */
+  --fg: 12 12 14;             /* near-black */
+  --surface: 255 255 255;     /* cards */
+  --surface-2: 255 255 255;   /* chips/inputs sutil */
+  --muted: 71 85 105;         /* más visible en light */
+  --border: 220 226 234;     /* borde más marcado */
+
+  /* GOLD */
+  --primary: 212 175 55;      /* #D4AF37 */
+  --primary-foreground: 11 11 13;
+  --on-primary: 11 11 13; /* negro */
+  --primary-glow: 212 175 55; /* gold */
+
 }
 
 .dark {
   --bg: 10 10 12;
   --fg: 241 245 249;
   --surface: 18 18 22;
+  --surface-2: 24 24 28;
   --muted: 148 163 184;
   --border: 255 255 255 / 0.10;
-  --primary: 212 17 50;
-  --primary-foreground: 255 255 255;
+
+  --primary: 212 175 55;
+  --primary-foreground: 11 11 13;
+  --on-primary: 255 255 255; /* blanco */
+  
 }
 
 /* Fuente global */
@@ -60,21 +70,7 @@ body { font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, 
   position: relative;
 }
 
-.ticket::before,
-.ticket::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  width: 18px;
-  height: 18px;
-  transform: translateY(-50%);
-  border-radius: 999px;
-  background: rgb(var(--bg));
-  border: 1px solid rgb(var(--border));
-}
 
-.ticket::before { left: -9px; }
-.ticket::after { right: -9px; }
 
 .ticket-divider {
   border-top: 1px dashed rgb(var(--border));

@@ -112,7 +112,7 @@ export default function ReservarPage() {
     <div className="min-h-dvh">
       <BookingHeader title={stepTitle} subtitle="Reserva" showBack={false} />
 
-      <main className="mx-auto max-w-md p-4 sm:p-6 space-y-6 pb-24">
+      <main className="mx-auto max-w-md p-4 sm:p-6 space-y-6 pb-28">
         <h1 className="text-2xl font-bold">Reservar hora</h1>
 
         <Stepper
@@ -201,8 +201,9 @@ export default function ReservarPage() {
       </main>
 
       {/* Bottom bar fijo (SIEMPRE visible) */}
-      <div className="sticky bottom-0 z-50 border-t border-[rgb(var(--border))] bg-[rgb(var(--bg))]/80 backdrop-blur">
-        <div className="mx-auto max-w-md px-4 py-3 flex items-center justify-between gap-3">
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[rgb(var(--border))] bg-[rgb(var(--bg))]/80 backdrop-blur">
+         <div className="mx-auto max-w-md px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+12px)] flex items-center justify-between gap-3"
+>
           <button
             className="w-28 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-sm disabled:opacity-50"
             onClick={() => setStep((v) => Math.max(1, v - 1))}

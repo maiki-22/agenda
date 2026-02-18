@@ -1,4 +1,5 @@
 "use client";
+import CheckIcon from "@/components/icons/CheckIcon";
 
 export default function SelectCard({
   title,
@@ -46,7 +47,7 @@ export default function SelectCard({
           ].join(" ")}
           aria-hidden="true"
         >
-          {selected ? "✓" : ""}
+          {selected ? <CheckIcon size={16} className="text-[rgb(var(--on-primary))]" /> : null}
         </div>
       </div>
     </button>

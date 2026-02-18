@@ -78,7 +78,7 @@ export function DateScroller({
               onClick={() => onChange(it.iso)}
               className={[
                 "shrink-0 w-[84px] rounded-2xl border px-3 py-3 text-left transition",
-                "bg-[rgb(var(--surface))] border-[rgb(var(--border))]",
+                "bg-[rgb(var(--surface-2))] border-[rgb(var(--border))]",
                 "hover:brightness-110",
                 selected
                   ? "ring-2 ring-[rgb(var(--primary))] ring-offset-2 ring-offset-[rgb(var(--bg))]"
@@ -102,7 +102,7 @@ export function DateScroller({
               <div
                 className={[
                   "mt-2 h-1 w-8 rounded-full",
-                  selected ? "bg-[rgb(var(--primary))]" : "bg-white/10",
+                  selected ? "bg-[rgb(var(--primary))]" : "bg-[rgb(var(--border))]",
                 ].join(" ")}
               />
             </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import CheckIcon from "@/components/icons/CheckIcon";
 
 export function CustomerForm({
   name,
@@ -52,7 +53,7 @@ export function CustomerForm({
           value={name}
           onChange={(e) => onChange(e.target.value, phone)}
           placeholder="Ej: Matías"
-          className="w-full rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-[rgb(var(--fg))] outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]"
+          className="w-full rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-4 py-3 text-[rgb(var(--fg))] outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]"
         />
       </div>
 
@@ -62,7 +63,7 @@ export function CustomerForm({
 
         <div
           className={[
-            "flex items-center gap-2 rounded-2xl border bg-[rgb(var(--surface))] px-3 py-2 transition",
+            "flex items-center gap-2 rounded-2xl border bg-[rgb(var(--surface-2))] px-3 py-2 transition",
             "border-[rgb(var(--border))]",
             showPhoneError
               ? "ring-2 ring-red-500/60"
@@ -102,7 +103,7 @@ export function CustomerForm({
             ].join(" ")}
             aria-hidden="true"
           >
-            {phoneValid ? "✓" : ""}
+            {phoneValid ? <CheckIcon size={18} className="text-[rgb(var(--on-primary))]" /> : null}
           </div>
         </div>
 

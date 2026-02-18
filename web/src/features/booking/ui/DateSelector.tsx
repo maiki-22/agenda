@@ -31,7 +31,7 @@ export function DateSelector({
         min={minDate}
         max={maxDate}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-[rgb(var(--fg))]"
+        className="w-full rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-4 py-3 text-[rgb(var(--fg))]"
       />
 
       <p className="text-sm text-[rgb(var(--muted))]">

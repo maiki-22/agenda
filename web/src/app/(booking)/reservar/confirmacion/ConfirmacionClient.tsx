@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Booking } from "@/features/booking/domain/booking.types";
 
-// AJUSTA ESTOS IMPORTS A TUS RUTAS REALES
+import CheckIcon from "@/components/icons/CheckIcon";
 import { SERVICES, BARBERS } from "@/features/booking/domain/booking.logic";
 
 import { SHOP_LOCATION } from "@/features/booking/config/location";
@@ -110,95 +110,97 @@ export default function ConfirmacionClient({
   }, [booking?.time, duration]);
 
   // UI
-  return (
-    <div className="space-y-5">
-      {/* Estado: loading / success */}
-      <div className="flex flex-col items-center text-center gap-4">
-        {state === "loading" ? (
-          <>
-            <div className="h-20 w-20 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface))] grid place-items-center">
-              <div className="h-10 w-10 rounded-full border-4 border-white/10 border-t-[rgb(var(--primary))] animate-spin" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold">Confirmando tu reserva</div>
-              <div className="text-sm text-[rgb(var(--muted))]">
-                Un momento… estamos guardando tu cita.
+return (
+  <div className="min-h-dvh flex flex-col">
+    {/* Contenido scrolleable */}
+    <div className="flex-1 overflow-auto px-4 py-6 pb-36">
+      <div className="space-y-5">
+        {/* Estado: loading / success */}
+        <div className="flex flex-col items-center text-center gap-4">
+          {state === "loading" ? (
+            <>
+              <div className="h-20 w-20 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface))] grid place-items-center">
+                <div className="h-10 w-10 rounded-full border-4 border-white/10 border-t-[rgb(var(--primary))] animate-spin" />
               </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="h-20 w-20 rounded-full bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))] grid place-items-center text-3xl font-bold pop-in shadow-[0_16px_60px_rgba(212,17,50,0.35)]">
-              {<CheckIcon />}
-            </div>
-            <div className="pop-in">
-              <div className="text-3xl font-extrabold">¡Cita agendada!</div>
-              <div className="mt-1 text-sm text-[rgb(var(--muted))]">
-                Tu reserva fue confirmada. Te enviaremos los detalles por
-                WhatsApp.
+              <div>
+                <div className="text-2xl font-bold">Confirmando tu reserva</div>
+                <div className="text-sm text-[rgb(var(--muted))]">
+                  Un momento… estamos guardando tu cita.
+                </div>
               </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Ticket (aparece después del check) */}
-      {booking && showTicket && (
-        <div
-          className={[
-            "ticket relative isolate overflow-hidden rounded-3xl",
-            "border border-[rgb(var(--border))] bg-[rgb(var(--surface))]",
-            "shadow-[0_24px_80px_rgba(0,0,0,0.45)]",
-          ].join(" ")}
-        >
-          <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-br from-[rgb(var(--primary))]/10 via-transparent to-transparent" />
-          <div className="relative z-10">
-            <Section
-              icon={<ScissorsIcon />}
-              title="Servicio"
-              right={
-                <span className="text-[rgb(var(--primary))] font-semibold">
-                  {/* si luego manejas precios, lo ponemos aquí */}
-                </span>
-              }
-            >
-              <div className="text-lg font-semibold">{serviceLabel}</div>
-              <div className="text-sm text-[rgb(var(--muted))]">
-                Con {barberName}
+            </>
+          ) : (
+            <>
+              <div
+                className="h-20 w-20 rounded-full bg-[rgb(var(--primary))] text-white dark:text-white grid place-items-center pop-in shadow-[0_18px_70px_rgba(0,0,0,0.35)]"
+                style={{ filter: "drop-shadow(0 18px 50px rgba(212,175,55,0.35))" }}
+              >
+                <CheckIcon size={48} className="text-white" />
               </div>
-            </Section>
-
-            <Divider />
-
-            <Section icon={<CalendarIcon />} title="Fecha y hora">
-              <div className="text-lg font-semibold">{dateLong}</div>
-              <div className="text-sm text-[rgb(var(--muted))]">
-                {timeRange}
+              <div className="pop-in">
+                <div className="text-3xl font-extrabold">¡Cita agendada!</div>
+                <div className="mt-1 text-sm text-[rgb(var(--muted))]">
+                  Tu reserva fue confirmada. Te enviaremos los detalles por WhatsApp.
+                </div>
               </div>
-            </Section>
+            </>
+          )}
+        </div>
 
-            <Divider />
+        {/* Ticket (aparece después del check) */}
+        {booking && showTicket && (
+          <div
+            className={[
+              "ticket relative isolate overflow-hidden rounded-3xl",
+              "border border-[rgb(var(--border))] bg-[rgb(var(--surface))]",
+              "shadow-[0_24px_80px_rgba(0,0,0,0.45)]",
+            ].join(" ")}
+          >
+            <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-br from-[rgb(var(--primary))]/10 via-transparent to-transparent" />
+            <div className="relative z-10">
+              <Section
+                icon={<ScissorsIcon />}
+                title="Servicio"
+                right={
+                  <span className="text-[rgb(var(--primary))] font-semibold">
+                    {/* en caso de manejar precios directamente */}
+                  </span>
+                }
+              >
+                <div className="text-lg font-semibold">{serviceLabel}</div>
+                <div className="text-sm text-[rgb(var(--muted))]">Con {barberName}</div>
+              </Section>
 
-            <Section icon={<PinIcon />} title="Ubicación">
-              <div className="text-lg font-semibold">{SHOP_LOCATION.name}</div>
-              <div className="text-sm text-[rgb(var(--muted))]">
-                {SHOP_LOCATION.address}
+              <Divider />
+
+              <Section icon={<CalendarIcon />} title="Fecha y hora">
+                <div className="text-lg font-semibold">{dateLong}</div>
+                <div className="text-sm text-[rgb(var(--muted))]">{timeRange}</div>
+              </Section>
+
+              <Divider />
+
+              <Section icon={<PinIcon />} title="Ubicación">
+                <div className="text-lg font-semibold">{SHOP_LOCATION.name}</div>
+                <div className="text-sm text-[rgb(var(--muted))]">{SHOP_LOCATION.address}</div>
+              </Section>
+
+              <Divider />
+
+              <div className="p-4 space-y-2 text-sm">
+                <Row label="Cliente" value={booking.customerName} />
+                <Row label="Teléfono" value={booking.customerPhone} />
+                <Row label="ID" value={booking.id} />
               </div>
-            </Section>
-
-            <Divider />
-
-            <div className="p-4 space-y-2 text-sm">
-              <Row label="Cliente" value={booking.customerName} />
-              <Row label="Teléfono" value={booking.customerPhone} />
-              <Row label="ID" value={booking.id} mono />
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+    </div>
 
-      {/* Actions */}
-      <div className="relative z-20 grid grid-cols-2 gap-3">
+    {/* Footer fijo (siempre visible) */}
+    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[rgb(var(--border))] bg-[rgb(var(--bg))]/85 backdrop-blur">
+      <div className="mx-auto max-w-md px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] grid grid-cols-2 gap-3">
         <button
           type="button"
           onClick={() => router.push("/")}
@@ -216,7 +218,9 @@ export default function ConfirmacionClient({
         </button>
       </div>
     </div>
-  );
+  </div>
+);
+
 }
 
 function Divider() {
@@ -276,17 +280,17 @@ function ScissorsIcon() {
       width="24"
       height="24"
       viewBox="0 0 24 25"
-      fill="none"
+      fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
       transform="rotate(0 0 0)"
     >
       <path
         d="M7.25132 3.27236C7.07313 3.01789 6.72238 2.95605 6.46791 3.13424C5.70449 3.66882 5.51897 4.72105 6.05355 5.48448L10.6057 11.9853L8.16317 15.4736L8.16081 15.4769C7.97673 15.4436 7.7871 15.4262 7.5934 15.4262C5.84721 15.4262 4.43164 16.8417 4.43164 18.5879C4.43164 20.3341 5.84721 21.7497 7.5934 21.7497C9.33959 21.7497 10.7552 20.3341 10.7552 18.5879C10.7552 17.8559 10.5064 17.182 10.0888 16.6462L11.9791 13.9467L13.8889 16.6741C13.4844 17.2054 13.2441 17.8686 13.2441 18.5879C13.2441 20.3341 14.6597 21.7497 16.4059 21.7497C18.1521 21.7497 19.5677 20.3341 19.5677 18.5879C19.5677 16.8417 18.1521 15.4262 16.4059 15.4262C16.1994 15.4262 15.9976 15.446 15.8022 15.4837L7.25132 3.27236ZM5.93164 18.5879C5.93164 17.6702 6.67563 16.9262 7.5934 16.9262C8.51116 16.9262 9.25515 17.6702 9.25515 18.5879C9.25515 19.5057 8.51116 20.2497 7.5934 20.2497C6.67563 20.2497 5.93164 19.5057 5.93164 18.5879ZM14.7441 18.5879C14.7441 17.6702 15.4881 16.9262 16.4059 16.9262C17.3237 16.9262 18.0677 17.6702 18.0677 18.5879C18.0677 19.5057 17.3237 20.2497 16.4059 20.2497C15.4881 20.2497 14.7441 19.5057 14.7441 18.5879Z"
-        fill="#ffffff"
+        
       />
       <path
         d="M12.59 9.15131L13.9634 11.1126L17.9064 5.4813C18.441 4.71786 18.2554 3.66563 17.492 3.13107C17.2375 2.95288 16.8868 3.01473 16.7086 3.26922L12.59 9.15131Z"
-        fill="#ffffff"
+        
       />
     </svg>
   );
@@ -320,20 +324,6 @@ function PinIcon() {
       <path d="M6.94795 4.67894C6.83907 5.11196 6.78125 5.56526 6.78125 6.03206C6.78125 8.04162 7.61088 9.76378 8.43945 10.9975V20.0885L4.02728 19.008C3.02055 18.7614 2.3125 17.8591 2.3125 16.8226V6.41123C2.3125 4.9519 3.68027 3.87868 5.09771 4.22581L6.94795 4.67894Z" />
       <path d="M16.193 10.9971C17.0181 9.76301 17.8442 8.04081 17.8442 6.03206C17.8442 5.40655 17.7403 4.80529 17.549 4.24458L20.5972 4.9911C21.604 5.23766 22.312 6.14004 22.312 7.17652V17.5879C22.312 19.0472 20.9443 20.1204 19.5268 19.7733L16.193 18.9568V10.9971Z" />
       <path d="M10.9074 13.7492L10.9085 13.7501C11.7347 14.4167 12.9144 14.4151 13.7388 13.7464L13.7399 13.7455L13.7436 13.7425L13.7496 13.7376L13.7652 13.7248C13.7771 13.7149 13.7922 13.7023 13.8102 13.6871C13.8462 13.6567 13.8939 13.6157 13.9517 13.5647C14.067 13.4628 14.2235 13.3198 14.4074 13.1396C14.4961 13.0528 14.5918 12.9566 14.693 12.8514V18.9495L9.93945 20.0903V12.8449C10.045 12.9542 10.1448 13.054 10.2369 13.1437C10.4217 13.3239 10.5789 13.4668 10.6948 13.5686C10.7528 13.6196 10.8007 13.6605 10.8369 13.6909C10.8549 13.7061 10.8701 13.7186 10.8821 13.7285L10.8977 13.7413L10.9037 13.7462L10.9074 13.7492Z" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg
-      width="48"
-      height="48"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M19.5455 6.4965C19.9848 6.93584 19.9848 7.64815 19.5455 8.08749L10.1286 17.5043C9.6893 17.9437 8.97699 17.9437 8.53765 17.5043L4.45451 13.4212C4.01517 12.9819 4.01516 12.2695 4.4545 11.8302C4.89384 11.3909 5.60616 11.3909 6.0455 11.8302L9.33315 15.1179L17.9545 6.4965C18.3938 6.05716 19.1062 6.05716 19.5455 6.4965Z" />
     </svg>
   );
 }

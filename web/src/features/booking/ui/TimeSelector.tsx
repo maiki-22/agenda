@@ -72,11 +72,11 @@ export function TimeSelector({
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 text-sm text-[rgb(var(--muted))]">
+        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 text-sm text-[rgb(var(--muted))]">
           Cargando horarios...
         </div>
       ) : slots.length === 0 ? (
-        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 text-sm text-[rgb(var(--muted))]">
+        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 text-sm text-[rgb(var(--muted))]">
           No hay horarios disponibles para este día.
         </div>
       ) : (
@@ -90,13 +90,15 @@ export function TimeSelector({
                 type="button"
                 onClick={() => onChange(t)}
                 className={[
-                  "rounded-2xl px-3 py-3 text-sm font-semibold transition",
-                  "border border-[rgb(var(--border))] bg-[rgb(var(--surface))]",
-                  "hover:brightness-110 active:scale-[0.99]",
-                  selected
-                    ? "bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))] border-[rgb(var(--primary))]"
-                    : "text-[rgb(var(--fg))]",
-                ].join(" ")}
+  "rounded-2xl px-3 py-3 text-sm font-semibold transition",
+  "border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--fg))]",
+  "hover:brightness-110 active:scale-[0.99]",
+  "focus:outline-none", 
+  selected
+    ? "ring-2 ring-[rgb(var(--primary))] border-[rgb(var(--primary))]"
+    : "",
+].join(" ")}
+
               >
                 {t}
               </button>

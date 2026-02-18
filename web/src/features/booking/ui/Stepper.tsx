@@ -37,7 +37,7 @@ export function Stepper({
               onClick={() => onJump?.(s.n)}
               className={[
                 "shrink-0 rounded-full px-3 py-2 text-xs font-medium transition",
-                "border border-[rgb(var(--border))] bg-[rgb(var(--surface))]",
+                "border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))]",
                 "hover:brightness-110",
                 active
                   ? "ring-2 ring-[rgb(var(--primary))] ring-offset-2 ring-offset-[rgb(var(--bg))]"
@@ -50,8 +50,8 @@ export function Stepper({
                 className={[
                   "mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px]",
                   done || active
-                    ? "bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))]"
-                    : "bg-white/10 text-[rgb(var(--muted))]",
+  ? "bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))]"
+  : "bg-[rgb(var(--surface-2))] text-[rgb(var(--muted))] border border-[rgb(var(--border))]"
                 ].join(" ")}
               >
                 {s.n}
