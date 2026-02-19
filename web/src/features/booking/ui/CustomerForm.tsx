@@ -10,20 +10,21 @@ export function CustomerForm({
   shakeKey,
 }: {
   name: string;
-  phone: string; // guardamos E.164: +569XXXXXXXX
+  phone: string;
   onChange: (name: string, phone: string) => void;
-  shakeKey?: number; // cambia para disparar shake (cuando intentas avanzar inválido)
+  shakeKey?: number;
 }) {
   const nameRef = useRef<HTMLInputElement | null>(null);
   const [touchedPhone, setTouchedPhone] = useState(false);
   const [shake, setShake] = useState(false);
+  const [nameFocused, setNameFocused] = useState(false);
+  const [phoneFocused, setPhoneFocused] = useState(false);
 
-  // Autofocus al entrar al step
   useEffect(() => {
-    nameRef.current?.focus();
+    const isTouch = window.matchMedia("(pointer: coarse)").matches;
+    if (!isTouch) nameRef.current?.focus();
   }, []);
 
-  // Shake cuando cambia shakeKey
   useEffect(() => {
     if (shakeKey == null) return;
     setShake(true);
@@ -33,122 +34,164 @@ export function CustomerForm({
 
   const phoneDisplay = useMemo(() => toChileDisplay(phone), [phone]);
   const phoneValid = useMemo(() => isValidChileMobileE164(phone), [phone]);
-
   const showPhoneError = touchedPhone && !phoneValid;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
-        <div className="text-xs tracking-widest text-[rgb(var(--muted))] uppercase">
+        <div className="text-xs tracking-widest text-[rgb(var(--muted))] uppercase mb-0.5">
           Tus datos
         </div>
         <div className="text-xl font-semibold">Cliente</div>
       </div>
 
-      {/* Nombre */}
-      <div className="space-y-2">
-        <label className="text-sm text-[rgb(var(--muted))]">Nombre</label>
+      {/* ── Nombre ── */}
+      <div className="space-y-1.5">
+        <label
+          htmlFor="customer-name"
+          className={[
+            "text-xs font-medium tracking-wide uppercase transition-colors duration-200",
+            nameFocused ? "text-[rgb(var(--primary))]" : "text-[rgb(var(--muted))]",
+          ].join(" ")}
+        >
+          Nombre
+        </label>
         <input
+          id="customer-name"
           ref={nameRef}
           value={name}
           onChange={(e) => onChange(e.target.value, phone)}
+          onFocus={() => setNameFocused(true)}
+          onBlur={() => setNameFocused(false)}
           placeholder="Ej: Matías"
-          className="w-full rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-4 py-3 text-[rgb(var(--fg))] outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]"
+          autoComplete="given-name"
+          className={[
+            "w-full rounded-2xl border px-4 py-3",
+            "bg-[rgb(var(--surface-2))] text-base text-[rgb(var(--fg))]",
+            /* Triple lock: outline, ring de Tailwind, y box-shadow nativo */
+            "outline-none focus:outline-none ring-0 focus:ring-0 shadow-none focus:shadow-none",
+            "appearance-none",
+            "transition-all duration-200",
+            nameFocused
+              ? "border-[rgb(var(--primary))] shadow-[0_0_0_3px_rgb(var(--primary)/0.15)]"
+              : "border-[rgb(var(--border))]",
+          ].join(" ")}
         />
       </div>
 
-      {/* Teléfono Chile móvil */}
-      <div className="space-y-2">
-        <label className="text-sm text-[rgb(var(--muted))]">Teléfono</label>
+      {/* ── Teléfono ── */}
+      <div className="space-y-1.5">
+        <label
+          htmlFor="customer-phone"
+          className={[
+            "text-xs font-medium tracking-wide uppercase transition-colors duration-200",
+            phoneFocused && !showPhoneError
+              ? "text-[rgb(var(--primary))]"
+              : showPhoneError
+              ? "text-red-400"
+              : "text-[rgb(var(--muted))]",
+          ].join(" ")}
+        >
+          Teléfono
+        </label>
 
         <div
           className={[
-            "flex items-center gap-2 rounded-2xl border bg-[rgb(var(--surface-2))] px-3 py-2 transition",
-            "border-[rgb(var(--border))]",
-            showPhoneError
-              ? "ring-2 ring-red-500/60"
-              : "focus-within:ring-2 focus-within:ring-[rgb(var(--primary))]",
+            "flex items-center gap-2 rounded-2xl border px-3 py-2 transition-all duration-200",
+            "bg-[rgb(var(--surface-2))]",
             shake && showPhoneError ? "shake" : "",
+            showPhoneError
+              ? "border-red-500/60 shadow-[0_0_0_3px_rgba(239,68,68,0.15)]"
+              : phoneFocused
+              ? "border-[rgb(var(--primary))] shadow-[0_0_0_3px_rgb(var(--primary)/0.15)]"
+              : "border-[rgb(var(--border))]",
           ].join(" ")}
         >
-          {/* Prefijo fijo */}
-          <div className="flex items-center gap-2 rounded-xl border border-[rgb(var(--border))] bg-black/5 dark:bg-white/5 px-3 py-2">
-            <span className="text-lg leading-none" aria-hidden>
-              🇨🇱
-            </span>
+          {/* Prefijo — reemplazamos emoji por texto para evitar mojibake */}
+          <div className="flex shrink-0 items-center gap-1.5 rounded-xl border border-[rgb(var(--border))] bg-black/5 dark:bg-white/5 px-3 py-2">
+            <span className="text-xs font-bold text-[rgb(var(--muted))]">CL</span>
             <span className="text-sm font-semibold">+56</span>
           </div>
 
-          {/* Número (9 dígitos; mostramos con formato) */}
           <input
+            id="customer-phone"
             inputMode="numeric"
-            autoComplete="tel"
+            autoComplete="tel-national"
             placeholder="9 1234 5678"
             value={phoneDisplay}
             onChange={(e) => {
               const nextE164 = normalizeChileToE164(e.target.value);
               onChange(name, nextE164);
             }}
-            onBlur={() => setTouchedPhone(true)}
-            className="min-w-0 flex-1 bg-transparent px-2 py-2 text-[rgb(var(--fg))] outline-none"
+            onFocus={() => setPhoneFocused(true)}
+            onBlur={() => {
+              setPhoneFocused(false);
+              setTouchedPhone(true);
+            }}
+            /* 
+              outline-none + ring-0 + shadow-none + appearance-none:
+              Cuatro capas de supresión para garantizar cero ring del browser.
+              El feedback visual lo da únicamente el wrapper div.
+            */
+            className="
+              min-w-0 flex-1 bg-transparent px-2 py-2
+              text-base text-[rgb(var(--fg))]
+              outline-none focus:outline-none
+              ring-0 focus:ring-0
+              shadow-none focus:shadow-none
+              border-0 focus:border-0
+              appearance-none
+            "
           />
 
-          {/* Indicador OK */}
+          {/* Badge OK */}
           <div
             className={[
-              "h-9 w-9 rounded-xl grid place-items-center border",
+              "shrink-0 h-9 w-9 rounded-xl grid place-items-center transition-all duration-300",
               phoneValid
-                ? "bg-[rgb(var(--primary))] border-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))]"
-                : "border-[rgb(var(--border))] text-[rgb(var(--muted))]",
+                ? "bg-[rgb(var(--primary))] border border-[rgb(var(--primary))] scale-100"
+                : "border border-[rgb(var(--border))] scale-95 opacity-60",
             ].join(" ")}
             aria-hidden="true"
           >
-            {phoneValid ? <CheckIcon size={18} className="text-[rgb(var(--on-primary))]" /> : null}
+            {phoneValid ? (
+              <CheckIcon size={16} className="text-[rgb(var(--on-primary))]" />
+            ) : null}
           </div>
         </div>
 
-        {showPhoneError ? (
-          <p className="text-sm text-red-400">
-            Ingresa un móvil válido: 9 dígitos (ej: 9 1234 5678)
-          </p>
-        ) : (
-          <p className="text-sm text-[rgb(var(--muted))]">
-            Formato: {" "}
-            <span className="font-semibold">+569XXXXXXXX</span>.
-          </p>
-        )}
+        <p
+          className={[
+            "text-xs transition-colors duration-200",
+            showPhoneError ? "text-red-400" : "text-[rgb(var(--muted))]",
+          ].join(" ")}
+          role={showPhoneError ? "alert" : undefined}
+        >
+          {showPhoneError
+            ? "Ingresa un móvil válido: 9 dígitos (ej: 9 1234 5678)"
+            : "Formato: +569XXXXXXXX"}
+        </p>
       </div>
     </div>
   );
 }
 
-function normalizeChileToE164(raw: string) {
+function normalizeChileToE164(raw: string): string {
   const digits = raw.replace(/\D/g, "");
-
-  // Si pegó con 56 incluido
-  if (digits.startsWith("56")) {
-    const rest = digits.slice(2);
-    const trimmed = rest.slice(0, 9);
-    return `+56${trimmed}`;
-  }
-
-  // Si pegó solo los 9 dígitos
-  const trimmed = digits.slice(0, 9);
-  return `+56${trimmed}`;
+  const rest = digits.startsWith("56") ? digits.slice(2) : digits;
+  return `+56${rest.slice(0, 9)}`;
 }
 
-function isValidChileMobileE164(e164: string) {
+function isValidChileMobileE164(e164: string): boolean {
   return /^\+569\d{8}$/.test(e164);
 }
 
-function toChileDisplay(e164: string) {
+function toChileDisplay(e164: string): string {
   const digits = e164.replace(/\D/g, "");
   const rest = digits.startsWith("56") ? digits.slice(2) : digits;
-
   const a = rest.slice(0, 1);
   const b = rest.slice(1, 5);
   const c = rest.slice(5, 9);
-
   if (!rest) return "";
   if (rest.length <= 1) return a;
   if (rest.length <= 5) return `${a} ${b}`;

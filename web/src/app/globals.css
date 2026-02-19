@@ -1,20 +1,46 @@
 @import "tailwindcss";
 
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
 :root {
-  /* Light: fondo cálido + contraste más alto */
-  --bg: 250 248 244;          /* warm ivory */
-  --fg: 12 12 14;             /* near-black */
-  --surface: 255 255 255;     /* cards */
-  --surface-2: 255 255 255;   /* chips/inputs sutil */
-  --muted: 71 85 105;         /* más visible en light */
-  --border: 220 226 234;     /* borde más marcado */
+  /* Light: fondo cálido + contraste alto */
+  --bg: 250 248 244;
+  --fg: 12 12 14;
+  --surface: 255 255 255;
+  --surface-2: 255 255 255;
+  --muted: 71 85 105;
+  --border: 220 226 234;
 
   /* GOLD */
-  --primary: 212 175 55;      /* #D4AF37 */
+  --primary: 212 175 55;
   --primary-foreground: 11 11 13;
-  --on-primary: 11 11 13; /* negro */
-  --primary-glow: 212 175 55; /* gold */
+  --on-primary: 11 11 13;
+  --primary-glow: 212 175 55;
 
+  /* Spacing responsive */
+  --page-px: 1rem;          /* 16px mobile */
+  --page-max: 28rem;        /* 448px — md breakpoint */
+  --card-radius: 1rem;      /* 16px */
+  --btn-radius: 1rem;
+}
+
+/* Tablet */
+@media (min-width: 640px) {
+  :root {
+    --page-px: 1.5rem;
+    --page-max: 42rem;      /* 672px */
+    --card-radius: 1.25rem;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  :root {
+    --page-px: 2rem;
+    --page-max: 56rem;      /* 896px */
+    --card-radius: 1.5rem;
+  }
 }
 
 .dark {
@@ -27,51 +53,208 @@
 
   --primary: 212 175 55;
   --primary-foreground: 11 11 13;
-  --on-primary: 255 255 255; /* blanco */
-  
+  --on-primary: 255 255 255;
 }
 
-/* Fuente global */
-body { font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; }
+/* ============================================================
+   GLOBAL BASE
+   ============================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
+html {
+  /* Previene zoom en inputs en iOS */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Scroll suave */
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Arial, "Noto Sans", "Apple Color Emoji",
+    "Segoe UI Emoji";
+  background-color: rgb(var(--bg));
+  color: rgb(var(--fg));
+  /* Safe areas para notch/home bar */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  /* Evita scroll horizontal accidental */
+  overflow-x: hidden;
+  /* Mejor legibilidad en retina */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tap highlight transparente en móvil */
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+  Elimina el outline y ring nativo del browser en todos los inputs.
+  Usamos !important + :focus para ganar sobre las reglas del browser
+  sin importar la especificidad del selector en el componente.
+*/
+input,
+textarea,
+select {
+  outline: none !important;
+  box-shadow: none;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+}
+
+/* Inputs no hacen zoom en iOS (font-size >= 16px) */
+input,
+select,
+textarea {
+  font-size: max(1rem, 16px);
+}
+
+/* ============================================================
+   LAYOUT HELPERS
+   ============================================================ */
+
+/* Contenedor centrado responsivo — reemplaza mx-auto max-w-md etc. */
+.page-container {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding-inline: var(--page-px);
+}
+
+/* Full-bleed dentro de un page-container (para steppers, date scrollers) */
+.full-bleed {
+  margin-inline: calc(var(--page-px) * -1);
+  padding-inline: var(--page-px);
+}
+
+/* ============================================================
+   SCROLLBAR UTILITIES
+   ============================================================ */
 .no-scrollbar {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge legacy */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 .no-scrollbar::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
+  display: none;
 }
 
-
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-3px); }
-  40% { transform: translateX(3px); }
-  60% { transform: translateX(-2px); }
-  80% { transform: translateX(2px); }
+  20%       { transform: translateX(-3px); }
+  40%       { transform: translateX(3px); }
+  60%       { transform: translateX(-2px); }
+  80%       { transform: translateX(2px); }
 }
-
 .shake {
   animation: shake 240ms ease-in-out;
 }
 
-
 @keyframes popIn {
-  0% { transform: scale(0.92); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+  0%   { transform: scale(0.92); opacity: 0; }
+  100% { transform: scale(1);    opacity: 1; }
 }
-.pop-in { animation: popIn 260ms ease-out; }
+.pop-in {
+  animation: popIn 260ms ease-out;
+}
 
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  animation: fadeUp 300ms ease-out both;
+}
 
-
-
-/* Ticket perforado */
+/* ============================================================
+   TICKET (confirmación)
+   ============================================================ */
 .ticket {
   position: relative;
 }
 
-
-
 .ticket-divider {
   border-top: 1px dashed rgb(var(--border));
+}
+
+/* ============================================================
+   RESPONSIVE GRID HELPERS
+   ============================================================ */
+
+/* Grid de servicios/barberos — 1 col móvil, 2 tablet, 3 desktop */
+.grid-cards {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .grid-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .grid-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Grid de horarios — 3 col móvil, 4 tablet, 6 desktop */
+.grid-times {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (min-width: 640px) {
+  .grid-times {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .grid-times {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+/* ============================================================
+   FIXED FOOTER (booking actions)
+   Suma el safe-area-inset-bottom para iPhone con home bar
+   ============================================================ */
+.footer-fixed {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 50;
+  border-top: 1px solid rgb(var(--border));
+  background-color: rgb(var(--bg) / 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+/* ============================================================
+   FOCUS VISIBLE — accesibilidad
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid rgb(var(--primary));
+  outline-offset: 2px;
+}
+
+/* Quita outline para mouse, lo mantiene para teclado */
+:focus:not(:focus-visible) {
+  outline: none;
 }

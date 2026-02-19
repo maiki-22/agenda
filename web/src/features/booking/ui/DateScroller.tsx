@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useRef, useCallback, useMemo } from "react";
 
 function toISODate(d: Date) {
   const y = d.getFullYear();
@@ -16,10 +16,10 @@ function addDays(d: Date, days: number) {
 }
 
 type DayItem = {
-  iso: string; // YYYY-MM-DD
-  labelTop: string; // Hoy / Lun / Mar ...
-  dayNumber: string; // 14
-  monthShort: string; // Oct
+  iso: string;
+  labelTop: string;
+  dayNumber: string;
+  monthShort: string;
 };
 
 export function DateScroller({
@@ -29,8 +29,39 @@ export function DateScroller({
 }: {
   value: string;
   onChange: (iso: string) => void;
-  daysAhead?: number; // máximo 7 por tu regla
+  daysAhead?: number;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const drag = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
+
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    drag.current = { active: true, startX: e.pageX, scrollLeft: el.scrollLeft, moved: false };
+  }, []);
+
+  const onMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!drag.current.active) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const dx = e.pageX - drag.current.startX;
+    if (Math.abs(dx) > 4) drag.current.moved = true;
+    el.scrollLeft = drag.current.scrollLeft - dx;
+  }, []);
+
+  const onMouseUp = useCallback(() => {
+    drag.current.active = false;
+  }, []);
+
+  // Evita disparar onChange si el usuario estaba arrastrando
+  const makeClickHandler = useCallback(
+    (iso: string) => (e: React.MouseEvent) => {
+      if (drag.current.moved) { e.preventDefault(); return; }
+      onChange(iso);
+    },
+    [onChange]
+  );
+
   const items = useMemo<DayItem[]>(() => {
     const today = new Date();
     const fmtWeekday = new Intl.DateTimeFormat("es-CL", { weekday: "short" });
@@ -40,12 +71,10 @@ export function DateScroller({
     for (let i = 0; i <= daysAhead; i++) {
       const d = addDays(today, i);
       const iso = toISODate(d);
-
       const labelTop =
         i === 0 ? "Hoy" : capitalize(fmtWeekday.format(d).replace(".", ""));
       const dayNumber = String(d.getDate());
       const monthShort = capitalize(fmtMonth.format(d).replace(".", ""));
-
       out.push({ iso, labelTop, dayNumber, monthShort });
     }
     return out;
@@ -61,47 +90,46 @@ export function DateScroller({
       </div>
 
       <div
+        ref={scrollRef}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
         className="
-  -mx-4 px-4 pt-2 pb-2
-  flex gap-3 px-1 sm:px-2 overflow-x-auto no-scrollbar
-  [-webkit-overflow-scrolling:touch]
-  scroll-px-4
-"
+          full-bleed
+          flex gap-3 py-2 overflow-x-auto no-scrollbar
+          [-webkit-overflow-scrolling:touch]
+          scroll-px-[var(--page-px)]
+          cursor-grab active:cursor-grabbing
+          select-none
+        "
       >
         {items.map((it) => {
           const selected = value === it.iso;
-
           return (
             <button
               key={it.iso}
               type="button"
-              onClick={() => onChange(it.iso)}
+              onClick={makeClickHandler(it.iso)}
+              aria-pressed={selected}
               className={[
-                "shrink-0 w-[84px] rounded-2xl border px-3 py-3 text-left transition",
+                "shrink-0 w-20 sm:w-24 lg:w-28",
+                "rounded-2xl border px-3 py-3 text-left transition",
                 "bg-[rgb(var(--surface-2))] border-[rgb(var(--border))]",
-                "hover:brightness-110 min-w-[84px] sm:min-w-[104px] lg:min-w-[120px]",
+                "hover:brightness-110 active:scale-[0.98] touch-manipulation",
                 selected
                   ? "ring-2 ring-[rgb(var(--primary))] ring-offset-2 ring-offset-[rgb(var(--bg))]"
                   : "",
               ].join(" ")}
             >
-              <div className="text-xs text-[rgb(var(--muted))]">
-                {it.labelTop}
-              </div>
-
+              <div className="text-xs text-[rgb(var(--muted))]">{it.labelTop}</div>
               <div className="mt-1 flex items-end justify-between">
-                <div className="text-2xl font-bold leading-none">
-                  {it.dayNumber}
-                </div>
-                <div className="text-xs text-[rgb(var(--muted))]">
-                  {it.monthShort}
-                </div>
+                <div className="text-2xl font-bold leading-none">{it.dayNumber}</div>
+                <div className="text-xs text-[rgb(var(--muted))]">{it.monthShort}</div>
               </div>
-
-              {/* acento rojo */}
               <div
                 className={[
-                  "mt-2 h-1 w-8 rounded-full",
+                  "mt-2 h-1 w-8 rounded-full transition-colors",
                   selected ? "bg-[rgb(var(--primary))]" : "bg-[rgb(var(--border))]",
                 ].join(" ")}
               />

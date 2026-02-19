@@ -56,7 +56,7 @@ export function TimeSelector({
       <div className="space-y-2">
         <h2 className="text-xl font-semibold">Selecciona la hora</h2>
         <p className="text-sm text-gray-500">
-          Primero elige barbero, servicio y día.
+          Primero elige barbero, servicio y dÃ­a.
         </p>
       </div>
     );
@@ -77,7 +77,7 @@ export function TimeSelector({
         </div>
       ) : slots.length === 0 ? (
         <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 text-sm text-[rgb(var(--muted))]">
-          No hay horarios disponibles para este día.
+          No hay horarios disponibles para este dÃ­a.
         </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">

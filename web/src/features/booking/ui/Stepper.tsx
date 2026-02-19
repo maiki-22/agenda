@@ -17,49 +17,57 @@ export function Stepper({
   onJump?: (step: number) => void;
 }) {
   return (
-    
-      <div
-        className="
-  -mx-4 px-4 pt-2 pb-2
-  flex gap-2 overflow-x-auto no-scrollbar
-  [-webkit-overflow-scrolling:touch]
-  scroll-px-4
-"
-      >
-        {steps.map((s) => {
-          const active = s.n === step;
-          const done = s.n < step;
+    /*
+      full-bleed: clase en globals.css que aplica margin-inline negativo
+      igual al padding de page-container, logrando scroll de borde a borde
+      sin que los ítems queden pegados al margen.
+    */
+    <div
+      className="
+        full-bleed
+        flex gap-2 overflow-x-auto no-scrollbar py-2
+        [-webkit-overflow-scrolling:touch]
+        scroll-px-[var(--page-px)]
+        sm:justify-center sm:overflow-x-visible sm:flex-wrap
+      "
+    >
+      {steps.map((s) => {
+        const active = s.n === step;
+        const done = s.n < step;
 
-          return (
-            <button
-              key={s.n}
-              type="button"
-              onClick={() => onJump?.(s.n)}
+        return (
+          <button
+            key={s.n}
+            type="button"
+            onClick={() => onJump?.(s.n)}
+            disabled={!onJump}
+            aria-current={active ? "step" : undefined}
+            className={[
+              /* Tamaño táctil mínimo */
+              "shrink-0 min-h-[40px] rounded-full px-3 py-2 text-xs font-medium transition",
+              "border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))]",
+              "hover:brightness-110 touch-manipulation",
+              "disabled:cursor-default",
+              active
+                ? "ring-2 ring-[rgb(var(--primary))] ring-offset-2 ring-offset-[rgb(var(--bg))]"
+                : "",
+              done ? "opacity-95" : "",
+            ].join(" ")}
+          >
+            <span
               className={[
-                "shrink-0 rounded-full px-3 py-2 text-xs font-medium transition",
-                "border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))]",
-                "hover:brightness-110",
-                active
-                  ? "ring-2 ring-[rgb(var(--primary))] ring-offset-2 ring-offset-[rgb(var(--bg))]"
-                  : "",
-                done ? "opacity-95" : "",
-                !onJump ? "cursor-default" : "",
+                "mr-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold",
+                done || active
+                  ? "bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))]"
+                  : "bg-[rgb(var(--surface-2))] text-[rgb(var(--muted))] border border-[rgb(var(--border))]",
               ].join(" ")}
             >
-              <span
-                className={[
-                  "mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px]",
-                  done || active
-  ? "bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))]"
-  : "bg-[rgb(var(--surface-2))] text-[rgb(var(--muted))] border border-[rgb(var(--border))]"
-                ].join(" ")}
-              >
-                {s.n}
-              </span>
-              {s.label}
-            </button>
-          );
-        })}
-      </div>
+              {s.n}
+            </span>
+            {s.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }

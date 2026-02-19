@@ -18,7 +18,7 @@ export default function BookingHeader({
     <>
       {/* Header fijo */}
       <header className="fixed inset-x-0 top-0 z-50 border-b border-[rgb(var(--border))] bg-[rgb(var(--bg))] supports-[backdrop-filter]:bg-[rgb(var(--bg))]/80 backdrop-blur">
-        <div className="mx-auto max-w-md md:max-w-2xl lg:max-w-3xl px-4 pt-[calc(env(safe-area-inset-top)+12px)] pb-3 flex items-center justify-between gap-3">
+        <div className="mx-auto w-full max-w-[var(--container)] px-4 pt-[calc(env(safe-area-inset-top)+12px)] pb-3 flex items-center justify-between gap-3">
           {showBack ? (
             <button
               type="button"
