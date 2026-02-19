@@ -32,12 +32,22 @@ export function DateScroller({
   daysAhead?: number;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const drag = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
+  const drag = useRef({
+    active: false,
+    startX: 0,
+    scrollLeft: 0,
+    moved: false,
+  });
 
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     const el = scrollRef.current;
     if (!el) return;
-    drag.current = { active: true, startX: e.pageX, scrollLeft: el.scrollLeft, moved: false };
+    drag.current = {
+      active: true,
+      startX: e.pageX,
+      scrollLeft: el.scrollLeft,
+      moved: false,
+    };
   }, []);
 
   const onMouseMove = useCallback((e: React.MouseEvent) => {
@@ -56,7 +66,10 @@ export function DateScroller({
   // Evita disparar onChange si el usuario estaba arrastrando
   const makeClickHandler = useCallback(
     (iso: string) => (e: React.MouseEvent) => {
-      if (drag.current.moved) { e.preventDefault(); return; }
+      if (drag.current.moved) {
+        e.preventDefault();
+        return;
+      }
       onChange(iso);
     },
     [onChange]
@@ -102,10 +115,12 @@ export function DateScroller({
           scroll-px-[var(--page-px)]
           cursor-grab active:cursor-grabbing
           select-none
+          [touch-action:pan-x]
         "
       >
         {items.map((it) => {
           const selected = value === it.iso;
+
           return (
             <button
               key={it.iso}
@@ -117,20 +132,31 @@ export function DateScroller({
                 "rounded-2xl border px-3 py-3 text-left transition",
                 "bg-[rgb(var(--surface-2))] border-[rgb(var(--border))]",
                 "hover:brightness-110 active:scale-[0.98] touch-manipulation",
+                "focus:outline-none",
                 selected
-                  ? "ring-2 ring-[rgb(var(--primary))] ring-offset-2 ring-offset-[rgb(var(--bg))]"
+                  ? "ring-2 ring-[rgb(var(--primary))] border-[rgb(var(--primary))]"
                   : "",
               ].join(" ")}
             >
-              <div className="text-xs text-[rgb(var(--muted))]">{it.labelTop}</div>
-              <div className="mt-1 flex items-end justify-between">
-                <div className="text-2xl font-bold leading-none">{it.dayNumber}</div>
-                <div className="text-xs text-[rgb(var(--muted))]">{it.monthShort}</div>
+              <div className="text-xs text-[rgb(var(--muted))]">
+                {it.labelTop}
               </div>
+
+              <div className="mt-1 flex items-end justify-between">
+                <div className="text-2xl font-bold leading-none">
+                  {it.dayNumber}
+                </div>
+                <div className="text-xs text-[rgb(var(--muted))]">
+                  {it.monthShort}
+                </div>
+              </div>
+
               <div
                 className={[
                   "mt-2 h-1 w-8 rounded-full transition-colors",
-                  selected ? "bg-[rgb(var(--primary))]" : "bg-[rgb(var(--border))]",
+                  selected
+                    ? "bg-[rgb(var(--primary))]"
+                    : "bg-[rgb(var(--border))]",
                 ].join(" ")}
               />
             </button>

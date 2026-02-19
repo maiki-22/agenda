@@ -47,37 +47,43 @@ export function CustomerForm({
 
       {/* ── Nombre ── */}
       <div className="space-y-1.5">
-        <label
-          htmlFor="customer-name"
-          className={[
-            "text-xs font-medium tracking-wide uppercase transition-colors duration-200",
-            nameFocused ? "text-[rgb(var(--primary))]" : "text-[rgb(var(--muted))]",
-          ].join(" ")}
-        >
-          Nombre
-        </label>
-        <input
-          id="customer-name"
-          ref={nameRef}
-          value={name}
-          onChange={(e) => onChange(e.target.value, phone)}
-          onFocus={() => setNameFocused(true)}
-          onBlur={() => setNameFocused(false)}
-          placeholder="Ej: Matías"
-          autoComplete="given-name"
-          className={[
-            "w-full rounded-2xl border px-4 py-3",
-            "bg-[rgb(var(--surface-2))] text-base text-[rgb(var(--fg))]",
-            /* Triple lock: outline, ring de Tailwind, y box-shadow nativo */
-            "outline-none focus:outline-none ring-0 focus:ring-0 shadow-none focus:shadow-none",
-            "appearance-none",
-            "transition-all duration-200",
-            nameFocused
-              ? "border-[rgb(var(--primary))] shadow-[0_0_0_3px_rgb(var(--primary)/0.15)]"
-              : "border-[rgb(var(--border))]",
-          ].join(" ")}
-        />
-      </div>
+  <label
+    htmlFor="customer-name"
+    className={[
+      "text-xs font-medium tracking-wide uppercase transition-colors duration-200",
+      nameFocused ? "text-[rgb(var(--primary))]" : "text-[rgb(var(--muted))]",
+    ].join(" ")}
+  >
+    Nombre
+  </label>
+
+  <div
+    className={[
+      "flex items-center gap-2 rounded-2xl border px-3 py-2 transition-all duration-200",
+      "bg-[rgb(var(--surface-2))]",
+      nameFocused
+        ? "border-[rgb(var(--primary))] ring-2 ring-[rgb(var(--primary))]"
+        : "border-[rgb(var(--border))]",
+    ].join(" ")}
+  >
+    <input
+      id="customer-name"
+      ref={nameRef}
+      value={name}
+      onChange={(e) => onChange(e.target.value, phone)}
+      onFocus={() => setNameFocused(true)}
+      onBlur={() => setNameFocused(false)}
+      placeholder="Ej: Miguel"
+      autoComplete="given-name"
+      className={[
+        "no-focus-outline min-w-0 flex-1 bg-transparent px-1 py-2 text-base text-[rgb(var(--fg))]",
+        "outline-none focus:outline-none focus-visible:outline-none",
+        "ring-0 focus:ring-0 focus-visible:ring-0",
+        "shadow-none focus:shadow-none focus-visible:shadow-none appearance-none",
+      ].join(" ")}
+    />
+  </div>
+</div>
 
       {/* ── Teléfono ── */}
       <div className="space-y-1.5">
@@ -101,13 +107,12 @@ export function CustomerForm({
             "bg-[rgb(var(--surface-2))]",
             shake && showPhoneError ? "shake" : "",
             showPhoneError
-              ? "border-red-500/60 shadow-[0_0_0_3px_rgba(239,68,68,0.15)]"
+              ? "border-red-500/60 ring-2 ring-red-500/60"
               : phoneFocused
-              ? "border-[rgb(var(--primary))] shadow-[0_0_0_3px_rgb(var(--primary)/0.15)]"
+              ? "border-[rgb(var(--primary))] ring-2 ring-[rgb(var(--primary))]"
               : "border-[rgb(var(--border))]",
           ].join(" ")}
         >
-          {/* Prefijo — reemplazamos emoji por texto para evitar mojibake */}
           <div className="flex shrink-0 items-center gap-1.5 rounded-xl border border-[rgb(var(--border))] bg-black/5 dark:bg-white/5 px-3 py-2">
             <span className="text-xs font-bold text-[rgb(var(--muted))]">CL</span>
             <span className="text-sm font-semibold">+56</span>
@@ -128,20 +133,12 @@ export function CustomerForm({
               setPhoneFocused(false);
               setTouchedPhone(true);
             }}
-            /* 
-              outline-none + ring-0 + shadow-none + appearance-none:
-              Cuatro capas de supresión para garantizar cero ring del browser.
-              El feedback visual lo da únicamente el wrapper div.
-            */
-            className="
-              min-w-0 flex-1 bg-transparent px-2 py-2
-              text-base text-[rgb(var(--fg))]
-              outline-none focus:outline-none
-              ring-0 focus:ring-0
-              shadow-none focus:shadow-none
-              border-0 focus:border-0
-              appearance-none
-            "
+            className={[
+              "no-focus-outline min-w-0 flex-1 bg-transparent px-2 py-2 text-base text-[rgb(var(--fg))]",
+              "outline-none focus:outline-none focus-visible:outline-none",
+              "ring-0 focus:ring-0 focus-visible:ring-0",
+              "shadow-none focus:shadow-none focus-visible:shadow-none appearance-none",
+            ].join(" ")}
           />
 
           {/* Badge OK */}

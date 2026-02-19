@@ -19,17 +19,17 @@
   --primary-glow: 212 175 55;
 
   /* Spacing responsive */
-  --page-px: 1rem;          /* 16px mobile */
-  --page-max: 28rem;        /* 448px — md breakpoint */
-  --card-radius: 1rem;      /* 16px */
+  --page-px: 1rem; /* 16px mobile */
+  --page-max: 28rem; /* 448px */
+  --card-radius: 1rem; /* 16px */
   --btn-radius: 1rem;
 }
 
 /* Tablet */
 @media (min-width: 640px) {
   :root {
-    --page-px: 1.5rem;
-    --page-max: 42rem;      /* 672px */
+    --page-px: 1.5rem; /* 24px */
+    --page-max: 42rem; /* 672px */
     --card-radius: 1.25rem;
   }
 }
@@ -37,9 +37,16 @@
 /* Desktop */
 @media (min-width: 1024px) {
   :root {
-    --page-px: 2rem;
-    --page-max: 56rem;      /* 896px */
+    --page-px: 2rem; /* 32px */
+    --page-max: 70rem; /* 1120px */
     --card-radius: 1.5rem;
+  }
+}
+
+/* Desktop wide */
+@media (min-width: 1280px) {
+  :root {
+    --page-max: 75rem; /* 1200px */
   }
 }
 
@@ -69,8 +76,13 @@ html {
   /* Previene zoom en inputs en iOS */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  /* Scroll suave */
-  scroll-behavior: smooth;
+}
+
+/* Smooth scroll solo cuando corresponde */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
@@ -79,11 +91,14 @@ body {
     "Segoe UI Emoji";
   background-color: rgb(var(--bg));
   color: rgb(var(--fg));
+
   /* Safe areas para notch/home bar */
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
-  /* Evita scroll horizontal accidental */
-  overflow-x: hidden;
+
+  /* Evita scroll horizontal accidental (clip > hidden) */
+  overflow-x: clip;
+
   /* Mejor legibilidad en retina */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -95,31 +110,28 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
-/*
-  Elimina el outline y ring nativo del browser en todos los inputs.
-  Usamos !important + :focus para ganar sobre las reglas del browser
-  sin importar la especificidad del selector en el componente.
-*/
-input,
-textarea,
-select {
-  outline: none !important;
-  box-shadow: none;
-}
-input:focus,
-textarea:focus,
-select:focus {
-  outline: none !important;
-  box-shadow: none !important;
-  --tw-ring-shadow: 0 0 #0000 !important;
-  --tw-ring-offset-shadow: 0 0 #0000 !important;
-}
-
 /* Inputs no hacen zoom en iOS (font-size >= 16px) */
 input,
 select,
 textarea {
   font-size: max(1rem, 16px);
+}
+
+/* Evita ring/sombras del browser al hacer click/tap,
+   pero NO rompe focus-visible para teclado */
+input,
+textarea,
+select {
+  box-shadow: none;
+}
+
+input:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible),
+select:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-shadow: 0 0 #0000;
 }
 
 /* ============================================================
@@ -155,30 +167,62 @@ textarea {
    ANIMATIONS
    ============================================================ */
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%       { transform: translateX(-3px); }
-  40%       { transform: translateX(3px); }
-  60%       { transform: translateX(-2px); }
-  80%       { transform: translateX(2px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-3px);
+  }
+  40% {
+    transform: translateX(3px);
+  }
+  60% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
 }
 .shake {
   animation: shake 240ms ease-in-out;
 }
 
 @keyframes popIn {
-  0%   { transform: scale(0.92); opacity: 0; }
-  100% { transform: scale(1);    opacity: 1; }
+  0% {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 .pop-in {
   animation: popIn 260ms ease-out;
 }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .fade-up {
   animation: fadeUp 300ms ease-out both;
+}
+
+/* Respeta reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .shake,
+  .pop-in,
+  .fade-up {
+    animation: none !important;
+  }
 }
 
 /* ============================================================
@@ -249,12 +293,16 @@ textarea {
 /* ============================================================
    FOCUS VISIBLE — accesibilidad
    ============================================================ */
-:focus-visible {
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
   outline: 2px solid rgb(var(--primary));
   outline-offset: 2px;
 }
 
-/* Quita outline para mouse, lo mantiene para teclado */
-:focus:not(:focus-visible) {
+/* Quita outline para mouse/touch, lo mantiene para teclado */
+:where(a, button, input, textarea, select, [tabindex]):focus:not(:focus-visible) {
   outline: none;
+}
+
+.no-focus-outline:focus-visible {
+  outline: none !important;
 }

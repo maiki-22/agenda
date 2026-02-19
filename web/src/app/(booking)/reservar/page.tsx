@@ -13,6 +13,7 @@ import { BookingDraftSchema } from "@/features/booking/domain/booking.schema";
 import { DateScroller } from "@/features/booking/ui/DateScroller";
 import BookingHeader from "@/components/booking/BookingHeader";
 import { SERVICES, BARBERS } from "@/features/booking/domain/booking.logic";
+import MessageReportIcon from "@/components/icons/MessageReportIcon";
 
 const TOTAL_STEPS = 6;
 
@@ -98,7 +99,7 @@ export default function ReservarPage() {
 
   return (
     <div className="min-h-dvh">
-      <BookingHeader title={stepTitle} subtitle="Reserva" showBack={false} />
+      <BookingHeader showBack={false} />
 
       <main className="page-container py-4 sm:py-6 space-y-6 pb-32">
 
@@ -191,9 +192,9 @@ export default function ReservarPage() {
                 </div>
               </div>
             </div>
-            <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-sm text-[rgb(var(--muted))] flex items-start gap-3">
-              <span className="mt-0.5 text-[rgb(var(--primary))] shrink-0">✓</span>
-              Al confirmar, recibirás la confirmación por WhatsApp.
+            <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-sm text-[rgb(var(--muted))] flex items-center gap-4">
+              <span className="mt-0.5 text-[rgb(var(--primary))] shrink-0"> <MessageReportIcon size={30}/> </span>
+              Recibirás el resumen y un recordatorio de tu cita vía WhatsApp.
             </div>
           </div>
         )}

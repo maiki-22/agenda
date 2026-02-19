@@ -14,7 +14,7 @@ export function ServiceSelector({
   return (
     <div className="space-y-3">
       <h2 className="text-xl font-semibold">Selecciona el servicio</h2>
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid-cards">
         {SERVICES.map((s) => (
           <SelectCard
             key={s.id}
