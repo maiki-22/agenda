@@ -63,7 +63,7 @@ export function DateScroller({
       <div
         className="
   -mx-4 px-4 pt-2 pb-2
-  flex gap-3 overflow-x-auto no-scrollbar
+  flex gap-3 px-1 sm:px-2 overflow-x-auto no-scrollbar
   [-webkit-overflow-scrolling:touch]
   scroll-px-4
 "
@@ -79,7 +79,7 @@ export function DateScroller({
               className={[
                 "shrink-0 w-[84px] rounded-2xl border px-3 py-3 text-left transition",
                 "bg-[rgb(var(--surface-2))] border-[rgb(var(--border))]",
-                "hover:brightness-110",
+                "hover:brightness-110 min-w-[84px] sm:min-w-[104px] lg:min-w-[120px]",
                 selected
                   ? "ring-2 ring-[rgb(var(--primary))] ring-offset-2 ring-offset-[rgb(var(--bg))]"
                   : "",

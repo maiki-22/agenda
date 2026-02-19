@@ -80,7 +80,7 @@ export function TimeSelector({
           No hay horarios disponibles para este día.
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
           {slots.map((t) => {
             const selected = value === t;
 

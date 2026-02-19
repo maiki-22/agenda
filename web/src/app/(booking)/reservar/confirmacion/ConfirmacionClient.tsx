@@ -200,7 +200,7 @@ return (
 
     {/* Footer fijo (siempre visible) */}
     <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[rgb(var(--border))] bg-[rgb(var(--bg))]/85 backdrop-blur">
-      <div className="mx-auto max-w-md px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] grid grid-cols-2 gap-3">
+      <div className="mx-auto max-w-md md:max-w-2xl lg:max-w-3xl px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] grid grid-cols-2 gap-3">
         <button
           type="button"
           onClick={() => router.push("/")}

@@ -16,7 +16,7 @@ export default async function ConfirmacionPage({
   }
 
   return (
-    <main className="mx-auto max-w-md p-0">
+    <main className="mx-auto max-w-md md:max-w-2xl lg:max-w-3xl p-0">
       <ConfirmacionClient bookingId={bookingId} />
     </main>
   );

@@ -112,7 +112,7 @@ export default function ReservarPage() {
     <div className="min-h-dvh">
       <BookingHeader title={stepTitle} subtitle="Reserva" showBack={false} />
 
-      <main className="mx-auto max-w-md p-4 sm:p-6 space-y-6 pb-28">
+      <main className="mx-auto max-w-md md:max-w-2xl lg:max-w-3xl p-4 sm:p-6 space-y-6 pb-28">
         <h1 className="text-2xl font-bold">Reservar hora</h1>
 
         <Stepper
