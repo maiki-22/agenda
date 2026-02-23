@@ -7,6 +7,7 @@ function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(":").map(Number);
   return h * 60 + m;
 }
+
 function overlaps(aStart: number, aEnd: number, bStart: number, bEnd: number) {
   return aStart < bEnd && bStart < aEnd;
 }
@@ -14,7 +15,6 @@ function overlaps(aStart: number, aEnd: number, bStart: number, bEnd: number) {
 export function createBookingService(input: unknown): Booking {
   const draft = BookingDraftSchema.parse(input);
 
-  // Validación de disponibilidad (MVP): no permitir solapes
   const duration = getServiceDurationMinutes(draft.service);
   const start = toMinutes(draft.time);
   const end = start + duration;
@@ -27,10 +27,9 @@ export function createBookingService(input: unknown): Booking {
   });
 
   if (!ok) {
-    type SlotTakenError = Error & { code: "SLOT_TAKEN" };
-    const err: SlotTakenError = Object.assign(new Error("Horario no disponible"), {
+    const err = Object.assign(new Error("Horario no disponible"), {
       code: "SLOT_TAKEN" as const,
-      });
+    });
     throw err;
   }
 

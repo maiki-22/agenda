@@ -1,18 +1,11 @@
-export type ServiceType = "corte" | "barba" | "corte_y_barba";
+import type { ServiceType, BookingDraft } from "./booking.schema";
+
+export type { ServiceType, BookingDraft };
 
 export type Barber = {
   id: string;
   name: string;
   isActive: boolean;
-};
-
-export type BookingDraft = {
-  barberId: string;
-  service: ServiceType;
-  date: string; // YYYY-MM-DD
-  time: string; // HH:mm
-  customerName: string;
-  customerPhone: string; // normalized
 };
 
 export type Booking = BookingDraft & {
@@ -23,10 +16,10 @@ export type Booking = BookingDraft & {
 
 export type AvailabilityQuery = {
   barberId: string;
-  date: string; // YYYY-MM-DD
+  date: string;
   service?: ServiceType;
 };
 
 export type AvailabilityResult = {
-  slots: string[]; // HH:mm start times available
+  slots: string[]; // HH:mm start times
 };

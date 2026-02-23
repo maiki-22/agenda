@@ -1,12 +1,15 @@
 import { z } from "zod";
 import { getAvailability } from "../data/availability.repo";
 import type { AvailabilityResult } from "../domain/booking.types";
-import { ServiceTypeSchema } from "../domain/booking.schema";
+import { SERVICES } from "../domain/booking.logic";
+import type { ServiceType } from "../domain/booking.schema";
+
+const serviceIds = SERVICES.map((s) => s.id) as [ServiceType, ...ServiceType[]];
 
 const QuerySchema = z.object({
   barberId: z.string().min(1),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  service: ServiceTypeSchema.optional(),
+  service: z.enum(serviceIds).optional(),
 });
 
 export function getAvailabilityService(input: unknown): AvailabilityResult {
