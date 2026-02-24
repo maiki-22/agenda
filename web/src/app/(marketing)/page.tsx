@@ -21,14 +21,14 @@ const BRAND = {
 export default function MarketingHomePage() {
   return (
     <div className="min-h-dvh">
-<div
-  className="pointer-events-none fixed inset-0 z-0 dark:opacity-100 opacity-50"
-  aria-hidden="true"
-  style={{
-    background:
-      "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(212,175,55,0.30) 0%, transparent 65%)",
-  }}
-/>
+      <div
+        className="pointer-events-none fixed inset-0 z-0 dark:opacity-100 opacity-50"
+        aria-hidden="true"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(212,175,55,0.30) 0%, transparent 65%)",
+        }}
+      />
 
       {/* ── TOPBAR ────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 border-b border-[rgb(var(--border))] bg-[rgb(var(--bg))]/90 backdrop-blur-md">
@@ -47,44 +47,53 @@ export default function MarketingHomePage() {
 
       <main className="relative z-10 page-container py-10 space-y-14">
         {/* ── HERO ──────────────────────────────────────────── */}
-        <section className="grid gap-8 lg:grid-cols-[1.05fr_.95fr] items-center">
-          <div className="space-y-6 text-center lg:text-left flex flex-col items-center lg:items-start">
-            {/* Logo hero — protagonista */}
-            <LogoAdaptive className="w-80 sm:w-[28rem] h-40 sm:h-52" />
+        <section className="grid gap-6 lg:gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+          {/* LOGO (mobile: 1°, desktop: 1°) */}
+          <div className="order-1 flex flex-col items-center lg:items-start">
+            <LogoAdaptive className="w-full max-w-[44rem] sm:max-w-[52rem] lg:max-w-[40rem]" />
+          </div>
 
-            <div className="space-y-3">
+          {/* BLOQUE TEXTO/CTA (mobile: 2°, desktop: debajo de ambos) */}
+          <div className="order-2 lg:order-3 lg:col-span-2 text-center lg:text-left">
+            <div className="mx-auto lg:mx-0 max-w-[60rem] space-y-4 lg:space-y-5">
               <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
                 <Badge>Barbería premium</Badge>
                 <Badge>Agenda online</Badge>
                 <Badge>Ambiente cómodo</Badge>
               </div>
-              <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.1]">
-                Más que un corte,{" "}
-                <span className="text-[rgb(var(--primary))]">
-                  es identidad.
-                </span>
-              </h1>
-              <p className="text-sm sm:text-base text-[rgb(var(--muted))] max-w-sm mx-auto lg:mx-0">
-                Cortes actuales, barba prolija y terminaciones finas. Elige
-                servicio, día y hora en segundos.
-              </p>
-            </div>
 
-            <Link
-              href="/reservar"
-              className="btn-gold w-full max-w-[280px] px-6 py-4 text-base text-center block"
-              style={{ boxShadow: "0 12px 36px rgba(212,175,55,0.22)" }}
-            >
-              Reservar hora
-            </Link>
+              <div className="space-y-2">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.05]">
+                  Más que un corte,{" "}
+                  <span className="text-[rgb(var(--primary))]">
+                    es identidad.
+                  </span>
+                </h1>
+
+                <p className="text-sm sm:text-base text-[rgb(var(--muted))]">
+                  Cortes actuales, barba prolija y terminaciones finas. Elige
+                  servicio, día y hora en segundos.
+                </p>
+              </div>
+
+              <div className="flex justify-center lg:justify-start">
+                <Link
+                  href="/reservar"
+                  className="btn-gold w-full max-w-[320px] lg:max-w-[360px] px-6 py-4 text-base text-center block"
+                  style={{ boxShadow: "0 12px 36px rgba(212,175,55,0.22)" }}
+                >
+                  Reservar hora
+                </Link>
+              </div>
+            </div>
           </div>
 
-          {/* Imagen principal del local */}
+          {/* IMAGEN LOCAL (mobile: 3°, desktop: 2° a la derecha del logo) */}
           <div
-            className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] overflow-hidden"
+            className="order-3 lg:order-2 lg:mt-6 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] overflow-hidden"
             style={{ boxShadow: "0 2px 40px rgba(0,0,0,0.18)" }}
           >
-            <div className="aspect-[4/3] sm:aspect-[16/10] relative">
+            <div className="aspect-[4/3] sm:aspect-[16/10] lg:aspect-[16/9] relative">
               <div className="absolute inset-0 grid place-items-center">
                 <div className="text-xs text-[rgb(var(--muted))] text-center px-4">
                   Aquí va tu foto/arte principal
