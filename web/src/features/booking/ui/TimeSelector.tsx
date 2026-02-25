@@ -3,6 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ServiceType } from "../domain/booking.types";
 
+const MIN_LEAD_MINUTES = 30;
+
+function isSlotAtLeastMinutesFromNow(dateYYYYMMDD: string, hhmm: string, minMinutes: number) {
+  // Hora local del navegador (UX). La seguridad real va en backend.
+  const [y, m, d] = dateYYYYMMDD.split("-").map(Number);
+  const [hh, mm] = hhmm.split(":").map(Number);
+  const slot = new Date(y, m - 1, d, hh, mm, 0, 0).getTime();
+  return slot - Date.now() >= minMinutes * 60 * 1000;
+}
+
 export function TimeSelector({
   barberId,
   date,
@@ -39,9 +49,10 @@ export function TimeSelector({
       if (!url) return;
       setLoading(true);
       try {
-        const res = await fetch(url);
+        const res = await fetch(url, { cache: "no-store" });
         const json = await res.json();
-        if (ok) setSlots(Array.isArray(json.slots) ? json.slots : []);
+        if (!ok) return;
+        setSlots(Array.isArray(json.slots) ? json.slots : []);
       } finally {
         if (ok) setLoading(false);
       }
@@ -53,6 +64,20 @@ export function TimeSelector({
       ok = false;
     };
   }, [url, refreshKey]);
+
+  const filteredSlots = useMemo(() => {
+    if (!date) return [];
+    return slots.filter((t) => isSlotAtLeastMinutesFromNow(date, t, MIN_LEAD_MINUTES));
+  }, [slots, date]);
+
+  // Si el usuario tenía seleccionada una hora que quedó inválida, la limpiamos
+  useEffect(() => {
+    if (!value) return;
+    if (!date) return;
+    const stillOk = isSlotAtLeastMinutesFromNow(date, value, MIN_LEAD_MINUTES);
+    if (!stillOk) onChange("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date, value]);
 
   if (!canLoad) {
     return (
@@ -78,13 +103,16 @@ export function TimeSelector({
         <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 text-sm text-[rgb(var(--muted))]">
           Cargando horarios...
         </div>
-      ) : slots.length === 0 ? (
+      ) : filteredSlots.length === 0 ? (
         <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 text-sm text-[rgb(var(--muted))]">
           No hay horarios disponibles para este día.
+          <div className="mt-2 text-xs">
+            Recuerda: se requiere al menos {MIN_LEAD_MINUTES} minutos de anticipación.
+          </div>
         </div>
       ) : (
         <div className="grid-times">
-          {slots.map((t) => {
+          {filteredSlots.map((t) => {
             const selected = value === t;
 
             return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { z } from "zod";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useBookingStore } from "@/features/booking/store/booking.store";
 import { Stepper } from "@/features/booking/ui/Stepper";
@@ -12,19 +12,53 @@ import { CustomerForm } from "@/features/booking/ui/CustomerForm";
 import { BookingDraftSchema } from "@/features/booking/domain/booking.schema";
 import { DateScroller } from "@/features/booking/ui/DateScroller";
 import BookingHeader from "@/components/booking/BookingHeader";
-import { SERVICES, BARBERS } from "@/features/booking/domain/booking.logic";
 import MessageReportIcon from "@/components/icons/MessageReportIcon";
 
 const TOTAL_STEPS = 6;
 
+type CatalogService = {
+  id: string;
+  name: string;
+  duration_min: number;
+  price_clp: number;
+};
+
+type CatalogBarber = {
+  id: string;
+  name: string;
+};
+
 export default function ReservarPage() {
   const router = useRouter();
   const s = useBookingStore();
+
   const [refreshKey, setRefreshKey] = useState(0);
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>("");
   const [phoneShakeKey, setPhoneShakeKey] = useState(0);
+
+  // ✅ Catalogo (Supabase) para resumen y consistencia
+  const [services, setServices] = useState<CatalogService[]>([]);
+  const [barbers, setBarbers] = useState<CatalogBarber[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/catalog", { cache: "no-store" });
+        const json = await res.json();
+        if (!alive) return;
+        setServices((json?.services ?? []) as CatalogService[]);
+        setBarbers((json?.barbers ?? []) as CatalogBarber[]);
+      } catch {
+        // no bloqueamos el flujo; el resumen cae a "id"
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const isChileMobileE164 = (v: string) => /^\+569\d{8}$/.test(v);
 
@@ -36,15 +70,15 @@ export default function ReservarPage() {
     if (step === 5)
       return s.customerName.trim().length > 0 && isChileMobileE164(s.customerPhone);
     return true;
-  }, [step, s]);
-
-  const stepTitle =
-    step === 1 ? "Selecciona barbero"
-    : step === 2 ? "Selecciona servicio"
-    : step === 3 ? "Selecciona día"
-    : step === 4 ? "Selecciona hora"
-    : step === 5 ? "Tus datos"
-    : "Confirmar reserva";
+  }, [
+    step,
+    s.barberId,
+    s.service,
+    s.date,
+    s.time,
+    s.customerName,
+    s.customerPhone,
+  ]);
 
   async function onConfirm() {
     setError("");
@@ -79,7 +113,9 @@ export default function ReservarPage() {
         throw new Error(json?.error ?? "No se pudo crear la reserva");
       }
 
-      router.push(`/reservar/confirmacion?bookingId=${encodeURIComponent(json.bookingId)}`);
+      router.push(
+        `/reservar/confirmacion?bookingId=${encodeURIComponent(json.bookingId)}`
+      );
       setTimeout(() => s.reset(), 0);
     } catch (e: unknown) {
       if (e instanceof z.ZodError) {
@@ -97,12 +133,17 @@ export default function ReservarPage() {
     }
   }
 
+  const barberNameFromId = (id: string) =>
+    barbers.find((b) => b.id === id)?.name ?? id;
+
+  const serviceLabelFromId = (id: string) =>
+    services.find((x) => x.id === id)?.name ?? id;
+
   return (
     <div className="min-h-dvh">
       <BookingHeader showBack={false} />
 
       <main className="page-container py-4 sm:py-6 space-y-6 pb-32">
-
         {/* ── Encabezado centrado ── */}
         <div className="text-center space-y-1">
           <p className="text-xs tracking-widest text-[rgb(var(--muted))] uppercase">
@@ -111,15 +152,17 @@ export default function ReservarPage() {
           <h1 className="text-2xl sm:text-3xl font-bold">Reservar hora</h1>
         </div>
 
-        {/* ── Progress bar enterprise ── */}
+        {/* ── Progress bar ── */}
         <div className="space-y-3">
-          {/* Barra de progreso numérica */}
           <div className="flex items-center justify-between text-xs text-[rgb(var(--muted))]">
-            <span>Paso {step} de {TOTAL_STEPS}</span>
+            <span>
+              Paso {step} de {TOTAL_STEPS}
+            </span>
             <span className="font-medium text-[rgb(var(--primary))]">
               {Math.round((step / TOTAL_STEPS) * 100)}%
             </span>
           </div>
+
           <div className="h-1 w-full rounded-full bg-[rgb(var(--border))] overflow-hidden">
             <div
               className="h-full rounded-full bg-[rgb(var(--primary))] transition-all duration-500 ease-out"
@@ -127,7 +170,6 @@ export default function ReservarPage() {
             />
           </div>
 
-          {/* Pills del stepper */}
           <Stepper
             step={step}
             onJump={(target) => {
@@ -136,20 +178,34 @@ export default function ReservarPage() {
           />
         </div>
 
-        {/* ── Contenido del paso ── */}
+        {/* ── Contenido ── */}
         {step === 1 && (
-          <BarberSelector value={s.barberId} onChange={(id) => s.setBarberId(id)} />
-        )}
-        {step === 2 && (
-          <ServiceSelector value={s.service} onChange={(svc) => s.setService(svc)} />
-        )}
+  <BarberSelector
+    barbers={barbers}
+    value={s.barberId}
+    onChange={(id) => s.setBarberId(id)}
+  />
+)}
+
+{step === 2 && (
+  <ServiceSelector
+    services={services}
+    value={s.service}
+    onChange={(svc) => s.setService(svc)}
+  />
+)}
+
         {step === 3 && (
           <DateScroller
             value={s.date}
-            onChange={(d) => { setError(""); s.setDate(d); }}
+            onChange={(d) => {
+              setError("");
+              s.setDate(d);
+            }}
             daysAhead={7}
           />
         )}
+
         {step === 4 && (
           <TimeSelector
             barberId={s.barberId}
@@ -160,14 +216,19 @@ export default function ReservarPage() {
             refreshKey={refreshKey}
           />
         )}
+
         {step === 5 && (
           <CustomerForm
             name={s.customerName}
             phone={s.customerPhone}
             shakeKey={phoneShakeKey}
-            onChange={(name, phone) => { setError(""); s.setCustomer(name, phone); }}
+            onChange={(name, phone) => {
+              setError("");
+              s.setCustomer(name, phone);
+            }}
           />
         )}
+
         {step === 6 && (
           <div className="space-y-4">
             <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] divide-y divide-[rgb(var(--border))]">
@@ -176,10 +237,10 @@ export default function ReservarPage() {
                   Resumen de tu cita
                 </p>
                 <div className="space-y-2 text-sm">
-                  <Row label="Barbero"  value={barberNameFromId(s.barberId)} />
+                  <Row label="Barbero" value={barberNameFromId(s.barberId)} />
                   <Row label="Servicio" value={serviceLabelFromId(s.service)} />
-                  <Row label="Fecha"    value={s.date} />
-                  <Row label="Hora"     value={s.time} />
+                  <Row label="Fecha" value={s.date} />
+                  <Row label="Hora" value={s.time} />
                 </div>
               </div>
               <div className="px-4 py-3">
@@ -187,20 +248,26 @@ export default function ReservarPage() {
                   Cliente
                 </p>
                 <div className="space-y-2 text-sm">
-                  <Row label="Nombre"   value={s.customerName} />
+                  <Row label="Nombre" value={s.customerName} />
                   <Row label="Teléfono" value={s.customerPhone} />
                 </div>
               </div>
             </div>
+
             <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-sm text-[rgb(var(--muted))] flex items-center gap-4">
-              <span className="mt-0.5 text-[rgb(var(--primary))] shrink-0"> <MessageReportIcon size={30}/> </span>
+              <span className="mt-0.5 text-[rgb(var(--primary))] shrink-0">
+                <MessageReportIcon size={30} />
+              </span>
               Recibirás el resumen y un recordatorio de tu cita vía WhatsApp.
             </div>
           </div>
         )}
 
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900/50 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-start gap-2" role="alert">
+          <div
+            className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900/50 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-start gap-2"
+            role="alert"
+          >
             <span className="shrink-0 mt-0.5">⚠</span>
             {error}
           </div>
@@ -271,12 +338,4 @@ function Row({ label, value, mono }: { label: string; value: string; mono?: bool
       <div className={mono ? "font-mono text-xs" : "font-medium"}>{value}</div>
     </div>
   );
-}
-
-function barberNameFromId(id: string) {
-  return BARBERS.find((b) => b.id === id)?.name ?? id;
-}
-
-function serviceLabelFromId(id: string) {
-  return SERVICES.find((s) => s.id === id)?.label ?? id;
 }

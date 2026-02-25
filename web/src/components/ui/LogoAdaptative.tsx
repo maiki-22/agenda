@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import LogoSvg from "@/../public/LogoLaSucursal.svg";
+import LogoSvg from "@/../public/logo.svg";
 
 export default function LogoAdaptive({
   className = "",
@@ -13,10 +13,7 @@ export default function LogoAdaptive({
 
   return (
     <div className={`text-[rgb(var(--fg))] ${className}`}>
-      <LogoSvg
-        className="block w-full h-auto"
-        aria-label="La Sucursal Barber Shop"
-      />
-    </div>
+  <LogoSvg className="block w-full h-auto" aria-label="La Sucursal Barber Shop" />
+</div>
   );
 }

@@ -1,6 +1,5 @@
 import { BookingDraftSchema } from "../domain/booking.schema";
 import { createBooking, listBookingsByBarberDate } from "../data/booking.repo";
-import { getServiceDurationMinutes } from "../domain/booking.logic";
 import type { Booking } from "../domain/booking.types";
 
 function toMinutes(hhmm: string): number {
@@ -12,14 +11,31 @@ function overlaps(aStart: number, aEnd: number, bStart: number, bEnd: number) {
   return aStart < bEnd && bStart < aEnd;
 }
 
+type CreateBookingInput = {
+  barberId: string;
+  service: string; // serviceId
+  date: string;    // YYYY-MM-DD
+  time: string;    // HH:mm
+  customerName: string;
+  customerPhone: string;
+  durationMinutes: number; // viene desde Supabase (source of truth)
+};
+
 export function createBookingService(input: unknown): Booking {
-  const draft = BookingDraftSchema.parse(input);
+  // Validamos el shape base (sin duración)
+  const parsed = BookingDraftSchema.parse(input);
 
-  const duration = getServiceDurationMinutes(draft.service);
-  const start = toMinutes(draft.time);
-  const end = start + duration;
+  // durationMinutes debe venir desde API (server) luego de validar el servicio
+  const durationMinutes = (input as Partial<CreateBookingInput>).durationMinutes;
 
-  const sameDay = listBookingsByBarberDate(draft.barberId, draft.date);
+  if (!durationMinutes || typeof durationMinutes !== "number" || durationMinutes <= 0) {
+    throw new Error("Missing durationMinutes (server must resolve service duration)");
+  }
+
+  const start = toMinutes(parsed.time);
+  const end = start + durationMinutes;
+
+  const sameDay = listBookingsByBarberDate(parsed.barberId, parsed.date);
   const ok = sameDay.every((b) => {
     const bs = toMinutes(b.time);
     const be = bs + b.durationMinutes;
@@ -33,5 +49,5 @@ export function createBookingService(input: unknown): Booking {
     throw err;
   }
 
-  return createBooking(draft);
+  return createBooking({ ...parsed, durationMinutes });
 }

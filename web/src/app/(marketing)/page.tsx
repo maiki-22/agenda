@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import LogoAdaptive from "@/components/ui/LogoAdaptative";
+import localImg from "@/assets/local.webp";
 
 const BRAND = {
   name: "La Sucursal Barber Shop",
@@ -45,78 +46,81 @@ export default function MarketingHomePage() {
         </div>
       </header>
 
-      <main className="relative z-10 page-container py-10 space-y-14">
+      <main className="relative z-10 page-container pt-4 pb-8 sm:py-8 lg:py-10 space-y-10 sm:space-y-12">
         {/* ── HERO ──────────────────────────────────────────── */}
         <section className="grid gap-6 lg:gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
-          {/* LOGO (mobile: 1°, desktop: 1°) */}
-          <div className="order-1 flex flex-col items-center lg:items-start">
-            <LogoAdaptive className="w-full max-w-[44rem] sm:max-w-[52rem] lg:max-w-[40rem]" />
-          </div>
+  {/* LOGO (mobile: 1°, desktop: 1°) */}
+  <div className="order-1 flex flex-col items-center lg:items-start lg:mt-9">
+    <LogoAdaptive className="w-full max-w-[44rem] sm:max-w-[52rem] lg:max-w-[40rem]" />
+  </div>
 
-          {/* BLOQUE TEXTO/CTA (mobile: 2°, desktop: debajo de ambos) */}
-          <div className="order-2 lg:order-3 lg:col-span-2 text-center lg:text-left">
-            <div className="mx-auto lg:mx-0 max-w-[60rem] space-y-4 lg:space-y-5">
-              <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-                <Badge>Barbería premium</Badge>
-                <Badge>Agenda online</Badge>
-                <Badge>Ambiente cómodo</Badge>
-              </div>
+  {/* BLOQUE TEXTO/CTA (mobile: 2°, desktop: debajo de ambos) */}
+  <div className="order-2 lg:order-3 lg:col-span-2 text-center lg:text-left">
+    <div className="mx-auto lg:mx-0 max-w-[60rem] space-y-4 lg:space-y-5">
+      <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+        <Badge>Barbería premium</Badge>
+        <Badge>Agenda online</Badge>
+        <Badge>Ambiente cómodo</Badge>
+      </div>
 
-              <div className="space-y-2">
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.05]">
-                  Más que un corte,{" "}
-                  <span className="text-[rgb(var(--primary))]">
-                    es identidad.
-                  </span>
-                </h1>
+      <div className="space-y-2">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.05]">
+          Más que un corte,{" "}
+          <span className="text-[rgb(var(--primary))]">es identidad.</span>
+        </h1>
 
-                <p className="text-sm sm:text-base text-[rgb(var(--muted))]">
-                  Cortes actuales, barba prolija y terminaciones finas. Elige
-                  servicio, día y hora en segundos.
-                </p>
-              </div>
+        <p className="text-sm sm:text-base text-[rgb(var(--muted))]">
+          Cortes actuales, barba prolija y terminaciones finas. Elige servicio,
+          día y hora en segundos.
+        </p>
+      </div>
 
-              <div className="flex justify-center lg:justify-start">
-                <Link
-                  href="/reservar"
-                  className="btn-gold w-full max-w-[320px] lg:max-w-[360px] px-6 py-4 text-base text-center block"
-                  style={{ boxShadow: "0 12px 36px rgba(212,175,55,0.22)" }}
-                >
-                  Reservar hora
-                </Link>
-              </div>
-            </div>
-          </div>
+      <div className="flex justify-center lg:justify-start">
+        <Link
+          href="/reservar"
+          className="btn-gold w-full max-w-[320px] lg:max-w-[360px] px-6 py-4 text-base text-center block"
+          style={{ boxShadow: "0 12px 36px rgba(212,175,55,0.22)" }}
+        >
+          Reservar hora
+        </Link>
+      </div>
+    </div>
+  </div>
 
-          {/* IMAGEN LOCAL (mobile: 3°, desktop: 2° a la derecha del logo) */}
-          <div
-            className="order-3 lg:order-2 lg:mt-6 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] overflow-hidden"
-            style={{ boxShadow: "0 2px 40px rgba(0,0,0,0.18)" }}
-          >
-            <div className="aspect-[4/3] sm:aspect-[16/10] lg:aspect-[16/9] relative">
-              <div className="absolute inset-0 grid place-items-center">
-                <div className="text-xs text-[rgb(var(--muted))] text-center px-4">
-                  Aquí va tu foto/arte principal
-                  <br />
-                  (corte, local, logo)
-                </div>
-              </div>
-              <div
-                className="absolute -inset-24 opacity-30 pointer-events-none"
-                style={{
-                  background:
-                    "radial-gradient(circle at 30% 30%, rgba(212,175,55,.3), transparent 60%)",
-                }}
-              />
-            </div>
-            <div className="p-5 border-t border-[rgb(var(--border))]">
-              <div className="text-sm font-semibold">Calidad que se nota</div>
-              <div className="text-sm text-[rgb(var(--muted))]">
-                Terminaciones prolijas, asesoría y un ambiente cómodo.
-              </div>
-            </div>
-          </div>
-        </section>
+  {/* IMAGEN LOCAL (mobile: 3°, desktop: 2° a la derecha del logo) */}
+<div
+  className="order-3 lg:order-2 lg:mt-0 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] overflow-hidden"
+  style={{ boxShadow: "0 2px 40px rgba(0,0,0,0.18)" }}
+>
+  <div className="aspect-[4/3] sm:aspect-[16/10] lg:aspect-[16/9] relative">
+    <Image
+      src={localImg}
+      alt="Interior de La Sucursal Barber Shop"
+      fill
+      priority
+      placeholder="blur"
+      sizes="(min-width: 1024px) 52vw, 100vw"
+      className="object-cover object-[center_80%] scale-[1.12]"
+    />
+
+    {/* Glow dorado encima */}
+    <div
+      className="absolute -inset-24 opacity-30 pointer-events-none"
+      style={{
+        background:
+          "radial-gradient(circle at 30% 30%, rgba(212,175,55,.3), transparent 60%)",
+      }}
+    />
+  </div>
+
+<div className="px-5 pt-6 pb-5 border-t border-[rgb(var(--border))] flex flex-col justify-center gap-1">
+  <div className="text-sm font-semibold leading-tight">Calidad que se nota</div>
+  <div className="text-sm text-[rgb(var(--muted))] leading-snug">
+    Terminaciones prolijas, asesoría y un ambiente cómodo.
+  </div>
+</div>
+</div>
+</section>
 
         {/* ── FILOSOFÍA ─────────────────────────────────────── */}
         <section
@@ -703,18 +707,14 @@ function TikTokIcon({ className }: { className: string }) {
       className={className}
       fill="none"
       aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M14 3v10.2a3.8 3.8 0 1 1-3-3.72V6.2c.6.2 1.3.3 2 .3 1.6 0 3-.6 4-1.6V3h-3Z"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M14 6.5c.8 1.2 2.1 2 3.6 2.1"
+        d="M21 7.917v4.034a9.948 9.948 0 0 1 -5 -1.951v4.5a6.5 6.5 0 1 1 -8 -6.326v4.326a2.5 2.5 0 1 0 4 2v-11.5h4.083a6.005 6.005 0 0 0 4.917 4.917"
         stroke="currentColor"
         strokeWidth="1.8"
         strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );

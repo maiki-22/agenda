@@ -1,12 +1,18 @@
 "use client";
 
-import { BARBERS } from "../domain/booking.logic";
 import SelectCard from "@/components/ui/SelectCard";
 
+type CatalogBarber = {
+  id: string;
+  name: string;
+};
+
 export function BarberSelector({
+  barbers,
   value,
   onChange,
 }: {
+  barbers: CatalogBarber[];
   value: string;
   onChange: (id: string) => void;
 }) {
@@ -14,7 +20,7 @@ export function BarberSelector({
     <div className="space-y-3">
       <h2 className="text-xl font-semibold">Selecciona un barbero</h2>
       <div className="grid-cards">
-        {BARBERS.filter((b) => b.isActive).map((b) => (
+        {barbers.map((b) => (
           <SelectCard
             key={b.id}
             title={b.name}

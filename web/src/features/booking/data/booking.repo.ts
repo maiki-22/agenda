@@ -1,5 +1,4 @@
 import type { Booking, BookingDraft } from "../domain/booking.types";
-import { getServiceDurationMinutes } from "../domain/booking.logic";
 
 const bookings: Booking[] = []; // memoria (MVP). Luego DB.
 
@@ -11,12 +10,11 @@ export function listBookingsByBarberDate(barberId: string, date: string): Bookin
   return bookings.filter((b) => b.barberId === barberId && b.date === date);
 }
 
-export function createBooking(draft: BookingDraft): Booking {
-  const durationMinutes = getServiceDurationMinutes(draft.service);
+export function createBooking(draft: BookingDraft & { durationMinutes: number }): Booking {
   const booking: Booking = {
     ...draft,
     id: makeId(),
-    durationMinutes,
+    durationMinutes: draft.durationMinutes,
     createdAt: new Date().toISOString(),
   };
   bookings.push(booking);

@@ -1,32 +1,8 @@
-// Sin imports de tipos — booking.logic es la fuente de verdad
-
-export const SERVICES = [
-  { id: "corte", label: "Corte", durationMinutes: 30 },
-  { id: "barba", label: "Barba", durationMinutes: 30 },
-  { id: "corte_y_barba", label: "Corte + Barba", durationMinutes: 60 },
-  { id: "corte_y_cejas", label: "Corte + Cejas", durationMinutes: 60 },
-] as const;
-
 export type Barber = {
   id: string;
   name: string;
   isActive: boolean;
 };
-
-export const BARBERS: Barber[] = [
-  { id: "barber_1", name: "Barbero 1", isActive: true },
-  { id: "barber_2", name: "Barbero 2", isActive: true },
-  { id: "barber_3", name: "Barbero 3", isActive: true },
-  { id: "barber_4", name: "Barbero 4", isActive: true },
-  { id: "barber_5", name: "Barbero 5", isActive: true },
-];
-
-export function getServiceDurationMinutes(
-  service: (typeof SERVICES)[number]["id"],
-): number {
-  const s = SERVICES.find((x) => x.id === service);
-  return s?.durationMinutes ?? 30;
-}
 
 export function normalizePhone(input: string): string {
   const trimmed = input.trim();

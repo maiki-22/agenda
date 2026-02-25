@@ -6,14 +6,11 @@ type SearchParams = { bookingId?: string };
 export default async function ConfirmacionPage({
   searchParams,
 }: {
-  searchParams: Promise<SearchParams> | SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
-  const sp = await Promise.resolve(searchParams);
-  const bookingId = sp.bookingId;
+  const { bookingId } = await searchParams;
 
-  if (!bookingId) {
-    redirect("/reservar");
-  }
+  if (!bookingId) redirect("/reservar");
 
   return (
     <main>

@@ -1,20 +1,32 @@
 import { NextResponse } from "next/server";
 import { getAvailabilityService } from "@/features/booking/services/getAvailability";
-import type { ServiceType } from "@/features/booking/domain/booking.types";
-
-function parseService(value: string | null): ServiceType | undefined {
-  if (value === "corte" || value === "barba" || value === "corte_y_barba") return value;
-  return undefined;
-}
+import { listServices } from "@/features/booking/data/catalog.repo";
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const barberId = searchParams.get("barberId") ?? "";
     const date = searchParams.get("date") ?? "";
-    const service = parseService(searchParams.get("service"));
+    const serviceId = searchParams.get("service") ?? "";
 
-    const result = getAvailabilityService({ barberId, date, service });
+    if (!barberId) return NextResponse.json({ error: "Missing barberId" }, { status: 400 });
+    if (!date) return NextResponse.json({ error: "Missing date" }, { status: 400 });
+
+    let durationMinutes: number | undefined;
+
+    if (serviceId) {
+      const services = await listServices();
+      const svc = services.find((s) => s.id === serviceId);
+      if (!svc) {
+        return NextResponse.json(
+          { error: "Servicio inválido", code: "INVALID_SERVICE" },
+          { status: 400 }
+        );
+      }
+      durationMinutes = svc.duration_min;
+    }
+
+    const result = await getAvailabilityService({ barberId, date, durationMinutes });
     return NextResponse.json(result, { status: 200 });
   } catch (e: unknown) {
     const err = e instanceof Error ? e : new Error("Bad Request");
