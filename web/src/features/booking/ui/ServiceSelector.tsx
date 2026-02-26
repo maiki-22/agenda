@@ -18,6 +18,17 @@ function formatCLP(value: number) {
   }).format(value);
 }
 
+function SkeletonCard() {
+  return (
+    <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4">
+      <div className="animate-pulse space-y-3">
+        <div className="h-4 w-3/4 rounded bg-black/10 dark:bg-white/10" />
+        <div className="h-3 w-1/2 rounded bg-black/10 dark:bg-white/10" />
+      </div>
+    </div>
+  );
+}
+
 export function ServiceSelector({
   services,
   value,
@@ -27,19 +38,31 @@ export function ServiceSelector({
   value: ServiceType | "";
   onChange: (s: ServiceType) => void;
 }) {
+  const loading = services.length === 0;
+
   return (
     <div className="space-y-3">
       <h2 className="text-xl font-semibold">Selecciona el servicio</h2>
+
       <div className="grid-cards">
-        {services.map((s) => (
-          <SelectCard
-            key={s.id}
-            title={s.name}
-            subtitle={`${s.duration_min} min • ${formatCLP(s.price_clp)}`}
-            selected={value === (s.id as ServiceType)}
-            onClick={() => onChange(s.id as ServiceType)}
-          />
-        ))}
+        {loading ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : (
+          services.map((s) => (
+            <SelectCard
+              key={s.id}
+              title={s.name}
+              subtitle={`${s.duration_min} min • ${formatCLP(s.price_clp)}`}
+              selected={value === (s.id as ServiceType)}
+              onClick={() => onChange(s.id as ServiceType)}
+            />
+          ))
+        )}
       </div>
     </div>
   );
