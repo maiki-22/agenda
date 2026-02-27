@@ -18,7 +18,7 @@ export default function ThemeToggle() {
     <button
       type="button"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="flex items-center gap-1.5 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-1 text-sm text-[rgb(var(--fg))]"
+      className="flex items-center gap-1.5 rounded-full border border-[rgb(var(--primary))]/35 bg-[rgb(var(--surface-2))] px-3 py-1 text-sm text-[rgb(var(--primary))] transition-colors hover:border-[rgb(var(--primary))]/55"
     >
       {isDark ? (
         <>
