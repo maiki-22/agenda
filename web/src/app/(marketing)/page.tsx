@@ -173,8 +173,8 @@ export default function MarketingHomePage() {
               <div className="p-6 space-y-3">
                 <div className="text-sm font-semibold">¿Primera vez?</div>
                 <div className="text-sm text-[rgb(var(--muted))]">
-                  Reserva "Corte + barba" si quieres un cambio completo, o
-                  "Corte" si vienes a mantener tu estilo.
+                                    Reserva &quot;Corte + barba&quot; si quieres un cambio completo, o
+                  &quot;Corte&quot; si vienes a mantener tu estilo.
                 </div>
                 <Link
                   href="/reservar"
@@ -186,11 +186,14 @@ export default function MarketingHomePage() {
               </div>
               <div className="border-t md:border-t-0 md:border-l border-[rgb(var(--border))] bg-[rgb(var(--surface-2))]">
                 <div className="aspect-[16/9] relative">
-                  <div className="absolute inset-0 grid place-items-center">
-                    <div className="text-xs text-[rgb(var(--muted))] text-center px-4">
-                      Foto del local / equipo / antes-después
-                    </div>
-                  </div>
+                  <Image
+                    src={localImg}
+                    alt="Interior de La Sucursal Barber Shop para primera visita"
+                    fill
+                    placeholder="blur"
+                    sizes="(min-width: 768px) 35vw, 100vw"
+                    className="object-cover object-center"
+                  />
                 </div>
               </div>
             </div>
@@ -201,13 +204,13 @@ export default function MarketingHomePage() {
         <section className="space-y-4">
           <SectionLabel label="Servicios" title="Elige tu estilo" />
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <ServiceCard
               icon={<ScissorsIcon className="h-6 w-6" />}
               title="Corte"
               subtitle="30 min"
               note="Corte + terminaciones"
-              price="$15.000"
+              price="$13.000"
             />
             <ServiceCard
               icon={<FaceIcon className="h-6 w-6" />}
@@ -221,8 +224,15 @@ export default function MarketingHomePage() {
               title="Corte + barba"
               subtitle="60 min"
               note="Servicio completo"
-              price="$22.000"
+              price="$20.000"
               highlight
+            />
+            <ServiceCard
+              icon={<FaceIcon className="h-6 w-6" />}
+              title="Corte y ceja"
+              subtitle="40 min"
+              note="Corte + perfilado de cejas"
+              price="$15.000"
             />
           </div>
         </section>
@@ -268,8 +278,8 @@ export default function MarketingHomePage() {
               <a
                 href={BRAND.mapsUrl}
                 target="_blank"
-                rel="noreferrer"
-                className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-full border border-[rgb(var(--primary))]/40 bg-[rgb(var(--surface-2))] px-4 py-2 text-xs font-semibold text-[rgb(var(--primary))] hover:bg-[rgb(var(--primary))]/10 transition-colors"
+                 rel="noopener noreferrer"
+                className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-full border border-[rgb(var(--primary))]/40 bg-[rgb(var(--surface-2))] px-4 py-2 text-xs font-semibold text-[rgb(var(--primary))] hover:bg-[rgb(var(--primary))]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary))]/50 focus-visible:ring-offset-2"
               >
                 <ExternalLinkIcon className="h-3.5 w-3.5" />
                 Abrir en Maps
@@ -328,14 +338,14 @@ export default function MarketingHomePage() {
             <a
               href={BRAND.instagramUrl}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               aria-label="Instagram"
-              className="group flex flex-col items-center gap-2.5"
+              className="group flex flex-col items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary))]/50 focus-visible:ring-offset-2 rounded-xl"
             >
               <div className="h-16 w-16 rounded-full border border-[rgb(var(--primary))]/50 bg-[rgb(var(--surface))] grid place-items-center text-[rgb(var(--primary))] group-hover:bg-[rgb(var(--primary))]/10 group-hover:border-[rgb(var(--primary))] group-hover:shadow-[0_0_20px_rgba(212,175,55,0.2)] transition-all duration-300 active:scale-95">
                 <InstagramIcon className="h-7 w-7" />
               </div>
-              <span className="text-[10px] text-[rgb(var(--muted))] font-medium tracking-widest uppercase">
+              <span className="text-xs text-[rgb(var(--muted))] font-medium tracking-widest uppercase">
                 Instagram
               </span>
             </a>
@@ -343,14 +353,14 @@ export default function MarketingHomePage() {
             <a
               href={BRAND.tiktokUrl}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               aria-label="TikTok"
-              className="group flex flex-col items-center gap-2.5"
+              className="group flex flex-col items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary))]/50 focus-visible:ring-offset-2 rounded-xl"
             >
               <div className="h-16 w-16 rounded-full border border-[rgb(var(--primary))]/50 bg-[rgb(var(--surface))] grid place-items-center text-[rgb(var(--primary))] group-hover:bg-[rgb(var(--primary))]/10 group-hover:border-[rgb(var(--primary))] group-hover:shadow-[0_0_20px_rgba(212,175,55,0.2)] transition-all duration-300 active:scale-95">
                 <TikTokIcon className="h-7 w-7" />
               </div>
-              <span className="text-[10px] text-[rgb(var(--muted))] font-medium tracking-widest uppercase">
+              <span className="text-xs text-[rgb(var(--muted))] font-medium tracking-widest uppercase">
                 TikTok
               </span>
             </a>
@@ -358,17 +368,26 @@ export default function MarketingHomePage() {
             <a
               href={BRAND.facebookUrl}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               aria-label="Facebook"
-              className="group flex flex-col items-center gap-2.5"
+              className="group flex flex-col items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary))]/50 focus-visible:ring-offset-2 rounded-xl"
             >
               <div className="h-16 w-16 rounded-full border border-[rgb(var(--primary))]/50 bg-[rgb(var(--surface))] grid place-items-center text-[rgb(var(--primary))] group-hover:bg-[rgb(var(--primary))]/10 group-hover:border-[rgb(var(--primary))] group-hover:shadow-[0_0_20px_rgba(212,175,55,0.2)] transition-all duration-300 active:scale-95">
                 <FacebookIcon className="h-7 w-7" />
               </div>
-              <span className="text-[10px] text-[rgb(var(--muted))] font-medium tracking-widest uppercase">
+              <span className="text-xs text-[rgb(var(--muted))] font-medium tracking-widest uppercase">
                 Facebook
               </span>
             </a>
+          </div>
+          <div className="flex justify-center pt-2">
+            <Link
+              href="/reservar"
+              className="btn-gold w-full max-w-[340px] px-6 py-4 text-base text-center block"
+              style={{ boxShadow: "0 12px 36px rgba(212,175,55,0.22)" }}
+            >
+              Reservar mi hora
+            </Link>
           </div>
         </section>
 

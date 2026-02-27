@@ -34,3 +34,12 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+## Rate-limit kill switch (ENV)
+
+Puedes controlar el comportamiento global del rate limit con `RATE_LIMIT_MODE`:
+
+- `upstash` (default): usa Upstash + failover (retry/backoff/circuit breaker + memory fallback).
+- `fallback`: fuerza modo memoria local (no llama Upstash).
+- `off`: desactiva el bloqueo por rate limit (solo para incidentes/operación controlada).
