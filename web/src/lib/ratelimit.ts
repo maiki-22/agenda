@@ -1,9 +1,10 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { env } from "@/lib/env";
 
 const redis = Redis.fromEnv();
 
-type RateLimitSource = "upstash" | "memory-fallback";
+type RateLimitSource = "upstash" | "memory-fallback" | "disabled";
 
 type CircuitState = {
   failures: number;
@@ -85,6 +86,17 @@ function isCircuitOpen(prefix: string) {
   return state.openUntil > nowMs();
 }
 
+
+function bypassRateLimit(limit: number): SafeRateLimitResult {
+  return {
+    success: true,
+    limit,
+    remaining: limit,
+    reset: nowMs() + 60_000,
+    source: "disabled",
+  };
+}
+
 function limitWithMemoryFallback(
   key: string,
   limit: number,
@@ -158,6 +170,14 @@ export async function limitWithFailover({
 }: LimitWithFailoverOptions): Promise<SafeRateLimitResult> {
   const prefix = circuitKey;
 
+  if (env.rateLimitMode === "off") {
+    return bypassRateLimit(fallbackLimit);
+  }
+
+  if (env.rateLimitMode === "fallback") {
+    return limitWithMemoryFallback(key, fallbackLimit, fallbackWindowMs);
+  }
+
   if (isCircuitOpen(prefix)) {
     logRateLimitEvent("circuit open, using fallback", { prefix, key });
     return limitWithMemoryFallback(key, fallbackLimit, fallbackWindowMs);
@@ -192,6 +212,10 @@ export function applyRateLimitHeaders(res: Response, rl: SafeRateLimitResult) {
       "upstash_unavailable_using_memory_fallback",
     );
   }
+
+  if (rl.source === "disabled") {
+    res.headers.set("X-RateLimit-Warning", "rate_limit_disabled_by_env");
+  }
 }
 
 // POST /api/booking (crítico)
@@ -209,6 +233,7 @@ export const availabilityRatelimit = new Ratelimit({
   analytics: true,
   prefix: "rl:availability",
 });
+
 
 // GET /api/catalog (catálogo público)
 export const catalogRatelimit = new Ratelimit({
