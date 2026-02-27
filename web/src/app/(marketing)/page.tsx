@@ -7,12 +7,12 @@ import localImg from "@/assets/local.webp";
 const BRAND = {
   name: "La Sucursal Barber Shop",
   tagline: "Reserva tu cita en minutos.",
-  addressLine1: "Javiera Carrera 1555, local 2",
-  addressLine2: "Temuco, Chile",
+  addressLine1: "Av. Javiera Carrera 1555, local 2",
+  addressLine2: "4810999 Temuco, Araucanía",
   mapsUrl:
-    "https://google.com/maps/place/La+Sucursal+Barber+Shop/data=!4m2!3m1!1s0x0:0x1730fafa9606ed96?sa=X&ved=1t:2428&ictx=111",
+    "https://www.google.com/maps/search/?api=1&query=Av.+Javiera+Carrera+1555,+local+2,+4810999+Temuco,+Araucan%C3%ADa",
   mapsEmbedUrl:
-    "https://maps.google.com/maps?q=La+Sucursal+Barber+Shop&query_place_id=0x1730fafa9606ed96&output=embed&z=17",
+    "https://www.google.com/maps?q=Av.+Javiera+Carrera+1555,+local+2,+4810999+Temuco,+Araucan%C3%ADa&output=embed&z=17",
   instagramUrl:
     "https://www.instagram.com/lasucursalbarbershop?igsh=MWxwNTUzbXdndm90cA%3D%3D&utm_source=qr",
   tiktokUrl: "https://www.tiktok.com/@lasucursalbarber?_r=1&_t=ZS-943o3wYm6v2",
@@ -33,13 +33,10 @@ export default function MarketingHomePage() {
 
       {/* ── TOPBAR ────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 border-b border-[rgb(var(--border))] bg-[rgb(var(--bg))]/90 backdrop-blur-md">
-        <div className="page-container pt-[calc(env(safe-area-inset-top)+12px)] pb-3 grid grid-cols-[1fr_auto] md:grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <div className="min-w-0 md:opacity-0 md:pointer-events-none">
-            <div className="text-sm font-bold tracking-tight leading-tight truncate">
-              {BRAND.name}
-            </div>
-          </div>
-          <div className="hidden md:flex flex-col items-center justify-center min-w-0 gap-0.5">
+        <div className="page-container pt-[calc(env(safe-area-inset-top)+12px)] pb-3 grid grid-cols-[auto_1fr_auto] items-center gap-3">
+          <div className="h-10 w-10" aria-hidden="true" />
+
+          <div className="flex flex-col items-center justify-center min-w-0 gap-0.5">
             <span className="text-sm font-semibold tracking-[0.12em] text-[rgb(var(--fg))] uppercase truncate">
               La Sucursal
             </span>

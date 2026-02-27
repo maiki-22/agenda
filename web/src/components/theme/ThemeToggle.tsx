@@ -18,17 +18,13 @@ export default function ThemeToggle() {
     <button
       type="button"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="flex items-center gap-1.5 rounded-full border border-[rgb(var(--primary))]/35 bg-[rgb(var(--surface-2))] px-3 py-1 text-sm text-[rgb(var(--primary))] transition-colors hover:border-[rgb(var(--primary))]/55"
+      className="group h-10 w-10 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] text-[rgb(var(--fg))] grid place-items-center transition-all duration-200 hover:bg-[rgb(var(--surface-3,var(--surface-2)))] hover:border-[rgb(var(--fg))]/20 active:scale-95"
+      aria-label={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+      title={isDark ? "Modo claro" : "Modo oscuro"}
     >
-      {isDark ? (
-        <>
-          <MoonHalf size={18} /> <span>Oscuro</span>
-        </>
-      ) : (
-        <>
-          <SunIcon size={20} /> <span>Claro</span>
-        </>
-      )}
+      <span className="transition-transform duration-200 group-hover:scale-110">
+        {isDark ? <MoonHalf size={18} /> : <SunIcon size={18} />}
+      </span>
     </button>
   );
 }
