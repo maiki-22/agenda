@@ -1,4 +1,4 @@
-import { supabaseServer } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export type DbService = {
   id: string;
@@ -13,7 +13,7 @@ export type DbBarber = {
 };
 
 export async function listServices(): Promise<DbService[]> {
-  const { data, error } = await supabaseServer
+  const { data, error } = await supabaseAdmin
     .from("services")
     .select("id,name,duration_min,price_clp,sort_order")
     .eq("active", true)
@@ -24,7 +24,7 @@ export async function listServices(): Promise<DbService[]> {
 }
 
 export async function listBarbers(): Promise<DbBarber[]> {
-  const { data, error } = await supabaseServer
+  const { data, error } = await supabaseAdmin
     .from("barbers")
     .select("id,name,sort_order")
     .eq("active", true)
