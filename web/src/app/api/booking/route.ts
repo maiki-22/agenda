@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { BookingDraftSchema } from "@/features/booking/domain/booking.schema";
 import { listServices } from "@/features/booking/data/catalog.repo";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { bookingRatelimit } from "@/lib/ratelimit";
+import { applyRateLimitHeaders, bookingRatelimit, limitWithFailover } from "@/lib/ratelimit";
+
 
 function getClientIp(req: Request) {
   const xfwd = req.headers.get("x-forwarded-for");
@@ -63,16 +64,19 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   // ✅ Rate limit por IP (antes de tocar Supabase)
   const ip = getClientIp(req);
-  const rl = await bookingRatelimit.limit(`ip:${ip}`);
+  const rl = await limitWithFailover({
+    ratelimit: bookingRatelimit,
+    key: `ip:${ip}`,
+    fallbackLimit: 8,
+    circuitKey: "booking",
+  });
 
   if (!rl.success) {
     const res = NextResponse.json(
       { error: "Too many requests", code: "RATE_LIMITED" },
       { status: 429 },
     );
-    res.headers.set("RateLimit-Limit", String(rl.limit));
-    res.headers.set("RateLimit-Remaining", String(rl.remaining));
-    res.headers.set("RateLimit-Reset", String(rl.reset));
+    applyRateLimitHeaders(res, rl);
     return res;
   }
 
@@ -127,9 +131,7 @@ export async function POST(req: Request) {
     }
 
     const res = NextResponse.json({ bookingId: data }, { status: 201 });
-    res.headers.set("RateLimit-Limit", String(rl.limit));
-    res.headers.set("RateLimit-Remaining", String(rl.remaining));
-    res.headers.set("RateLimit-Reset", String(rl.reset));
+    applyRateLimitHeaders(res, rl);
     return res;
   } catch (e: unknown) {
     const err = e instanceof Error ? e : new Error("Bad Request");

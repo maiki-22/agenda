@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAvailabilityService } from "@/features/booking/services/getAvailability";
 import { listServices } from "@/features/booking/data/catalog.repo";
-import { availabilityRatelimit } from "@/lib/ratelimit";
+import { applyRateLimitHeaders, availabilityRatelimit, limitWithFailover } from "@/lib/ratelimit";
 
 function getClientIp(req: Request) {
   const xfwd = req.headers.get("x-forwarded-for");
@@ -12,16 +12,18 @@ function getClientIp(req: Request) {
 export async function GET(req: Request) {
   // ✅ Rate limit por IP
   const ip = getClientIp(req);
-  const rl = await availabilityRatelimit.limit(`ip:${ip}`);
-
+  const rl = await limitWithFailover({
+    ratelimit: availabilityRatelimit,
+    key: `ip:${ip}`,
+    fallbackLimit: 90,
+    circuitKey: "availability",
+  });
   if (!rl.success) {
     const res = NextResponse.json(
       { error: "Too many requests", code: "RATE_LIMITED" },
       { status: 429 },
     );
-    res.headers.set("RateLimit-Limit", String(rl.limit));
-    res.headers.set("RateLimit-Remaining", String(rl.remaining));
-    res.headers.set("RateLimit-Reset", String(rl.reset));
+    applyRateLimitHeaders(res, rl);
     return res;
   }
 
@@ -51,9 +53,7 @@ export async function GET(req: Request) {
     const result = await getAvailabilityService({ barberId, date, durationMinutes });
 
     const res = NextResponse.json(result, { status: 200 });
-    res.headers.set("RateLimit-Limit", String(rl.limit));
-    res.headers.set("RateLimit-Remaining", String(rl.remaining));
-    res.headers.set("RateLimit-Reset", String(rl.reset));
+    applyRateLimitHeaders(res, rl);
     return res;
   } catch (e: unknown) {
     const err = e instanceof Error ? e : new Error("Bad Request");
