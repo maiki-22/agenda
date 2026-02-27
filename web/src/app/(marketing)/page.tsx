@@ -203,7 +203,7 @@ export default function MarketingHomePage() {
                     fill
                     placeholder="blur"
                     sizes="(min-width: 768px) 35vw, 100vw"
-                    className="object-cover object-center"
+                    className="object-cover object-[center_80%] scale-[1.12]"
                   />
                 </div>
               </div>

@@ -10,8 +10,9 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Agenda Barbería",
-  description: "Reserva tu hora en minutos",
+  title: "La Sucursal Barber Shop - Reserva tu hora en minutos",
+  description:
+    "Reserva tu cita en La Sucursal Barber Shop de forma rápida y sencilla. Elige tu servicio, selecciona a tu barbero favorito y encuentra el horario que mejor se adapte a ti. ¡Tu próxima experiencia de barbería está a solo unos clics de distancia!",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
