@@ -16,14 +16,20 @@ function addDays(d: Date, days: number) {
   return copy;
 }
 
-function isSlotAtLeastMinutesFromNow(dateYYYYMMDD: string, hhmm: string, minMinutes: number) {
+function isSlotAtLeastMinutesFromNow(
+  dateYYYYMMDD: string,
+  hhmm: string,
+  minMinutes: number,
+) {
   const [y, m, d] = dateYYYYMMDD.split("-").map(Number);
   const [hh, mm] = hhmm.split(":").map(Number);
   const slot = new Date(y, m - 1, d, hh, mm, 0, 0).getTime();
   return slot - Date.now() >= minMinutes * 60 * 1000;
 }
 
-
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 type DayItem = {
   iso: string;
@@ -45,7 +51,9 @@ export function DateScroller({
   service: string;
   daysAhead?: number;
 }) {
-  const [availabilityByDate, setAvailabilityByDate] = useState<Record<string, boolean>>({});
+  const [availabilityByDate, setAvailabilityByDate] = useState<
+    Record<string, boolean>
+  >({});
   const [loadingAvailability, setLoadingAvailability] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const drag = useRef({
@@ -79,7 +87,6 @@ export function DateScroller({
     drag.current.active = false;
   }, []);
 
-
   const items = useMemo<DayItem[]>(() => {
     const today = new Date();
     const fmtWeekday = new Intl.DateTimeFormat("es-CL", { weekday: "short" });
@@ -98,7 +105,7 @@ export function DateScroller({
     return out;
   }, [daysAhead]);
 
-    useEffect(() => {
+  useEffect(() => {
     let ok = true;
 
     async function run() {
@@ -109,32 +116,84 @@ export function DateScroller({
 
       setLoadingAvailability(true);
       try {
+        const from = items[0]?.iso;
+        const to = items[items.length - 1]?.iso;
+
+        if (!from || !to) {
+          if (ok) setAvailabilityByDate({});
+          return;
+        }
+
+        const toAvailabilityMap = (slotsByDate: Record<string, string[]>) =>
+          Object.fromEntries(
+            items.map((it) => {
+              const slots = Array.isArray(slotsByDate[it.iso])
+                ? slotsByDate[it.iso]
+                : [];
+              const hasValidSlots = slots.some((slot: string) =>
+                isSlotAtLeastMinutesFromNow(it.iso, slot, MIN_LEAD_MINUTES),
+              );
+              return [it.iso, hasValidSlots] as const;
+            }),
+          );
+
+        const params = new URLSearchParams({ barberId, service, from, to });
+
+        let batchOk = false;
+        let slotsByDate: Record<string, string[]> = {};
+
+        for (let attempt = 0; attempt < 2 && !batchOk; attempt += 1) {
+          const res = await fetch(
+            `/api/availability/batch?${params.toString()}`,
+            {
+              cache: "no-store",
+            },
+          );
+
+          if (res.ok) {
+            const json = await res.json();
+            slotsByDate = json?.slotsByDate ?? {};
+            batchOk = true;
+            continue;
+          }
+
+          if (res.status === 429) break;
+
+          if (attempt === 0) {
+            await sleep(250);
+          }
+        }
+
+        if (batchOk) {
+          if (!ok) return;
+          setAvailabilityByDate(toAvailabilityMap(slotsByDate));
+          return;
+        }
+
+        // Fallback: consulta por día individual
         const checks = await Promise.all(
           items.map(async (it) => {
-            const params = new URLSearchParams({
+            const singleParams = new URLSearchParams({
               barberId,
               date: it.iso,
               service,
             });
 
-            const res = await fetch(`/api/availability?${params.toString()}`, {
-              cache: "no-store",
-            });
-
-            if (!res.ok) return [it.iso, false] as const;
-
-            const json = await res.json();
-            const slots = Array.isArray(json?.slots) ? json.slots : [];
-            const hasValidSlots = slots.some((slot: string) =>
-              isSlotAtLeastMinutesFromNow(it.iso, slot, MIN_LEAD_MINUTES)
+            const res = await fetch(
+              `/api/availability?${singleParams.toString()}`,
+              {
+                cache: "no-store",
+              },
             );
-
-            return [it.iso, hasValidSlots] as const;
-          })
+            if (!res.ok) return [it.iso, false] as const;
+            const json = await res.json();
+            const daySlots = Array.isArray(json?.slots) ? json.slots : [];
+            return [it.iso, daySlots] as const;
+          }),
         );
 
         if (!ok) return;
-        setAvailabilityByDate(Object.fromEntries(checks));
+        setAvailabilityByDate(toAvailabilityMap(Object.fromEntries(checks)));
       } finally {
         if (ok) setLoadingAvailability(false);
       }
@@ -163,9 +222,8 @@ export function DateScroller({
       if (disabled) return;
       onChange(iso);
     },
-    [onChange]
+    [onChange],
   );
-
 
   return (
     <div className="space-y-3">
@@ -194,7 +252,8 @@ export function DateScroller({
       >
         {items.map((it) => {
           const selected = value === it.iso;
-          const disabled = !loadingAvailability && availabilityByDate[it.iso] === false;
+          const disabled =
+            loadingAvailability || availabilityByDate[it.iso] === false;
 
           return (
             <button
@@ -208,19 +267,26 @@ export function DateScroller({
                 "shrink-0 w-20 sm:w-24 lg:w-28",
                 "rounded-2xl border px-3 py-3 text-left transition",
                 "bg-[rgb(var(--surface-2))] border-[rgb(var(--border))]",
-                 disabled
+                disabled
                   ? "opacity-55 saturate-50 cursor-not-allowed"
                   : "hover:brightness-110 active:scale-[0.98] touch-manipulation",
                 "focus:outline-none",
                 selected
                   ? "ring-2 ring-[rgb(var(--primary))] border-[rgb(var(--primary))]"
                   : "",
+                loadingAvailability ? "animate-pulse" : "",
               ].join(" ")}
             >
-              <div className="text-xs text-[rgb(var(--muted))]">{it.labelTop}</div>
+              <div className="text-xs text-[rgb(var(--muted))]">
+                {it.labelTop}
+              </div>
               <div className="mt-1 flex items-end justify-between">
- <div className="text-2xl font-bold leading-none">{it.dayNumber}</div>
-                <div className="text-xs text-[rgb(var(--muted))]">{it.monthShort}</div>
+                <div className="text-2xl font-bold leading-none">
+                  {it.dayNumber}
+                </div>
+                <div className="text-xs text-[rgb(var(--muted))]">
+                  {it.monthShort}
+                </div>
               </div>
 
               <div
@@ -228,19 +294,24 @@ export function DateScroller({
                   "mt-2 h-1 w-8 rounded-full transition-colors",
                   selected
                     ? "bg-[rgb(var(--primary))]"
-                   : disabled
+                    : disabled
                       ? "bg-[rgb(var(--muted))]/35"
                       : "bg-[rgb(var(--border))]",
                 ].join(" ")}
               />
-              
             </button>
           );
         })}
       </div>
+      {loadingAvailability ? (
+        <p className="text-sm text-[rgb(var(--muted))]">
+          Cargando disponibilidad…
+        </p>
+      ) : null}
 
       <p className="text-sm text-[rgb(var(--muted))]">
-        Puedes reservar con hasta {daysAhead} días de anticipación. Los días sin disponibilidad aparecen atenuados.
+        Puedes reservar con hasta {daysAhead} días de anticipación. Los días sin
+        disponibilidad aparecen atenuados.
       </p>
     </div>
   );

@@ -69,7 +69,8 @@ function onLimiterSuccess(prefix: string) {
 function onLimiterFailure(prefix: string, error: unknown) {
   const current = getCircuit(prefix);
   const failures = current.failures + 1;
-  const openUntil = failures >= CIRCUIT_FAILURE_THRESHOLD ? nowMs() + CIRCUIT_OPEN_MS : 0;
+  const openUntil =
+    failures >= CIRCUIT_FAILURE_THRESHOLD ? nowMs() + CIRCUIT_OPEN_MS : 0;
 
   setCircuit(prefix, { failures, openUntil });
 
@@ -85,7 +86,6 @@ function isCircuitOpen(prefix: string) {
   const state = getCircuit(prefix);
   return state.openUntil > nowMs();
 }
-
 
 function bypassRateLimit(limit: number): SafeRateLimitResult {
   return {
@@ -128,7 +128,10 @@ function limitWithMemoryFallback(
   };
 }
 
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+): Promise<T> {
   const timeout = new Promise<never>((_, reject) => {
     setTimeout(() => reject(new Error("Ratelimit timeout")), timeoutMs);
   });
@@ -184,7 +187,12 @@ export async function limitWithFailover({
   }
 
   try {
-    const result = await callUpstashWithRetry(ratelimit, key, timeoutMs, retries);
+    const result = await callUpstashWithRetry(
+      ratelimit,
+      key,
+      timeoutMs,
+      retries,
+    );
     onLimiterSuccess(prefix);
 
     return {
@@ -234,6 +242,12 @@ export const availabilityRatelimit = new Ratelimit({
   prefix: "rl:availability",
 });
 
+export const availabilityBatchRatelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(20, "1 m"), // 20/min por IP (cada request puede consultar varios días)
+  analytics: true,
+  prefix: "rl:availability-batch",
+});
 
 // GET /api/catalog (catálogo público)
 export const catalogRatelimit = new Ratelimit({
