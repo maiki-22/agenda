@@ -1,6 +1,7 @@
 "use client";
+import { useRef, useCallback, useMemo, useEffect, useState } from "react";
 
-import { useRef, useCallback, useMemo } from "react";
+const MIN_LEAD_MINUTES = 30;
 
 function toISODate(d: Date) {
   const y = d.getFullYear();
@@ -15,6 +16,15 @@ function addDays(d: Date, days: number) {
   return copy;
 }
 
+function isSlotAtLeastMinutesFromNow(dateYYYYMMDD: string, hhmm: string, minMinutes: number) {
+  const [y, m, d] = dateYYYYMMDD.split("-").map(Number);
+  const [hh, mm] = hhmm.split(":").map(Number);
+  const slot = new Date(y, m - 1, d, hh, mm, 0, 0).getTime();
+  return slot - Date.now() >= minMinutes * 60 * 1000;
+}
+
+
+
 type DayItem = {
   iso: string;
   labelTop: string;
@@ -25,12 +35,18 @@ type DayItem = {
 export function DateScroller({
   value,
   onChange,
+  barberId,
+  service,
   daysAhead = 7,
 }: {
   value: string;
   onChange: (iso: string) => void;
+  barberId: string;
+  service: string;
   daysAhead?: number;
 }) {
+  const [availabilityByDate, setAvailabilityByDate] = useState<Record<string, boolean>>({});
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const drag = useRef({
     active: false,
@@ -63,17 +79,6 @@ export function DateScroller({
     drag.current.active = false;
   }, []);
 
-  // Evita disparar onChange si el usuario estaba arrastrando
-  const makeClickHandler = useCallback(
-    (iso: string) => (e: React.MouseEvent) => {
-      if (drag.current.moved) {
-        e.preventDefault();
-        return;
-      }
-      onChange(iso);
-    },
-    [onChange]
-  );
 
   const items = useMemo<DayItem[]>(() => {
     const today = new Date();
@@ -92,6 +97,75 @@ export function DateScroller({
     }
     return out;
   }, [daysAhead]);
+
+    useEffect(() => {
+    let ok = true;
+
+    async function run() {
+      if (!barberId || !service) {
+        setAvailabilityByDate({});
+        return;
+      }
+
+      setLoadingAvailability(true);
+      try {
+        const checks = await Promise.all(
+          items.map(async (it) => {
+            const params = new URLSearchParams({
+              barberId,
+              date: it.iso,
+              service,
+            });
+
+            const res = await fetch(`/api/availability?${params.toString()}`, {
+              cache: "no-store",
+            });
+
+            if (!res.ok) return [it.iso, false] as const;
+
+            const json = await res.json();
+            const slots = Array.isArray(json?.slots) ? json.slots : [];
+            const hasValidSlots = slots.some((slot: string) =>
+              isSlotAtLeastMinutesFromNow(it.iso, slot, MIN_LEAD_MINUTES)
+            );
+
+            return [it.iso, hasValidSlots] as const;
+          })
+        );
+
+        if (!ok) return;
+        setAvailabilityByDate(Object.fromEntries(checks));
+      } finally {
+        if (ok) setLoadingAvailability(false);
+      }
+    }
+
+    run();
+
+    return () => {
+      ok = false;
+    };
+  }, [barberId, service, items]);
+
+  useEffect(() => {
+    if (!value) return;
+    if (loadingAvailability) return;
+    if (availabilityByDate[value] === false) onChange("");
+  }, [value, loadingAvailability, availabilityByDate, onChange]);
+
+  // Evita disparar onChange si el usuario estaba arrastrando
+  const makeClickHandler = useCallback(
+    (iso: string, disabled: boolean) => (e: React.MouseEvent) => {
+      if (drag.current.moved) {
+        e.preventDefault();
+        return;
+      }
+      if (disabled) return;
+      onChange(iso);
+    },
+    [onChange]
+  );
+
 
   return (
     <div className="space-y-3">
@@ -120,35 +194,33 @@ export function DateScroller({
       >
         {items.map((it) => {
           const selected = value === it.iso;
+          const disabled = !loadingAvailability && availabilityByDate[it.iso] === false;
 
           return (
             <button
               key={it.iso}
               type="button"
-              onClick={makeClickHandler(it.iso)}
+              onClick={makeClickHandler(it.iso, disabled)}
               aria-pressed={selected}
+              aria-disabled={disabled}
+              disabled={disabled}
               className={[
                 "shrink-0 w-20 sm:w-24 lg:w-28",
                 "rounded-2xl border px-3 py-3 text-left transition",
                 "bg-[rgb(var(--surface-2))] border-[rgb(var(--border))]",
-                "hover:brightness-110 active:scale-[0.98] touch-manipulation",
+                 disabled
+                  ? "opacity-55 saturate-50 cursor-not-allowed"
+                  : "hover:brightness-110 active:scale-[0.98] touch-manipulation",
                 "focus:outline-none",
                 selected
                   ? "ring-2 ring-[rgb(var(--primary))] border-[rgb(var(--primary))]"
                   : "",
               ].join(" ")}
             >
-              <div className="text-xs text-[rgb(var(--muted))]">
-                {it.labelTop}
-              </div>
-
+              <div className="text-xs text-[rgb(var(--muted))]">{it.labelTop}</div>
               <div className="mt-1 flex items-end justify-between">
-                <div className="text-2xl font-bold leading-none">
-                  {it.dayNumber}
-                </div>
-                <div className="text-xs text-[rgb(var(--muted))]">
-                  {it.monthShort}
-                </div>
+ <div className="text-2xl font-bold leading-none">{it.dayNumber}</div>
+                <div className="text-xs text-[rgb(var(--muted))]">{it.monthShort}</div>
               </div>
 
               <div
@@ -156,16 +228,19 @@ export function DateScroller({
                   "mt-2 h-1 w-8 rounded-full transition-colors",
                   selected
                     ? "bg-[rgb(var(--primary))]"
-                    : "bg-[rgb(var(--border))]",
+                   : disabled
+                      ? "bg-[rgb(var(--muted))]/35"
+                      : "bg-[rgb(var(--border))]",
                 ].join(" ")}
               />
+              
             </button>
           );
         })}
       </div>
 
       <p className="text-sm text-[rgb(var(--muted))]">
-        Puedes reservar con hasta {daysAhead} días de anticipación.
+        Puedes reservar con hasta {daysAhead} días de anticipación. Los días sin disponibilidad aparecen atenuados.
       </p>
     </div>
   );

@@ -123,7 +123,7 @@ export function TimeSelector({
                 aria-pressed={selected}
                 className={[
                   "min-h-[48px] rounded-2xl px-3 py-3 text-sm font-semibold transition",
-                  "border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--fg))]",
+                   "border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] text-[rgb(var(--fg))]",
                   "hover:brightness-110 active:scale-[0.99] touch-manipulation",
                   "focus:outline-none",
                   selected

@@ -127,7 +127,7 @@ export default function ConfirmacionClient({
                 <div
                   className="h-20 w-20 rounded-full bg-[rgb(var(--primary))] grid place-items-center pop-in"
                   style={{
-                    filter: "drop-shadow(0 18px 50px rgba(212,175,55,0.35))",
+                    filter: "drop-shadow(0 18px 50px rgb(var(--primary-glow) / 0.35))",
                   }}
                 >
                   <CheckIcon size={48} className="text-white" />

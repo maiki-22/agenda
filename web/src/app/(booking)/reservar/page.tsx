@@ -203,6 +203,8 @@ export default function ReservarPage() {
               s.setDate(d);
             }}
             daysAhead={7}
+            barberId={s.barberId}
+            service={s.service}
           />
         )}
 
@@ -231,7 +233,7 @@ export default function ReservarPage() {
 
         {step === 6 && (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] divide-y divide-[rgb(var(--border))]">
+             <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] divide-y divide-[rgb(var(--border))]">
               <div className="px-4 py-3">
                 <p className="text-xs font-semibold tracking-widest text-[rgb(var(--muted))] uppercase mb-3">
                   Resumen de tu cita
@@ -254,7 +256,7 @@ export default function ReservarPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-sm text-[rgb(var(--muted))] flex items-center gap-4">
+            <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-4 py-3 text-sm text-[rgb(var(--muted))] flex items-center gap-4">
               <span className="mt-0.5 text-[rgb(var(--primary))] shrink-0">
                 <MessageReportIcon size={30} />
               </span>

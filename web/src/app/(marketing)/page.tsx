@@ -27,7 +27,7 @@ export default function MarketingHomePage() {
         aria-hidden="true"
         style={{
           background:
-            "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(212,175,55,0.30) 0%, transparent 65%)",
+            "radial-gradient(ellipse 80% 50% at 50% -10%, rgb(var(--bg-ambient-2)) 0%, transparent 65%)",
         }}
       />
 
@@ -78,7 +78,7 @@ export default function MarketingHomePage() {
       <div className="flex justify-center lg:justify-start">
         <Link
           href="/reservar"
-          className="btn-gold w-full max-w-[320px] lg:max-w-[360px] px-6 py-4 text-base text-center block"
+          className="btn-gold primary-glow w-full max-w-[320px] lg:max-w-[360px] px-6 py-4 text-base text-center block"
           style={{ boxShadow: "0 12px 36px rgba(212,175,55,0.22)" }}
         >
           Reservar hora
@@ -89,7 +89,7 @@ export default function MarketingHomePage() {
 
   {/* IMAGEN LOCAL (mobile: 3°, desktop: 2° a la derecha del logo) */}
 <div
-  className="order-3 lg:order-2 lg:mt-0 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] overflow-hidden"
+  className="order-3 lg:order-2 lg:mt-0 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] shadow-[var(--shadow-medium)] overflow-hidden"
   style={{ boxShadow: "0 2px 40px rgba(0,0,0,0.18)" }}
 >
   <div className="aspect-[4/3] sm:aspect-[16/10] lg:aspect-[16/9] relative">
@@ -108,7 +108,7 @@ export default function MarketingHomePage() {
       className="absolute -inset-24 opacity-30 pointer-events-none"
       style={{
         background:
-          "radial-gradient(circle at 30% 30%, rgba(212,175,55,.3), transparent 60%)",
+          "radial-gradient(circle at 30% 30%, rgb(var(--primary-glow) / 0.3), transparent 60%)",
       }}
     />
   </div>
@@ -124,7 +124,7 @@ export default function MarketingHomePage() {
 
         {/* ── about  ─────────────────────────────────────── */}
         <section
-          className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-6 sm:p-8 relative overflow-hidden"
+          className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] shadow-[var(--shadow-medium)] p-6 sm:p-8 relative overflow-hidden"
           style={{ boxShadow: "0 2px 32px rgba(0,0,0,0.15)" }}
         >
           <div className="relative z-10 space-y-3 max-w-prose">
@@ -164,8 +164,7 @@ export default function MarketingHomePage() {
           </div>
 
           <div
-            className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] overflow-hidden"
-            style={{ boxShadow: "0 2px 24px rgba(0,0,0,0.12)" }}
+            className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] shadow-[var(--shadow-soft)] overflow-hidden"
           >
             <div className="grid md:grid-cols-[.9fr_1.1fr]">
               <div className="p-6 space-y-3">
@@ -176,8 +175,7 @@ export default function MarketingHomePage() {
                 </div>
                 <Link
                   href="/reservar"
-                  className="btn-gold inline-flex px-5 py-3 text-sm mt-1"
-                  style={{ boxShadow: "0 8px 24px rgba(212,175,55,0.2)" }}
+                  className="btn-gold primary-glow inline-flex px-5 py-3 text-sm mt-1"
                 >
                   Reservar ahora
                 </Link>
@@ -240,8 +238,7 @@ export default function MarketingHomePage() {
           <SectionLabel label="Ubicación" title="Encuéntranos" />
 
           <div
-            className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] overflow-hidden"
-            style={{ boxShadow: "0 2px 32px rgba(0,0,0,0.14)" }}
+              className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] shadow-[var(--shadow-medium)] overflow-hidden"
           >
             {/* Vista previa del mapa */}
             <div className="relative w-full h-52 sm:h-64">
@@ -291,8 +288,7 @@ export default function MarketingHomePage() {
           <SectionLabel label="Horarios" title="Cuándo estamos" />
 
           <div
-            className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] overflow-hidden"
-            style={{ boxShadow: "0 2px 32px rgba(0,0,0,0.14)" }}
+            className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] shadow-[var(--shadow-medium)] overflow-hidden"
           >
             {/* Cabecera */}
             <div className="px-6 pt-6 pb-4 border-b border-[rgb(var(--border))] flex items-center gap-3">
@@ -340,7 +336,7 @@ export default function MarketingHomePage() {
               aria-label="Instagram"
               className="group flex flex-col items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary))]/50 focus-visible:ring-offset-2 rounded-xl"
             >
-              <div className="h-16 w-16 rounded-full border border-[rgb(var(--primary))]/50 bg-[rgb(var(--surface))] grid place-items-center text-[rgb(var(--primary))] group-hover:bg-[rgb(var(--primary))]/10 group-hover:border-[rgb(var(--primary))] group-hover:shadow-[0_0_20px_rgba(212,175,55,0.2)] transition-all duration-300 active:scale-95">
+              <div className="h-16 w-16 rounded-full border border-[rgb(var(--primary))]/50 bg-[rgb(var(--surface))] grid place-items-center text-[rgb(var(--primary))] group-hover:bg-[rgb(var(--primary))]/10 group-hover:border-[rgb(var(--primary))] icon-social transition-all duration-300 active:scale-95">
                 <InstagramIcon className="h-7 w-7" />
               </div>
               <span className="text-xs text-[rgb(var(--muted))] font-medium tracking-widest uppercase">
@@ -355,7 +351,7 @@ export default function MarketingHomePage() {
               aria-label="TikTok"
               className="group flex flex-col items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary))]/50 focus-visible:ring-offset-2 rounded-xl"
             >
-              <div className="h-16 w-16 rounded-full border border-[rgb(var(--primary))]/50 bg-[rgb(var(--surface))] grid place-items-center text-[rgb(var(--primary))] group-hover:bg-[rgb(var(--primary))]/10 group-hover:border-[rgb(var(--primary))] group-hover:shadow-[0_0_20px_rgba(212,175,55,0.2)] transition-all duration-300 active:scale-95">
+              <div className="h-16 w-16 rounded-full border border-[rgb(var(--primary))]/50 bg-[rgb(var(--surface))] grid place-items-center text-[rgb(var(--primary))] group-hover:bg-[rgb(var(--primary))]/10 group-hover:border-[rgb(var(--primary))] icon-social transition-all duration-300 active:scale-95">
                 <TikTokIcon className="h-7 w-7" />
               </div>
               <span className="text-xs text-[rgb(var(--muted))] font-medium tracking-widest uppercase">
@@ -370,7 +366,7 @@ export default function MarketingHomePage() {
               aria-label="Facebook"
               className="group flex flex-col items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary))]/50 focus-visible:ring-offset-2 rounded-xl"
             >
-              <div className="h-16 w-16 rounded-full border border-[rgb(var(--primary))]/50 bg-[rgb(var(--surface))] grid place-items-center text-[rgb(var(--primary))] group-hover:bg-[rgb(var(--primary))]/10 group-hover:border-[rgb(var(--primary))] group-hover:shadow-[0_0_20px_rgba(212,175,55,0.2)] transition-all duration-300 active:scale-95">
+              <div className="h-16 w-16 rounded-full border border-[rgb(var(--primary))]/50 bg-[rgb(var(--surface))] grid place-items-center text-[rgb(var(--primary))] group-hover:bg-[rgb(var(--primary))]/10 group-hover:border-[rgb(var(--primary))] icon-social transition-all duration-300 active:scale-95">
                 <FacebookIcon className="h-7 w-7" />
               </div>
               <span className="text-xs text-[rgb(var(--muted))] font-medium tracking-widest uppercase">
@@ -381,8 +377,7 @@ export default function MarketingHomePage() {
           <div className="flex justify-center pt-2">
             <Link
               href="/reservar"
-              className="btn-gold w-full max-w-[340px] px-6 py-4 text-base text-center block"
-              style={{ boxShadow: "0 12px 36px rgba(212,175,55,0.22)" }}
+              className="btn-gold primary-glow w-full max-w-[340px] px-6 py-4 text-base text-center block"
             >
               Reservar mi hora
             </Link>
@@ -413,7 +408,7 @@ function SectionLabel({ label, title }: { label: string; title: string }) {
 
 function Badge({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-1 text-xs font-medium text-[rgb(var(--muted))]">
+     <span className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-3 py-1 text-xs font-medium text-[rgb(var(--muted))] shadow-[0_4px_14px_rgb(var(--primary-glow)/0.08)]">
       {children}
     </span>
   );
@@ -430,8 +425,7 @@ function InfoCard({
 }) {
   return (
     <div
-      className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5 space-y-3"
-      style={{ boxShadow: "0 2px 20px rgba(0,0,0,0.10)" }}
+      className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] shadow-[var(--shadow-soft)] p-5 space-y-3"
     >
       <div className="h-9 w-9 rounded-full bg-[rgb(var(--primary))]/10 border border-[rgb(var(--primary))]/20 grid place-items-center text-[rgb(var(--primary))]">
         {icon}
@@ -463,15 +457,15 @@ function ServiceCard({
     <div
       className={[
         "rounded-3xl border p-6 space-y-4 flex flex-col justify-between",
-        "bg-[rgb(var(--surface))]",
+        "bg-[rgb(var(--surface-2))]",
         highlight
           ? "border-[rgb(var(--primary))]/60 ring-1 ring-[rgb(var(--primary))]/30"
           : "border-[rgb(var(--border))]",
       ].join(" ")}
       style={{
         boxShadow: highlight
-          ? "0 4px 32px rgba(212,175,55,0.14)"
-          : "0 2px 20px rgba(0,0,0,0.10)",
+          ? "0 18px 44px rgb(var(--primary-glow) / 0.2)"
+          : "var(--shadow-soft)",
       }}
     >
       <div className="space-y-3">

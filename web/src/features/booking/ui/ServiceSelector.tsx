@@ -20,7 +20,7 @@ function formatCLP(value: number) {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4">
+    <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4">
       <div className="animate-pulse space-y-3">
         <div className="h-4 w-3/4 rounded bg-black/10 dark:bg-white/10" />
         <div className="h-3 w-1/2 rounded bg-black/10 dark:bg-white/10" />

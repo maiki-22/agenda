@@ -4,19 +4,30 @@
    DESIGN TOKENS
    ============================================================ */
 :root {
-  /* Light: fondo cálido + contraste alto */
-  --bg: 250 248 244;
-  --fg: 12 12 14;
+  /* Light: paleta cálida premium con mayor profundidad */
+  --bg: 247 243 236;
+  --fg: 27 29 34;
   --surface: 255 255 255;
-  --surface-2: 243 240 234;
-  --muted: 100 106 115;
-  --border: 220 212 196;
+  --surface-2: 241 235 224;
+  --muted: 111 107 100;
+  --border: 221 210 189;
 
   /* GOLD */
-  --primary: 180 140 30;
+  --primary: 173 129 46;
   --primary-foreground: 255 255 255;
-  --on-primary: 11 11 13;
-  --primary-glow: 212 175 55;
+  --on-primary: 34 28 20;
+  --primary-glow: 221 184 97;
+
+  /* Ambient gradients */
+  --bg-ambient-1: 255 255 255 / 0.72;
+  --bg-ambient-2: 221 184 97 / 0.16;
+  --bg-ambient-3: 208 170 116 / 0.1;
+
+
+  /* Elevation */
+  --shadow-soft: 0 8px 28px rgb(43 31 14 / 0.09);
+  --shadow-medium: 0 14px 40px rgb(43 31 14 / 0.14);
+  --shadow-strong: 0 20px 54px rgb(43 31 14 / 0.18);
 
   /* Spacing responsive */
   --page-px: 1rem;
@@ -60,6 +71,14 @@
   --primary-foreground: 8 8 10;
   --on-primary: 255 255 255;
   --primary-glow: 212 175 55;
+
+  --bg-ambient-1: 255 255 255 / 0.02;
+  --bg-ambient-2: 212 175 55 / 0.12;
+  --bg-ambient-3: 80 63 24 / 0.16;
+
+  --shadow-soft: 0 10px 34px rgb(0 0 0 / 0.36);
+  --shadow-medium: 0 18px 46px rgb(0 0 0 / 0.45);
+  --shadow-strong: 0 24px 60px rgb(0 0 0 / 0.54);
 }
 
 /* ============================================================
@@ -95,6 +114,23 @@ body {
     "Apple Color Emoji",
     "Segoe UI Emoji";
   background-color: rgb(var(--bg));
+   background-image:
+    radial-gradient(
+      circle at 15% -10%,
+      rgb(var(--bg-ambient-1)) 0,
+      transparent 42%
+    ),
+    radial-gradient(
+      circle at 85% 15%,
+      rgb(var(--bg-ambient-2)) 0,
+      transparent 48%
+    ),
+    radial-gradient(
+      circle at 50% 120%,
+      rgb(var(--bg-ambient-3)) 0,
+      transparent 50%
+    );
+  background-attachment: fixed;
   color: rgb(var(--fg));
 
   padding-left: env(safe-area-inset-left);
@@ -305,7 +341,7 @@ select:focus:not(:focus-visible) {
 }
 .btn-gold:hover {
   filter: brightness(1.1);
-  box-shadow: 0 8px 32px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 10px 34px rgb(var(--primary-glow) / 0.34);
 }
 .btn-gold:active {
   transform: scale(0.98);
@@ -327,4 +363,29 @@ select:focus:not(:focus-visible) {
 
 .no-focus-outline:focus-visible {
   outline: none !important;
+}
+
+.surface-card {
+  border: 1px solid rgb(var(--border));
+  background-color: rgb(var(--surface));
+  box-shadow: var(--shadow-soft);
+}
+
+.surface-card-strong {
+  border: 1px solid rgb(var(--border));
+  background-color: rgb(var(--surface));
+  box-shadow: var(--shadow-medium);
+}
+
+.primary-glow {
+  box-shadow: 0 12px 36px rgb(var(--primary-glow) / 0.24);
+}
+
+.icon-social {
+  box-shadow: 0 0 0 rgb(var(--primary-glow) / 0);
+  transition: box-shadow 200ms ease, border-color 200ms ease, background-color 200ms ease;
+}
+
+.group:hover .icon-social {
+  box-shadow: 0 0 22px rgb(var(--primary-glow) / 0.25);
 }

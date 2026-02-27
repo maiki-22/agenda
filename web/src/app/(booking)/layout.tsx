@@ -16,12 +16,12 @@ export default function BookingLayout({ children }: { children: ReactNode }) {
           width: "clamp(24rem, 50vw, 56rem)",
           height: "clamp(24rem, 50vw, 56rem)",
           borderRadius: "9999px",
-          background: "rgb(var(--primary) / 0.18)",
+          background: "rgb(var(--bg-ambient-2))",
           filter: "blur(80px)",
         }}
       />
 
-      {/* Glow claro inferior-izquierdo */}
+       {/* Glow ambiental inferior-izquierdo */}
       <div
         className="fixed -z-10 pointer-events-none"
         style={{
@@ -30,7 +30,7 @@ export default function BookingLayout({ children }: { children: ReactNode }) {
           width: "clamp(18rem, 30vw, 36rem)",
           height: "clamp(18rem, 30vw, 36rem)",
           borderRadius: "9999px",
-          background: "rgb(255 255 255 / 0.06)",
+          background: "rgb(var(--bg-ambient-3))",
           filter: "blur(80px)",
         }}
       />

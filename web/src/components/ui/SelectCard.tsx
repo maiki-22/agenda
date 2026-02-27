@@ -21,7 +21,7 @@ export default function SelectCard({
       disabled={disabled}
       className={[
         "w-full text-left rounded-2xl border px-4 py-4 transition",
-        "bg-[rgb(var(--surface))] border-[rgb(var(--border))]",
+         "bg-[rgb(var(--surface-2))] border-[rgb(var(--border))]",
         "active:scale-[0.99]",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         "hover:brightness-110",
