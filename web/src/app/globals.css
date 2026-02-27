@@ -23,7 +23,6 @@
   --bg-ambient-2: 221 184 97 / 0.16;
   --bg-ambient-3: 208 170 116 / 0.1;
 
-
   /* Elevation */
   --shadow-soft: 0 8px 28px rgb(43 31 14 / 0.09);
   --shadow-medium: 0 14px 40px rgb(43 31 14 / 0.14);
@@ -81,6 +80,29 @@
   --shadow-strong: 0 24px 60px rgb(0 0 0 / 0.54);
 }
 
+@media (max-width: 639px) {
+  .dark {
+    --bg-ambient-1: 255 255 255 / 0.01;
+    --bg-ambient-2: 212 175 55 / 0.05;
+    --bg-ambient-3: 80 63 24 / 0.07;
+  }
+
+  .dark body {
+    background-image:
+      radial-gradient(
+        circle at 50% -24%,
+        rgb(var(--bg-ambient-2)) 0,
+        transparent 62%
+      ),
+      radial-gradient(
+        circle at 50% 120%,
+        rgb(var(--bg-ambient-3)) 0,
+        transparent 66%
+      );
+    background-attachment: scroll;
+  }
+}
+
 /* ============================================================
    GLOBAL BASE
    ============================================================ */
@@ -114,7 +136,7 @@ body {
     "Apple Color Emoji",
     "Segoe UI Emoji";
   background-color: rgb(var(--bg));
-   background-image:
+  background-image:
     radial-gradient(
       circle at 15% -10%,
       rgb(var(--bg-ambient-1)) 0,
@@ -383,7 +405,10 @@ select:focus:not(:focus-visible) {
 
 .icon-social {
   box-shadow: 0 0 0 rgb(var(--primary-glow) / 0);
-  transition: box-shadow 200ms ease, border-color 200ms ease, background-color 200ms ease;
+  transition:
+    box-shadow 200ms ease,
+    border-color 200ms ease,
+    background-color 200ms ease;
 }
 
 .group:hover .icon-social {

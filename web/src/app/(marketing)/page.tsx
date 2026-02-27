@@ -23,7 +23,7 @@ export default function MarketingHomePage() {
   return (
     <div className="min-h-dvh">
       <div
-        className="pointer-events-none fixed inset-0 z-0 dark:opacity-100 opacity-50"
+        className="pointer-events-none fixed inset-0 z-0 opacity-50 dark:opacity-100 dark:max-sm:opacity-45"
         aria-hidden="true"
         style={{
           background:
