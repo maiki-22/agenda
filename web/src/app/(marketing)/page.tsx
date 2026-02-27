@@ -122,19 +122,17 @@ export default function MarketingHomePage() {
 </div>
 </section>
 
-        {/* ── FILOSOFÍA ─────────────────────────────────────── */}
+        {/* ── about  ─────────────────────────────────────── */}
         <section
           className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-6 sm:p-8 relative overflow-hidden"
           style={{ boxShadow: "0 2px 32px rgba(0,0,0,0.15)" }}
         >
           <div className="relative z-10 space-y-3 max-w-prose">
             <div className="text-xs tracking-widest text-[rgb(var(--primary))] uppercase font-semibold">
-              Nuestra filosofía
+              Sobre nosotros
             </div>
             <p className="text-sm sm:text-base text-[rgb(var(--muted))] leading-relaxed">
-              En La Sucursal no solo cortamos cabello, creamos estilo y actitud.
-              Somos un equipo de barberos apasionados dedicados a perfeccionar
-              tu imagen en cada visita.
+              En La Sucursal Barber Shop no solo cortamos cabello, creamos estilo y actitud. Somos un equipo de 6 barberos apasionados por los detalles, la precisión y la experiencia de cada cliente. Aquí combinamos técnica, tendencia y buen ambiente para que cada visita sea única.
             </p>
           </div>
         </section>
