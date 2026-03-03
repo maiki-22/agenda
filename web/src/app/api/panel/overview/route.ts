@@ -39,8 +39,8 @@ function resolveWindow(windowParam: string | null, legacyRange: string | null): 
     return windowParam;
   }
 
-  if (legacyRange === "month") return "next_30_days";
-  return "next_7_days";
+ if (legacyRange === "month") return "last_30_days";
+  return "last_30_days";
 }
 
 

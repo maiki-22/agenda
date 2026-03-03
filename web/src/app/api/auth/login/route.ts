@@ -47,6 +47,18 @@ const ip = getClientIp(req);
 
   const supabase = await supabaseServer();
 
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: parsed.data.email,
+    password: parsed.data.password,
+  });
+
+  if (signInError) {
+    const res = NextResponse.json({ error: "Email o contraseña incorrectos" }, { status: 401 });
+    applyRateLimitHeaders(res, rl);
+    return res;
+  }
+
+
   const res = NextResponse.json({ ok: true }, { status: 200 });
   applyRateLimitHeaders(res, rl);
   return res;
