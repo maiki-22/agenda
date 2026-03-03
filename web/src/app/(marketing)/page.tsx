@@ -3,6 +3,7 @@ import Image from "next/image";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import LogoAdaptive from "@/components/ui/LogoAdaptative";
 import localImg from "@/assets/local.webp";
+import InstrumentosImg from "@/assets/instrumentos.webp";
 
 const BRAND = {
   name: "La Sucursal Barber Shop",
@@ -57,10 +58,10 @@ export default function MarketingHomePage() {
 
       <main className="relative z-10 page-container pt-4 pb-8 sm:py-8 lg:py-10 space-y-10 sm:space-y-12">
         {/* ── HERO ──────────────────────────────────────────── */}
-        <section className="grid gap-6 lg:gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+        <section className="grid gap-6 lg:gap-6 lg:grid-cols-[1.25fr_0.75fr] lg:items-stretch">
           {/* LOGO (mobile: 1°, desktop: 1°) */}
-          <div className="order-1 flex flex-col items-center lg:items-start lg:mt-9">
-            <LogoAdaptive className="w-full max-w-[44rem] sm:max-w-[52rem] lg:max-w-[40rem]" />
+          <div className="order-1 flex flex-col items-center lg:items-start lg:self-stretch lg:justify-center">
+              <LogoAdaptive className="w-full max-w-[44rem] sm:max-w-[52rem] lg:max-w-[52rem] xl:max-w-[56rem]" />
           </div>
 
           {/* BLOQUE TEXTO/CTA (mobile: 2°, desktop: debajo de ambos) */}
@@ -100,39 +101,48 @@ export default function MarketingHomePage() {
 
           {/* IMAGEN LOCAL (mobile: 3°, desktop: 2° a la derecha del logo) */}
           <div
-            className="order-3 lg:order-2 lg:mt-0 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] shadow-[var(--shadow-medium)] overflow-hidden"
-            style={{ boxShadow: "0 2px 40px rgba(0,0,0,0.18)" }}
-          >
-            <div className="aspect-[4/3] sm:aspect-[16/10] lg:aspect-[16/9] relative">
-              <Image
-                src={localImg}
-                alt="Interior de La Sucursal Barber Shop"
-                fill
-                priority
-                placeholder="blur"
-                sizes="(min-width: 1024px) 52vw, 100vw"
-                className="object-cover object-[center_80%] scale-[1.12]"
-              />
+  className="
+    order-3 lg:order-2 lg:mt-0
+    rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))]
+    overflow-hidden flex flex-col
+    w-full
+    lg:max-w-[22rem] xl:max-w-[24rem] 2xl:max-w-[26rem]
+    lg:justify-self-end
+  "
+  style={{ boxShadow: "0 2px 40px rgba(0,0,0,0.18)" }}
+>
+  {/* Definimos el aspecto EXACTO del recorte: 720/770 */}
+  <div className="aspect-[720/770] relative overflow-hidden bg-black">
+    <Image
+      src={localImg}
+      alt="Fachada de La Sucursal Barber Shop - Recorte Controlado"
+      fill
+      priority
+      placeholder="blur"
+      sizes="(min-width: 1024px) 45vw, 100vw"
+      className="object-cover object-[center_50%]"
+    />
 
-              {/* Glow dorado encima */}
-              <div
-                className="absolute -inset-24 opacity-30 pointer-events-none"
-                style={{
-                  background:
-                    "radial-gradient(circle at 30% 30%, rgb(var(--primary-glow) / 0.3), transparent 60%)",
-                }}
-              />
-            </div>
+    {/* Glow dorado encima mejorado */}
+    <div
+      className="absolute inset-0 opacity-40 pointer-events-none"
+      style={{
+        background:
+          "radial-gradient(circle at 50% 20%, rgb(var(--primary-glow) / 0.15), transparent 70%)",
+      }}
+    />
+  </div>
 
-            <div className="px-5 pt-6 pb-5 border-t border-[rgb(var(--border))] flex flex-col justify-center gap-1">
-              <div className="text-sm font-semibold leading-tight">
-                Calidad que se nota
-              </div>
-              <div className="text-sm text-[rgb(var(--muted))] leading-snug">
-                Terminaciones prolijas, asesoría y un ambiente cómodo.
-              </div>
-            </div>
-          </div>
+  {/* Footer de la tarjeta */}
+  <div className="px-5 py-5 border-t border-[rgb(var(--border))] bg-[rgb(var(--surface-1))]">
+    <div className="text-sm font-semibold leading-tight text-[rgb(var(--foreground))]">
+    La Sucursal
+    </div>
+    <div className="text-sm text-[rgb(var(--muted))] mt-1 leading-snug">
+      Ubicación central, ambiente cómodo y estacionamiento.
+    </div>
+  </div>
+</div>
         </section>
 
         {/* ── about  ─────────────────────────────────────── */}
@@ -195,18 +205,18 @@ export default function MarketingHomePage() {
                   Reservar ahora
                 </Link>
               </div>
-              <div className="border-t md:border-t-0 md:border-l border-[rgb(var(--border))] bg-[rgb(var(--surface-2))]">
-                <div className="aspect-[16/9] relative">
-                  <Image
-                    src={localImg}
-                    alt="Interior de La Sucursal Barber Shop para primera visita"
-                    fill
-                    placeholder="blur"
-                    sizes="(min-width: 768px) 35vw, 100vw"
-                    className="object-cover object-[center_80%] scale-[1.12]"
-                  />
-                </div>
-              </div>
+             <div className="border-t md:border-t-0 md:border-l border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] overflow-hidden">
+  <div className="aspect-[16/9] relative overflow-hidden">
+    <Image
+      src={InstrumentosImg}
+      alt="Interior de La Sucursal Barber Shop para primera visita"
+      fill
+      placeholder="blur"
+      sizes="(min-width: 768px) 35vw, 100vw"
+      className="object-cover object-[center_65%] scale-[1.04]"
+    />
+  </div>
+</div>
             </div>
           </div>
         </section>
@@ -219,21 +229,21 @@ export default function MarketingHomePage() {
             <ServiceCard
               icon={<ScissorsIcon className="h-6 w-6" />}
               title="Corte"
-              subtitle="30 min"
+              subtitle=""
               note="Corte + terminaciones"
               price="$13.000"
             />
             <ServiceCard
               icon={<FaceIcon className="h-6 w-6" />}
               title="Barba"
-              subtitle="30 min"
+              subtitle=""
               note="Perfilado + toalla caliente"
               price="$10.000"
             />
             <ServiceCard
               icon={<StarIcon className="h-6 w-6" />}
               title="Corte + barba"
-              subtitle="60 min"
+              subtitle=""
               note="Servicio completo"
               price="$20.000"
               highlight
@@ -241,7 +251,7 @@ export default function MarketingHomePage() {
             <ServiceCard
               icon={<FaceIcon className="h-6 w-6" />}
               title="Corte y ceja"
-              subtitle="40 min"
+              subtitle=""
               note="Corte + perfilado de cejas"
               price="$15.000"
             />
