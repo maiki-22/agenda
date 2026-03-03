@@ -256,3 +256,11 @@ export const catalogRatelimit = new Ratelimit({
   analytics: true,
   prefix: "rl:catalog",
 });
+
+// POST /api/auth/login (admin)
+export const authLoginRatelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(6, "1 m"), // 6/min por IP
+  analytics: true,
+  prefix: "rl:auth-login",
+});

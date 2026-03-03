@@ -8,14 +8,41 @@ type AppointmentRow = {
   date: string;
 };
 
-function daysBackFrom(range: string | null) {
-  if (range === "month") return 30;
-  return 7;
-}
+type WindowKey = "next_7_days" | "next_30_days" | "last_7_days" | "last_30_days";
 
 function isoDateOnly(date: Date) {
   return date.toISOString().slice(0, 10);
 }
+
+function getDateWindow(window: WindowKey) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const start = new Date(today);
+  const end = new Date(today);
+
+  if (window === "next_7_days") end.setDate(today.getDate() + 6);
+  if (window === "next_30_days") end.setDate(today.getDate() + 29);
+  if (window === "last_7_days") start.setDate(today.getDate() - 6);
+  if (window === "last_30_days") start.setDate(today.getDate() - 29);
+
+  return { startDate: isoDateOnly(start), endDate: isoDateOnly(end) };
+}
+
+function resolveWindow(windowParam: string | null, legacyRange: string | null): WindowKey {
+  if (
+    windowParam === "next_7_days" ||
+    windowParam === "next_30_days" ||
+    windowParam === "last_7_days" ||
+    windowParam === "last_30_days"
+  ) {
+    return windowParam;
+  }
+
+  if (legacyRange === "month") return "next_30_days";
+  return "next_7_days";
+}
+
 
 export async function GET(req: Request) {
   const supabase = await supabaseServer();
@@ -26,15 +53,10 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const range = searchParams.get("range");
-  const barberId = searchParams.get("barberId");
+  const window = resolveWindow(searchParams.get("window"), searchParams.get("range"));
+  const barberId = searchParams.get("barberId") ?? "";
 
-  const end = new Date();
-  const start = new Date(end);
-  start.setDate(end.getDate() - (daysBackFrom(range) - 1));
-
-  const startDate = isoDateOnly(start);
-  const endDate = isoDateOnly(end);
+  const { startDate, endDate } = getDateWindow(window);
 
   const [{ data: barbers, error: barbersError }, { data: appointments, error: appointmentsError }] = await Promise.all([
     supabase.from("barbers").select("id, name, active, sort_order").order("sort_order", { ascending: true }),
@@ -54,9 +76,7 @@ export async function GET(req: Request) {
   }
 
   const barberMap = new Map((barbers ?? []).map((b) => [b.id, b.name]));
-  const rows = ((appointments ?? []) as AppointmentRow[]).filter((row) =>
-    barberId ? row.barber_id === barberId : true,
-  );
+  const rows = ((appointments ?? []) as AppointmentRow[]).filter((row) => (barberId ? row.barber_id === barberId : true));
 
   const totals = {
     total: rows.length,
@@ -65,7 +85,13 @@ export async function GET(req: Request) {
     cancelled: rows.filter((r) => r.status === "cancelled").length,
   };
 
-  const byBarber: Record<string, { barber_id: string; barber_name: string; total: number; confirmed: number; pending: number }> = {};
+  const rates = {
+    confirmation_rate: totals.total ? Number(((totals.confirmed / totals.total) * 100).toFixed(1)) : 0,
+    cancellation_rate: totals.total ? Number(((totals.cancelled / totals.total) * 100).toFixed(1)) : 0,
+  };
+
+  const byBarber: Record<string, { barber_id: string; barber_name: string; total: number; confirmed: number; pending: number; cancelled: number }> = {};
+  const byDate: Record<string, { date: string; total: number; confirmed: number; pending: number; cancelled: number }> = {};
 
   for (const row of rows) {
     if (!byBarber[row.barber_id]) {
@@ -75,22 +101,49 @@ export async function GET(req: Request) {
         total: 0,
         confirmed: 0,
         pending: 0,
+        cancelled: 0,
       };
     }
+    
+    if (!byDate[row.date]) {
+      byDate[row.date] = { date: row.date, total: 0, confirmed: 0, pending: 0, cancelled: 0 };
+    }
+
 
     byBarber[row.barber_id].total += 1;
-    if (row.status === "confirmed") byBarber[row.barber_id].confirmed += 1;
-    if (row.status === "pending") byBarber[row.barber_id].pending += 1;
+    byDate[row.date].total += 1;
+
+    if (row.status === "confirmed") {
+      byBarber[row.barber_id].confirmed += 1;
+      byDate[row.date].confirmed += 1;
+    }
+
+    if (row.status === "pending") {
+      byBarber[row.barber_id].pending += 1;
+      byDate[row.date].pending += 1;
+    }
+
+    if (row.status === "cancelled") {
+      byBarber[row.barber_id].cancelled += 1;
+      byDate[row.date].cancelled += 1;
+    }
   }
 
   return NextResponse.json(
     {
       ok: true,
-      range: range === "month" ? "month" : "week",
+      window,
       date_window: { startDate, endDate },
       totals,
+      rates,
       by_barber: Object.values(byBarber).sort((a, b) => b.total - a.total),
+       by_date: Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date)),
       barbers: barbers ?? [],
+      meta: {
+        filters: { window, barberId: barberId || "all" },
+        counts: { raw_appointments: (appointments ?? []).length, filtered_appointments: rows.length },
+        generated_at: new Date().toISOString(),
+      },
     },
     { status: 200 },
   );

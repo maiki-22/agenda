@@ -3,26 +3,72 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Barber = { id: string; name: string; active: boolean };
+type WindowOption = "next_7_days" | "next_30_days" | "last_7_days" | "last_30_days";
 type SummaryByBarber = {
   barber_id: string;
   barber_name: string;
   total: number;
   confirmed: number;
   pending: number;
+  cancelled: number;
+};
+
+type DailySummary = {
+  date: string;
+  total: number;
+  confirmed: number;
+  pending: number;
+  cancelled: number;
 };
 
 type OverviewResponse = {
+  window: WindowOption;
+  date_window: { startDate: string; endDate: string };
   totals: { total: number; confirmed: number; pending: number; cancelled: number };
+  rates: { confirmation_rate: number; cancellation_rate: number };
   by_barber: SummaryByBarber[];
+  by_date: DailySummary[];
   barbers: Barber[];
+  meta: { counts: { raw_appointments: number; filtered_appointments: number }; generated_at: string };
+};
+
+type BookingItem = {
+  id: string;
+  date: string;
+  time: string;
+  status: "pending" | "confirmed" | "cancelled";
+  customer_name: string;
+  customer_phone: string;
+  barber_name: string;
+  service_name: string;
+};
+
+type BookingsResponse = {
+  items: BookingItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
+const WINDOW_LABELS: Record<WindowOption, string> = {
+  next_7_days: "Próximos 7 días",
+  next_30_days: "Próximos 30 días",
+  last_7_days: "Últimos 7 días",
+  last_30_days: "Últimos 30 días",
 };
 
 export function AdminDashboardClient() {
-  const [range, setRange] = useState<"week" | "month">("week");
+  const [windowKey, setWindowKey] = useState<WindowOption>("next_7_days");
   const [barberId, setBarberId] = useState<string>("all");
   const [overview, setOverview] = useState<OverviewResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string>("");
+
+  const [bookings, setBookings] = useState<BookingsResponse | null>(null);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [bookingStatus, setBookingStatus] = useState<"all" | "pending" | "confirmed" | "cancelled">("all");
+  const [bookingSearch, setBookingSearch] = useState("");
+
 
   const [blockDate, setBlockDate] = useState("");
   const [blockStart, setBlockStart] = useState("");
@@ -44,7 +90,7 @@ export function AdminDashboardClient() {
     setLoading(true);
     setMessage("");
     try {
-      const params = new URLSearchParams({ range });
+      const params = new URLSearchParams({ window: windowKey });
       if (selectedBarber) params.set("barberId", selectedBarber);
       const res = await fetch(`/api/panel/overview?${params.toString()}`, { cache: "no-store" });
       const json = await res.json();
@@ -55,11 +101,41 @@ export function AdminDashboardClient() {
     } finally {
       setLoading(false);
     }
-  }, [range, selectedBarber]);
+  }, [windowKey, selectedBarber]);
+
+  const loadBookings = useCallback(async () => {
+    if (!overview) return;
+    setBookingsLoading(true);
+    try {
+      const params = new URLSearchParams({
+        dateFrom: overview.date_window.startDate,
+        dateTo: overview.date_window.endDate,
+        page: "1",
+        pageSize: "8",
+      });
+      if (selectedBarber) params.set("barberId", selectedBarber);
+      if (bookingStatus !== "all") params.set("status", bookingStatus);
+      if (bookingSearch.trim()) params.set("q", bookingSearch.trim());
+
+      const res = await fetch(`/api/panel/bookings?${params.toString()}`, { cache: "no-store" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error ?? "No se pudo cargar reservas");
+      setBookings(json as BookingsResponse);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error inesperado");
+    } finally {
+      setBookingsLoading(false);
+    }
+  }, [bookingSearch, bookingStatus, overview, selectedBarber]);
 
   useEffect(() => {
     void loadOverview();
   }, [loadOverview]);
+
+  useEffect(() => {
+    void loadBookings();
+  }, [loadBookings]);
+
 
   const send = async (url: string, body: unknown) => {
     setMessage("");
@@ -71,6 +147,20 @@ export function AdminDashboardClient() {
     const json = await res.json();
     if (!res.ok) throw new Error(json?.error ?? "No se pudo guardar");
     await loadOverview();
+    await loadBookings();
+  };
+
+  const updateBookingStatus = async (id: string, status: BookingItem["status"]) => {
+    setMessage("");
+    const res = await fetch(`/api/panel/bookings/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json?.error ?? "No se pudo actualizar estado");
+    await loadOverview();
+    await loadBookings();
   };
 
   return (
@@ -83,9 +173,12 @@ export function AdminDashboardClient() {
       <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 sm:p-5 grid gap-3 sm:grid-cols-3">
         <label className="space-y-1 text-sm">
           <span className="text-[rgb(var(--muted))]">Resumen</span>
-          <select value={range} onChange={(e) => setRange(e.target.value as "week" | "month")} className="w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2">
-            <option value="week">Semanal</option>
-            <option value="month">Mensual</option>
+          <span className="text-[rgb(var(--muted))]">Ventana</span>
+          <select value={windowKey} onChange={(e) => setWindowKey(e.target.value as WindowOption)} className="w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2">
+            <option value="next_7_days">Próximos 7 días</option>
+            <option value="next_30_days">Próximos 30 días</option>
+            <option value="last_7_days">Últimos 7 días</option>
+            <option value="last_30_days">Últimos 30 días</option>
           </select>
         </label>
 
@@ -100,63 +193,164 @@ export function AdminDashboardClient() {
         </label>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {overview ? (
+        <p className="text-xs rounded-xl border border-[rgb(var(--border))] px-3 py-2 text-[rgb(var(--muted))]">
+          Ventana aplicada: {WINDOW_LABELS[overview.window]} · {overview.date_window.startDate} → {overview.date_window.endDate} · Registros: {overview.meta.counts.filtered_appointments}/{overview.meta.counts.raw_appointments}
+        </p>
+      ) : null}
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         <StatCard label="Total citas" value={overview?.totals.total ?? 0} />
         <StatCard label="Confirmadas" value={overview?.totals.confirmed ?? 0} />
         <StatCard label="Pendientes" value={overview?.totals.pending ?? 0} />
         <StatCard label="Canceladas" value={overview?.totals.cancelled ?? 0} />
+        <StatCard label="Tasa confirmación" value={`${overview?.rates.confirmation_rate ?? 0}%`} />
+        <StatCard label="Tasa cancelación" value={`${overview?.rates.cancellation_rate ?? 0}%`} />
       </section>
 
-      <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 sm:p-5">
-        <h2 className="font-semibold mb-3">Desempeño por barbero</h2>
+      {overview?.totals.total === 0 ? (
+        <p className="text-sm text-[rgb(var(--muted))] rounded-xl border border-dashed border-[rgb(var(--border))] p-3">
+          No hay citas en la ventana actual. Prueba cambiando a “Próximos 30 días” o quitando filtros de barbero.
+        </p>
+      ) : null}
+
+      <section className="grid gap-4 xl:grid-cols-5">
+        <article className="xl:col-span-3 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 sm:p-5">
+          <h2 className="font-semibold mb-3">Citas por día</h2>
+          <div className="space-y-2">
+            {(overview?.by_date ?? []).slice(0, 10).map((row) => {
+              const width = overview?.totals.total ? Math.max(6, Math.round((row.total / overview.totals.total) * 100)) : 0;
+              return (
+                <div key={row.date} className="grid grid-cols-[90px_1fr_40px] gap-2 items-center text-xs sm:text-sm">
+                  <span className="text-[rgb(var(--muted))]">{row.date.slice(5)}</span>
+                  <div className="h-2.5 rounded-full bg-[rgb(var(--surface))] overflow-hidden">
+                    <div className="h-full rounded-full bg-[rgb(var(--primary))]" style={{ width: `${width}%` }} />
+                  </div>
+                  <span className="text-right font-medium">{row.total}</span>
+                </div>
+              );
+            })}
+          </div>
+        </article>
+
+        <section className="xl:col-span-2 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 sm:p-5">
+          <h2 className="font-semibold mb-3">Desempeño por barbero</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="text-left text-[rgb(var(--muted))] border-b border-[rgb(var(--border))]">
+                  <th className="py-2 pr-4">Barbero</th>
+                  <th className="py-2 pr-4">Total</th>
+                  <th className="py-2 pr-4">Conf.</th>
+                  <th className="py-2 pr-4">Pend.</th>
+                  <th className="py-2">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(overview?.by_barber ?? []).map((row) => {
+                  const barber = overview?.barbers.find((b) => b.id === row.barber_id);
+                  return (
+                    <tr key={row.barber_id} className="border-b border-[rgb(var(--border))]">
+                      <td className="py-2 pr-4">{row.barber_name}</td>
+                      <td className="py-2 pr-4">{row.total}</td>
+                      <td className="py-2 pr-4">{row.confirmed}</td>
+                      <td className="py-2 pr-4">{row.pending}</td>
+                      <td className="py-2">
+                        <button
+                          onClick={async () => {
+                            if (!barber) return;
+                            try {
+                              const res = await fetch(`/api/panel/barbers/${barber.id}`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ active: !barber.active }),
+                              });
+                              const json = await res.json();
+                              if (!res.ok) throw new Error(json?.error ?? "No se pudo actualizar");
+                              await loadOverview();
+                            } catch (error) {
+                              setMessage(error instanceof Error ? error.message : "Error inesperado");
+                            }
+                          }}
+                          className="rounded-lg border border-[rgb(var(--border))] px-3 py-1"
+                        >
+                          {barber?.active ? "Deshabilitar" : "Habilitar"}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 sm:p-5 space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="font-semibold">Gestión de reservas</h2>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input value={bookingSearch} onChange={(e) => setBookingSearch(e.target.value)} placeholder="Buscar por nombre o teléfono" className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm" />
+            <select value={bookingStatus} onChange={(e) => setBookingStatus(e.target.value as typeof bookingStatus)} className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm">
+              <option value="all">Todos los estados</option>
+              <option value="pending">Pendiente</option>
+              <option value="confirmed">Confirmada</option>
+              <option value="cancelled">Cancelada</option>
+            </select>
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="text-left text-[rgb(var(--muted))] border-b border-[rgb(var(--border))]">
-                <th className="py-2 pr-4">Barbero</th>
-                <th className="py-2 pr-4">Total</th>
-                <th className="py-2 pr-4">Confirmadas</th>
-                <th className="py-2 pr-4">Pendientes</th>
-                <th className="py-2">Estado</th>
+                <th className="py-2 pr-3">Fecha</th>
+                <th className="py-2 pr-3">Hora</th>
+                <th className="py-2 pr-3">Barbero</th>
+                <th className="py-2 pr-3">Servicio</th>
+                <th className="py-2 pr-3">Cliente</th>
+                <th className="py-2 pr-3">Teléfono</th>
+                <th className="py-2 pr-3">Estado</th>
+                <th className="py-2">Acción</th>
               </tr>
             </thead>
             <tbody>
-              {(overview?.by_barber ?? []).map((row) => {
-                const barber = overview?.barbers.find((b) => b.id === row.barber_id);
-                return (
-                  <tr key={row.barber_id} className="border-b border-[rgb(var(--border))]">
-                    <td className="py-2 pr-4">{row.barber_name}</td>
-                    <td className="py-2 pr-4">{row.total}</td>
-                    <td className="py-2 pr-4">{row.confirmed}</td>
-                    <td className="py-2 pr-4">{row.pending}</td>
-                    <td className="py-2">
-                      <button
-                        onClick={async () => {
-                          if (!barber) return;
-                          try {
-                            const res = await fetch(`/api/panel/barbers/${barber.id}`, {
-                              method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ active: !barber.active }),
-                            });
-                            const json = await res.json();
-                            if (!res.ok) throw new Error(json?.error ?? "No se pudo actualizar");
-                            await loadOverview();
-                          } catch (error) {
-                            setMessage(error instanceof Error ? error.message : "Error inesperado");
-                          }
-                        }}
-                        className="rounded-lg border border-[rgb(var(--border))] px-3 py-1"
-                      >
-                        {barber?.active ? "Deshabilitar" : "Habilitar"}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+                {(bookings?.items ?? []).map((booking) => (
+                <tr key={booking.id} className="border-b border-[rgb(var(--border))]">
+                  <td className="py-2 pr-3">{booking.date}</td>
+                  <td className="py-2 pr-3">{booking.time}</td>
+                  <td className="py-2 pr-3">{booking.barber_name}</td>
+                  <td className="py-2 pr-3">{booking.service_name}</td>
+                  <td className="py-2 pr-3">{booking.customer_name}</td>
+                  <td className="py-2 pr-3">{booking.customer_phone}</td>
+                  <td className="py-2 pr-3">{booking.status}</td>
+                  <td className="py-2">
+                    <select
+                      className="rounded-lg border border-[rgb(var(--border))] px-2 py-1 text-xs"
+                      value={booking.status}
+                      onChange={async (e) => {
+                        try {
+                          await updateBookingStatus(booking.id, e.target.value as BookingItem["status"]);
+                          setMessage("Estado de reserva actualizado");
+                        } catch (error) {
+                          setMessage(error instanceof Error ? error.message : "Error inesperado");
+                        }
+                      }}
+                    >
+                      <option value="pending">Pendiente</option>
+                      <option value="confirmed">Confirmada</option>
+                      <option value="cancelled">Cancelada</option>
+                    </select>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
+
+              {bookingsLoading ? <p className="text-sm text-[rgb(var(--muted))]">Cargando reservas...</p> : null}
+        {!bookingsLoading && (bookings?.items.length ?? 0) === 0 ? <p className="text-sm text-[rgb(var(--muted))]">Sin resultados para los filtros actuales.</p> : null}
+
       </section>
 
       <section className="grid gap-4 lg:grid-cols-3">
@@ -224,7 +418,7 @@ export function AdminDashboardClient() {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
+function StatCard({ label, value }: { label: string; value: number | string }) {
   return (
     <article className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4">
       <p className="text-xs tracking-widest uppercase text-[rgb(var(--muted))]">{label}</p>

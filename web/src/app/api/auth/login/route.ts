@@ -1,5 +1,19 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
+import { z } from "zod";
+import { applyRateLimitHeaders, authLoginRatelimit, limitWithFailover } from "@/lib/ratelimit";
+
+
+const LoginSchema = z.object({
+  email: z.string().trim().email().max(120),
+  password: z.string().min(8).max(128),
+});
+
+function getClientIp(req: Request) {
+  const xfwd = req.headers.get("x-forwarded-for");
+  if (xfwd) return xfwd.split(",")[0]!.trim();
+  return req.headers.get("x-real-ip") ?? "unknown";
+}
 
 
 export async function GET(req: Request) {
@@ -9,20 +23,31 @@ export async function GET(req: Request) {
 
 
 export async function POST(req: Request) {
-  const { email, password } = await req.json().catch(() => ({}));
+const ip = getClientIp(req);
+  const rl = await limitWithFailover({
+    ratelimit: authLoginRatelimit,
+    key: `auth:ip:${ip}`,
+    fallbackLimit: 6,
+    circuitKey: "auth-login",
+  });
 
-  if (!email || !password) {
-    return NextResponse.json(
-      { error: "Missing email/password" },
-      { status: 400 },
-    );
+  if (!rl.success) {
+    const res = NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    applyRateLimitHeaders(res, rl);
+    return res;
+  }
+
+   const parsed = LoginSchema.safeParse(await req.json().catch(() => ({})));
+
+  if (!parsed.success) {
+    const res = NextResponse.json({ error: "Credenciales inválidas" }, { status: 400 });
+    applyRateLimitHeaders(res, rl);
+    return res;
   }
 
   const supabase = await supabaseServer();
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 401 });
-
-  return NextResponse.json({ ok: true }, { status: 200 });
+  const res = NextResponse.json({ ok: true }, { status: 200 });
+  applyRateLimitHeaders(res, rl);
+  return res;
 }
