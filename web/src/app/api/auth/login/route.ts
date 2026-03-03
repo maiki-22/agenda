@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 
+
+export async function GET(req: Request) {
+  const url = new URL("/panel/login", req.url);
+  return NextResponse.redirect(url, { status: 307 });
+}
+
+
 export async function POST(req: Request) {
   const { email, password } = await req.json().catch(() => ({}));
 

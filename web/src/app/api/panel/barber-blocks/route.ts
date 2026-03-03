@@ -1,19 +1,23 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
+import { getAuthenticatedAdmin } from "@/lib/auth/isAdmin";
+
 
 export async function GET(req: Request) {
   const supabase = await supabaseServer();
+   const admin = await getAuthenticatedAdmin(supabase);
 
-  const { data: authData } = await supabase.auth.getUser();
-  if (!authData?.user) {
-    return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
+   if (!admin.ok) {
+    return NextResponse.json({ error: admin.error }, { status: admin.status });
   }
 
   const { searchParams } = new URL(req.url);
-  const date = searchParams.get("date"); // opcional
-  const barberId = searchParams.get("barberId"); // opcional (admin puede)
+  const date = searchParams.get("date");
+  const barberId = searchParams.get("barberId");
 
-  let q = supabase.from("barber_blocks").select("id, barber_id, date, start_at, end_at, reason, created_at");
+  let q = supabase
+    .from("barber_blocks")
+    .select("id, barber_id, date, start_at, end_at, reason, created_at");
 
   if (date) q = q.eq("date", date);
   if (barberId) q = q.eq("barber_id", barberId);
@@ -26,10 +30,10 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const supabase = await supabaseServer();
+  const admin = await getAuthenticatedAdmin(supabase);
 
-  const { data: authData } = await supabase.auth.getUser();
-  if (!authData?.user) {
-    return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
+if (!admin.ok) {
+    return NextResponse.json({ error: admin.error }, { status: admin.status });
   }
 
   const body = await req.json().catch(() => ({}));
