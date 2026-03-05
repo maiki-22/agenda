@@ -4,7 +4,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { getAuthenticatedAdmin } from "@/lib/auth/isAdmin";
 
 const UpdateBookingSchema = z.object({
-  status: z.enum(["pending", "confirmed", "cancelled"]),
+  status: z.enum(["booked", "needs_confirmation", "confirmed", "cancelled"]),
 });
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {

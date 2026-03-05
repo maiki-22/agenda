@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getAuthenticatedAdmin } from "@/lib/auth/isAdmin";
 
-const VALID_STATUS = new Set(["pending", "confirmed", "cancelled"]);
+const VALID_STATUS = new Set(["booked", "needs_confirmation", "confirmed", "cancelled"]);
 
 type BookingRow = {
   id: string;

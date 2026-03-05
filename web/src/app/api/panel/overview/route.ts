@@ -8,6 +8,8 @@ type AppointmentRow = {
   date: string;
 };
 
+const PENDING_STATUSES = new Set(["booked", "needs_confirmation"]);
+
 type WindowKey = "next_7_days" | "next_30_days" | "last_7_days" | "last_30_days";
 
 function isoDateOnly(date: Date) {
@@ -81,7 +83,7 @@ export async function GET(req: Request) {
   const totals = {
     total: rows.length,
     confirmed: rows.filter((r) => r.status === "confirmed").length,
-    pending: rows.filter((r) => r.status === "pending").length,
+    pending: rows.filter((r) => PENDING_STATUSES.has(r.status)).length,
     cancelled: rows.filter((r) => r.status === "cancelled").length,
   };
 
@@ -118,7 +120,7 @@ export async function GET(req: Request) {
       byDate[row.date].confirmed += 1;
     }
 
-    if (row.status === "pending") {
+    if (PENDING_STATUSES.has(row.status)) {
       byBarber[row.barber_id].pending += 1;
       byDate[row.date].pending += 1;
     }
