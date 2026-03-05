@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import {
   authLoginSchema,
   type AuthLoginInput,
@@ -60,20 +63,19 @@ export function PanelLoginForm() {
   };
 
   return (
-    <form className="space-y-3" onSubmit={handleSubmit(onSubmit)} noValidate>
+    <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
       <fieldset
         disabled={isSubmitting}
-        className="space-y-3 disabled:opacity-70"
+        className="space-y-4 disabled:opacity-70"
       >
-        <label className="block space-y-1 text-sm" htmlFor="email">
+        <label className="block space-y-4 text-sm" htmlFor="email">
           <span className="text-[rgb(var(--muted))]">Email</span>
-          <input
+          <Input
             id="email"
             type="email"
             autoComplete="email"
             {...register("email")}
             aria-invalid={errors.email ? "true" : "false"}
-            className="w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2"
             placeholder="admin@tudominio.com"
           />
           {errors.email ? (
@@ -81,15 +83,14 @@ export function PanelLoginForm() {
           ) : null}
         </label>
 
-        <label className="block space-y-1 text-sm" htmlFor="password">
+        <label className="block space-y-4 text-sm" htmlFor="password">
           <span className="text-[rgb(var(--muted))]">Contraseña</span>
-          <input
+          <Input
             id="password"
             type="password"
             autoComplete="current-password"
             {...register("password")}
             aria-invalid={errors.password ? "true" : "false"}
-            className="w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2"
             placeholder="••••••••"
           />
           {errors.password ? (
@@ -101,13 +102,9 @@ export function PanelLoginForm() {
           {submitError}
         </p>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full rounded-xl bg-[rgb(var(--primary))] px-4 py-2.5 font-medium text-[rgb(var(--on-primary))] disabled:opacity-60"
-        >
+        <Button type="submit" disabled={isSubmitting} fullWidth>
           {isSubmitting ? "Ingresando..." : "Iniciar sesión"}
-        </button>
+        </Button>
       </fieldset>
     </form>
   );
