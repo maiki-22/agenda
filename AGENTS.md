@@ -7,6 +7,62 @@ SIEMPRE los estándares que se describen a continuación sin que sea necesario
 pedírtelo explícitamente.
 
 ════════════════════════════════════════════════════════
+CHECKLIST MÍNIMO POR PR
+════════════════════════════════════════════════════════
+
+Antes de mergear cualquier PR, validar estos puntos (checklist verificable):
+
+1. [ ] No hay `any` sin justificación explícita y documentada.
+2. [ ] Todas las funciones async tienen tipo de retorno explícito.
+3. [ ] No hay queries/accesos a datos sin manejo de error (`success/error`).
+4. [ ] Inputs de usuario, params y searchParams validados con Zod.
+5. [ ] No hay fetch en Client Components cuando corresponde TanStack Query.
+6. [ ] Se cubren estados de loading, empty y error en UI.
+7. [ ] UX responsive validada en mobile-first (mínimo 320px, tablet y desktop).
+8. [ ] Accesibilidad base cumplida: labels, aria-label, focus-visible y contraste AA.
+9. [ ] No se expone información sensible ni claves fuera de entorno seguro.
+10. [ ] Mutaciones con verificación de autenticación + autorización + ownership.
+11. [ ] No hay `console.log` en producción; logs técnicos con contexto.
+12. [ ] Archivos y funciones respetan límites de mantenibilidad (≈200/30 líneas).
+
+Subsecciones por dominio (criterios específicos):
+
+### panel/login
+
+- Validación de credenciales con React Hook Form + Zod (mensajes en español).
+- Botón de submit con estado loading y formulario deshabilitado durante envío.
+- Manejo de errores de autenticación por tipo (credenciales inválidas, bloqueo, red).
+- No redirecciones inseguras; sesión validada también del lado servidor.
+
+### panel/admin
+
+- Data fetching de dashboard con TanStack Query + `initialData` desde Server Component.
+- `queryKey` incluye filtros activos (fecha, barbero, estado, etc.).
+- Componentes desacoplados por responsabilidad (evitar archivos monolíticos >200 líneas).
+- Estados de error por widget con acción de reintento y skeletons por módulo.
+
+### booking
+
+- Flujo step-by-step validado con schema (draft + confirmación) antes de persistir.
+- Disponibilidad/slots con manejo de colisiones (`409`) y recuperación de estado UI.
+- Confirmación con datos consistentes (barbero/servicio/fecha/hora) y fallback robusto.
+- Acciones críticas (crear/cancelar) con validación de ownership y mensajes claros.
+
+Estado actual vs estándar (gaps conocidos):
+
+| Dominio       | Estado actual                                                                                                                                              | Estándar esperado                                                                                    | Gap conocido                                                                          |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `panel/admin` | `web/src/app/panel/admin/AdminDashboardClient.tsx` usa `fetch` en cliente con `useEffect/useState` y concentra múltiples responsabilidades.                | Server Component para carga inicial + Client con TanStack Query (`initialData`) y módulos separados. | Migrar a patrón SSR + Query y dividir archivo (actualmente >200 líneas).              |
+| `panel/login` | `web/src/app/panel/login/PanelLoginForm.tsx` usa `useState` por campo y validación HTML mínima.                                                            | React Hook Form + Zod, validación inline y manejo de errores por caso.                               | Refactor de formulario para escalabilidad y consistencia con estándar de formularios. |
+| `booking`     | `web/src/app/(booking)/reservar/page.tsx` y `.../confirmacion/ConfirmacionClient.tsx` consumen APIs con `fetch` directo en cliente y componentes extensos. | TanStack Query para lecturas en cliente + separación por hooks/services/componentes pequeños.        | Extraer hooks de datos, introducir Query y segmentar componentes para mantenibilidad. |
+
+Prioridades Q2 (orden recomendado):
+
+1. **Login UX**: estandarizar formulario de `panel/login` con RHF + Zod, errores por caso y feedback de envío.
+2. **Admin responsive**: mejorar layout y estados del dashboard para mobile/tablet, con skeletons y errores por bloque.
+3. **Refactor arquitectura panel**: migrar fetch client-side a patrón Server + TanStack Query y dividir componentes/servicios.
+
+════════════════════════════════════════════════════════
 IDENTIDAD Y FORMA DE TRABAJAR
 ════════════════════════════════════════════════════════
 
