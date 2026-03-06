@@ -13,14 +13,23 @@ import { useBookings } from "@/hooks/panel/use-bookings";
 import { useDaysOff } from "@/hooks/panel/use-days-off";
 import { useOverview } from "@/hooks/panel/use-overview";
 import { WINDOW_LABELS } from "@/types/panel";
-import type { BookingStatus } from "@/types/panel";
+import type { BookingStatus, BookingsResponse, OverviewResponse } from "@/types/panel";
 
-export function AdminDashboardClient() {
+interface AdminDashboardClientProps {
+  initialOverview: OverviewResponse | null;
+  initialBookings: BookingsResponse | null;
+}
+
+export function AdminDashboardClient({
+  initialOverview,
+  initialBookings,
+}: AdminDashboardClientProps) {
   const [message, setMessage] = useState<string>("");
-  const overviewState = useOverview();
+  const overviewState = useOverview(initialOverview);
   const bookingsState = useBookings({
     overview: overviewState.overview,
     selectedBarber: overviewState.selectedBarber,
+    initialBookings,
   });
   const blocksState = useBarberBlocks();
   const daysOffState = useDaysOff();
@@ -36,7 +45,7 @@ export function AdminDashboardClient() {
   ): Promise<void> {
     const error = await bookingsState.onUpdateBookingStatus(id, status);
     if (error) return setMessage(error);
-    await overviewState.reloadOverview();
+    
     setMessage("Estado de reserva actualizado");
   }
 
@@ -102,8 +111,7 @@ export function AdminDashboardClient() {
               return setMessage("Selecciona un barbero para bloquear horario");
             const error = await blocksState.submitBlock(input);
             if (error) return setMessage(error);
-            await overviewState.reloadOverview();
-            await bookingsState.reloadBookings();
+            
             setMessage("Horario bloqueado correctamente");
           }}
         />
@@ -115,8 +123,7 @@ export function AdminDashboardClient() {
               return setMessage("Selecciona un barbero para día libre");
             const error = await daysOffState.submitBarberDayOff(input);
             if (error) return setMessage(error);
-            await overviewState.reloadOverview();
-            await bookingsState.reloadBookings();
+            
             setMessage("Día libre agregado correctamente");
           }}
         />
@@ -125,8 +132,7 @@ export function AdminDashboardClient() {
           onSubmit={async (input) => {
             const error = await daysOffState.submitShopClosedDay(input);
             if (error) return setMessage(error);
-            await overviewState.reloadOverview();
-            await bookingsState.reloadBookings();
+            
             setMessage("Día cerrado agregado correctamente");
           }}
         />

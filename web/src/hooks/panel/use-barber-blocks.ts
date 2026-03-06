@@ -1,7 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createBarberBlock } from "@/services/panel/scheduling";
+
+type MutationError = {
+  message: string;
+  code?: string;
+};
 
 export function useBarberBlocks(): {
   loading: boolean;
@@ -13,7 +18,36 @@ export function useBarberBlocks(): {
     reason: string;
   }) => Promise<string | null>;
 } {
-  const [loading, setLoading] = useState<boolean>(false);
+  const queryClient = useQueryClient();
+
+  const createBlockMutation = useMutation<
+    { ok: boolean },
+    MutationError,
+    {
+      barberId: string;
+      date: string;
+      start: string;
+      end: string;
+      reason: string;
+    }
+  >({
+    mutationFn: async (input): Promise<{ ok: boolean }> => {
+      const result = await createBarberBlock(input);
+      if (!result.success) {
+        throw {
+          message: result.error,
+          code: result.code,
+        } satisfies MutationError;
+      }
+      return result.data;
+    },
+    onSuccess: async (): Promise<void> => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["panel-overview"] }),
+        queryClient.invalidateQueries({ queryKey: ["panel-bookings"] }),
+      ]);
+    },
+  });
 
   async function submitBlock(input: {
     barberId: string;
@@ -22,12 +56,16 @@ export function useBarberBlocks(): {
     end: string;
     reason: string;
   }): Promise<string | null> {
-    setLoading(true);
-    const result = await createBarberBlock(input);
-    setLoading(false);
-    if (!result.success) return result.error;
-    return null;
+    try {
+      await createBlockMutation.mutateAsync(input);
+      return null;
+    } catch (error: unknown) {
+      if (typeof error === "object" && error !== null && "message" in error) {
+        return String((error as MutationError).message);
+      }
+      return "No se pudo bloquear el horario";
+    }
   }
 
-  return { loading, submitBlock };
+  return { loading: createBlockMutation.isPending, submitBlock };
 }
