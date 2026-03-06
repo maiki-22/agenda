@@ -22,22 +22,18 @@ export function CollapsiblePanelCard({
       open={defaultOpen}
       className="group rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] shadow-[var(--shadow-soft)]"
     >
-      <summary className="list-none cursor-pointer p-4 sm:p-5">
+      <summary className="list-none cursor-pointer p-4 sm:p-5 rounded-3xl transition hover:bg-[rgb(var(--surface))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary-glow))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))]">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold">{title}</p>
-            <p className="text-xs text-[rgb(var(--muted))] mt-1">
-              {description}
-            </p>
+            <p className="text-xs text-[rgb(var(--muted))] mt-1">{description}</p>
           </div>
           <span className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-2.5 py-1 text-[11px] font-medium text-[rgb(var(--muted))]">
             {primaryActionLabel}
           </span>
         </div>
       </summary>
-      <div className="border-t border-[rgb(var(--border))] p-4 sm:p-5">
-        {children}
-      </div>
+      <div className="border-t border-[rgb(var(--border))] p-4 sm:p-5">{children}</div>
     </details>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { CollapsiblePanelCard } from "@/components/panel/admin/collapsible-panel-card";
+import { useState } from "react";
+import { AdminDashboardOperations } from "@/components/panel/admin/admin-dashboard-operations";
 import {
   DashboardTabs,
   type DashboardTabKey,
@@ -10,9 +10,7 @@ import { BookingsSection } from "@/components/panel/bookings/bookings-section";
 import { OverviewBreakdown } from "@/components/panel/overview/overview-breakdown";
 import { OverviewFilters } from "@/components/panel/overview/overview-filters";
 import { OverviewSummary } from "@/components/panel/overview/overview-summary";
-import { BarberBlockForm } from "@/components/panel/scheduling/barber-block-form";
-import { DayOffForm } from "@/components/panel/scheduling/day-off-form";
-import { ShopClosedForm } from "@/components/panel/scheduling/shop-closed-form";
+import { useToast } from "@/components/ui/toast-provider";
 import { useBarberBlocks } from "@/hooks/panel/use-barber-blocks";
 import { useBookings } from "@/hooks/panel/use-bookings";
 import { useDaysOff } from "@/hooks/panel/use-days-off";
@@ -33,7 +31,8 @@ export function AdminDashboardClient({
   initialOverview,
   initialBookings,
 }: AdminDashboardClientProps) {
-  const [message, setMessage] = useState<string>("");
+  const toast = useToast();
+  const [liveMessage, setLiveMessage] = useState<string>("");
   const [activeTab, setActiveTab] = useState<DashboardTabKey>("summary");
   const overviewState = useOverview(initialOverview);
   const bookingsState = useBookings({
@@ -44,23 +43,34 @@ export function AdminDashboardClient({
   const blocksState = useBarberBlocks();
   const daysOffState = useDaysOff();
 
-  const mergedError = useMemo(
-    () => message || overviewState.error || bookingsState.error,
-    [bookingsState.error, message, overviewState.error],
-  );
-
   async function handleBookingStatus(
     id: string,
     status: BookingStatus,
   ): Promise<void> {
     const error = await bookingsState.onUpdateBookingStatus(id, status);
-    if (error) return setMessage(error);
+    if (error) {
+      const message = `No se pudo ${
+        status === "confirmed" ? "confirmar" : "cancelar"
+      } la reserva: ${error}`;
+      toast.error(message);
+      setLiveMessage(message);
+      return;
+    }
 
-    setMessage("Estado de reserva actualizado");
+    const message =
+      status === "confirmed"
+        ? "Reserva confirmada correctamente"
+        : "Reserva cancelada correctamente";
+    toast.success(message);
+    setLiveMessage(message);
   }
 
   return (
     <main className="page-container py-5 sm:py-8 space-y-5 sm:space-y-6">
+      <p className="sr-only" aria-live="polite" aria-atomic="true">
+        {liveMessage}
+      </p>
+
       <header className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 sm:p-6 shadow-[var(--shadow-soft)]">
         <p className="text-[11px] tracking-[0.24em] uppercase text-[rgb(var(--muted))]">
           Panel administrador
@@ -94,15 +104,23 @@ export function AdminDashboardClient({
 
       {activeTab === "summary" ? (
         <>
-          <OverviewSummary overview={overviewState.overview} />
+          <OverviewSummary
+            overview={overviewState.overview}
+            error={overviewState.error}
+            onRetry={overviewState.reloadOverview}
+          />
           <OverviewBreakdown
             overview={overviewState.overview}
-            onToggleBarberStatus={async (barberId, active) => {
-              const error = await overviewState.onToggleBarberStatus(
-                barberId,
-                active,
-              );
-              if (error) setMessage(error);
+            error={overviewState.error}
+            onRetry={overviewState.reloadOverview}
+            onToggleBarberStatus={overviewState.onToggleBarberStatus}
+            onFeedback={(message, type) => {
+              if (type === "error") {
+                toast.error(message);
+              } else {
+                toast.success(message);
+              }
+              setLiveMessage(message);
             }}
           />
         </>
@@ -112,8 +130,10 @@ export function AdminDashboardClient({
         <BookingsSection
           bookings={bookingsState.bookings}
           loading={bookingsState.loading}
+          error={bookingsState.error}
           bookingSearch={bookingsState.bookingSearch}
           bookingStatus={bookingsState.bookingStatus}
+          onRetry={bookingsState.reloadBookings}
           onSearchChange={bookingsState.setBookingSearch}
           onStatusChange={bookingsState.setBookingStatus}
           onUpdateStatus={handleBookingStatus}
@@ -121,70 +141,13 @@ export function AdminDashboardClient({
       ) : null}
 
       {activeTab === "operations" ? (
-        <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          <CollapsiblePanelCard
-            title="Bloquear horario"
-            description="Reservá bloques para pausas o eventos puntuales."
-            primaryActionLabel="Crear bloqueo"
-            defaultOpen
-          >
-            <BarberBlockForm
-              selectedBarber={overviewState.selectedBarber}
-              loading={blocksState.loading}
-              onSubmit={async (input) => {
-                if (!overviewState.selectedBarber) {
-                  return setMessage(
-                    "Selecciona un barbero para bloquear horario",
-                  );
-                }
-                const error = await blocksState.submitBlock(input);
-                if (error) return setMessage(error);
-                setMessage("Horario bloqueado correctamente");
-              }}
-            />
-          </CollapsiblePanelCard>
-          <CollapsiblePanelCard
-            title="Día libre"
-            description="Configurá ausencias de barberos por día completo."
-            primaryActionLabel="Agregar día libre"
-          >
-            <DayOffForm
-              selectedBarber={overviewState.selectedBarber}
-              loading={daysOffState.loading}
-              onSubmit={async (input) => {
-                if (!overviewState.selectedBarber) {
-                  return setMessage("Selecciona un barbero para día libre");
-                }
-                const error = await daysOffState.submitBarberDayOff(input);
-                if (error) return setMessage(error);
-                setMessage("Día libre agregado correctamente");
-              }}
-            />
-          </CollapsiblePanelCard>
-          <CollapsiblePanelCard
-            title="Cierre general"
-            description="Marcá días cerrados para toda la barbería."
-            primaryActionLabel="Cerrar día"
-          >
-            <ShopClosedForm
-              loading={daysOffState.loading}
-              onSubmit={async (input) => {
-                const error = await daysOffState.submitShopClosedDay(input);
-                if (error) return setMessage(error);
-                setMessage("Día cerrado agregado correctamente");
-              }}
-            />
-          </CollapsiblePanelCard>
-        </section>
-      ) : null}
-
-      {overviewState.loading ? (
-        <p className="text-sm text-[rgb(var(--muted))]">Cargando datos...</p>
-      ) : null}
-      {mergedError ? (
-        <p className="text-sm rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-3 py-2">
-          {mergedError}
-        </p>
+        <AdminDashboardOperations
+          selectedBarber={overviewState.selectedBarber}
+          blocksState={blocksState}
+          daysOffState={daysOffState}
+          toast={toast}
+          setLiveMessage={setLiveMessage}
+        />
       ) : null}
     </main>
   );

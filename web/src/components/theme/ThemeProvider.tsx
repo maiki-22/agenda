@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { ToastProvider } from "@/components/ui/toast-provider";
 
 export default function ThemeProvider({
   children,
@@ -15,7 +16,7 @@ export default function ThemeProvider({
       enableSystem={false}
       disableTransitionOnChange
     >
-      {children}
+      <ToastProvider>{children}</ToastProvider>
     </NextThemesProvider>
   );
 }
