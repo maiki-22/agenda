@@ -78,7 +78,7 @@ export function BookingsSection(props: BookingsSectionProps) {
           <label htmlFor="booking-status" className="sr-only">
             Filtrar reservas por estado
           </label>
-          <select
+        
           <select
             id="booking-status"
             value={props.bookingStatus}
