@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { useToast } from "@/components/ui/toast-provider";
 import {
   authLoginSchema,
   type AuthLoginInput,
@@ -15,8 +15,22 @@ import {
 const DEFAULT_LOGIN_ERROR_MESSAGE =
   "No se pudo iniciar sesión. Inténtalo nuevamente.";
 
+type ApiLoginErrorResponse = {
+  error?: string;
+};
+
+function getLoginErrorMessage(status: number, fallbackMessage: string): string {
+  if (status === 401) return "Email o contraseña incorrectos.";
+  if (status === 429)
+    return "Demasiados intentos. Espera un momento antes de volver a intentar.";
+  if (status >= 500)
+    return "Tuvimos un problema interno. Vuelve a intentar en unos minutos.";
+  return fallbackMessage;
+}
+
 export function PanelLoginForm() {
   const router = useRouter();
+  const toast = useToast();
   const [submitError, setSubmitError] = useState<string>("");
   const {
     register,
@@ -39,26 +53,27 @@ export function PanelLoginForm() {
         body: JSON.stringify(values),
       });
 
-      const json: unknown = await res.json().catch(() => ({}));
+      const json: ApiLoginErrorResponse = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const errorMessage =
-          typeof json === "object" &&
-          json !== null &&
-          "error" in json &&
+const errorMessage = getLoginErrorMessage(
+          res.status,
           typeof json.error === "string"
             ? json.error
-            : DEFAULT_LOGIN_ERROR_MESSAGE;
+            : DEFAULT_LOGIN_ERROR_MESSAGE,
+        );
 
         setSubmitError(errorMessage);
+        toast.error(errorMessage);
         return;
       }
 
       router.push("/panel/admin");
       router.refresh();
     } catch {
-      setSubmitError(
-        "No pudimos conectarnos. Revisa tu internet e inténtalo otra vez.",
-      );
+      const message =
+        "No pudimos conectarnos. Revisa tu internet e inténtalo otra vez.";
+      setSubmitError(message);
+      toast.error(message);
     }
   };
 
