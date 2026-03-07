@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/toast-provider";
@@ -11,20 +12,48 @@ import {
   authLoginSchema,
   type AuthLoginInput,
 } from "@/validations/auth-login.schema";
+import { resolvePanelPathByRole } from "./resolve-panel-path-by-role";
 
 const DEFAULT_LOGIN_ERROR_MESSAGE =
   "No se pudo iniciar sesión. Inténtalo nuevamente.";
+const DEFAULT_PROFILE_ERROR_MESSAGE =
+  "No pudimos cargar tu perfil. Inténtalo nuevamente.";
 
-type ApiLoginErrorResponse = {
+const meResponseSchema = z.object({
+  profile: z
+    .object({
+      role: z.string().nullable().optional(),
+      barber_id: z.string().nullable().optional(),
+    })
+    .nullable()
+    .optional(),
+  error: z.string().optional(),
+});
+
+type ApiErrorResponse = {
   error?: string;
 };
 
 function getLoginErrorMessage(status: number, fallbackMessage: string): string {
   if (status === 401) return "Email o contraseña incorrectos.";
-  if (status === 429)
+  if (status === 429) {
     return "Demasiados intentos. Espera un momento antes de volver a intentar.";
-  if (status >= 500)
+  }
+  if (status >= 500) {
     return "Tuvimos un problema interno. Vuelve a intentar en unos minutos.";
+    }
+
+  return fallbackMessage;
+}
+
+function getProfileErrorMessage(status: number, fallbackMessage: string): string {
+  if (status === 401) {
+    return "Tu sesión no es válida. Inicia sesión nuevamente.";
+  }
+  if (status >= 500) {
+    return "No pudimos validar tu perfil en este momento. Inténtalo más tarde.";
+  }
+
   return fallbackMessage;
 }
 
@@ -47,18 +76,21 @@ export function PanelLoginForm() {
     setSubmitError("");
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const loginRes = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
 
-      const json: ApiLoginErrorResponse = await res.json().catch(() => ({}));
-      if (!res.ok) {
-const errorMessage = getLoginErrorMessage(
-          res.status,
-          typeof json.error === "string"
-            ? json.error
+      const loginJson: ApiErrorResponse = await loginRes
+        .json()
+        .catch(() => ({}));
+
+      if (!loginRes.ok) {
+        const errorMessage = getLoginErrorMessage(
+          loginRes.status,
+          typeof loginJson.error === "string"
+            ? loginJson.error
             : DEFAULT_LOGIN_ERROR_MESSAGE,
         );
 
@@ -67,7 +99,46 @@ const errorMessage = getLoginErrorMessage(
         return;
       }
 
-      router.push("/panel/admin");
+      const meRes = await fetch("/api/me", { method: "GET", cache: "no-store" });
+      const meJsonRaw: unknown = await meRes.json().catch(() => ({}));
+
+      if (!meRes.ok) {
+        const fallbackMessage =
+          meJsonRaw &&
+          typeof meJsonRaw === "object" &&
+          "error" in meJsonRaw &&
+          typeof meJsonRaw.error === "string"
+            ? meJsonRaw.error
+            : DEFAULT_PROFILE_ERROR_MESSAGE;
+
+        const errorMessage = getProfileErrorMessage(meRes.status, fallbackMessage);
+
+        setSubmitError(errorMessage);
+        toast.error(errorMessage);
+        return;
+      }
+
+      const parsedMeResponse = meResponseSchema.safeParse(meJsonRaw);
+      if (!parsedMeResponse.success || !parsedMeResponse.data.profile) {
+        const message =
+          "No encontramos un perfil asociado a tu cuenta. Contacta al administrador.";
+        setSubmitError(message);
+        toast.error(message);
+        return;
+      }
+
+      const destination = resolvePanelPathByRole(
+        parsedMeResponse.data.profile.role,
+        parsedMeResponse.data.profile.barber_id,
+      );
+
+      if (!destination.success) {
+        setSubmitError(destination.error);
+        toast.error(destination.error);
+        return;
+      }
+
+      router.replace(destination.path);
       router.refresh();
     } catch {
       const message =
