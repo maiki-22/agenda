@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
-import { getAuthenticatedAdmin } from "@/lib/auth/isAdmin";
+import { getAuthenticatedPanelUser } from "@/lib/auth/get-authenticated-panel-user";
 
 type AppointmentRow = {
   barber_id: string;
@@ -10,7 +10,11 @@ type AppointmentRow = {
 
 const PENDING_STATUSES = new Set(["booked", "needs_confirmation"]);
 
-type WindowKey = "next_7_days" | "next_30_days" | "last_7_days" | "last_30_days";
+type WindowKey =
+  | "next_7_days"
+  | "next_30_days"
+  | "last_7_days"
+  | "last_30_days";
 
 function isoDateOnly(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -31,7 +35,10 @@ function getDateWindow(window: WindowKey) {
   return { startDate: isoDateOnly(start), endDate: isoDateOnly(end) };
 }
 
-function resolveWindow(windowParam: string | null, legacyRange: string | null): WindowKey {
+function resolveWindow(
+  windowParam: string | null,
+  legacyRange: string | null,
+): WindowKey {
   if (
     windowParam === "next_7_days" ||
     windowParam === "next_30_days" ||
@@ -41,44 +48,63 @@ function resolveWindow(windowParam: string | null, legacyRange: string | null): 
     return windowParam;
   }
 
- if (legacyRange === "month") return "last_30_days";
+  if (legacyRange === "month") return "last_30_days";
   return "last_30_days";
 }
 
-
 export async function GET(req: Request) {
   const supabase = await supabaseServer();
-  const admin = await getAuthenticatedAdmin(supabase);
+  const panelUser = await getAuthenticatedPanelUser(supabase);
 
-  if (!admin.ok) {
-    return NextResponse.json({ error: admin.error }, { status: admin.status });
+  if (!panelUser.ok) {
+    return NextResponse.json(
+      { error: panelUser.error },
+      { status: panelUser.status },
+    );
+  }
+
+  if (panelUser.role !== "admin") {
+    return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   }
 
   const { searchParams } = new URL(req.url);
-  const window = resolveWindow(searchParams.get("window"), searchParams.get("range"));
+  const window = resolveWindow(
+    searchParams.get("window"),
+    searchParams.get("range"),
+  );
   const barberId = searchParams.get("barberId") ?? "";
 
   const { startDate, endDate } = getDateWindow(window);
 
-  const [{ data: barbers, error: barbersError }, { data: appointments, error: appointmentsError }] = await Promise.all([
-    supabase.from("barbers").select("id, name, active, sort_order").order("sort_order", { ascending: true }),
-    supabase
-      .from("appointments")
-      .select("barber_id, status, date")
-      .gte("date", startDate)
-      .lte("date", endDate)
-      .order("date", { ascending: true }),
-  ]);
+  const barbersQuery = supabase
+    .from("barbers")
+    .select("id, name, active, sort_order")
+    .order("sort_order", { ascending: true });
+  const appointmentsQuery = supabase
+    .from("appointments")
+    .select("barber_id, status, date")
+    .gte("date", startDate)
+    .lte("date", endDate)
+    .order("date", { ascending: true });
 
+  const [
+    { data: barbers, error: barbersError },
+    { data: appointments, error: appointmentsError },
+  ] = await Promise.all([barbersQuery, appointmentsQuery] as const);
   if (barbersError || appointmentsError) {
     return NextResponse.json(
-      { error: barbersError?.message ?? appointmentsError?.message ?? "Query error" },
+      {
+        error:
+          barbersError?.message ?? appointmentsError?.message ?? "Query error",
+      },
       { status: 400 },
     );
   }
 
   const barberMap = new Map((barbers ?? []).map((b) => [b.id, b.name]));
-  const rows = ((appointments ?? []) as AppointmentRow[]).filter((row) => (barberId ? row.barber_id === barberId : true));
+  const rows: AppointmentRow[] = (appointments ?? []).filter((row) =>
+    barberId ? row.barber_id === barberId : true,
+  );
 
   const totals = {
     total: rows.length,
@@ -88,12 +114,35 @@ export async function GET(req: Request) {
   };
 
   const rates = {
-    confirmation_rate: totals.total ? Number(((totals.confirmed / totals.total) * 100).toFixed(1)) : 0,
-    cancellation_rate: totals.total ? Number(((totals.cancelled / totals.total) * 100).toFixed(1)) : 0,
+    confirmation_rate: totals.total
+      ? Number(((totals.confirmed / totals.total) * 100).toFixed(1))
+      : 0,
+    cancellation_rate: totals.total
+      ? Number(((totals.cancelled / totals.total) * 100).toFixed(1))
+      : 0,
   };
 
-  const byBarber: Record<string, { barber_id: string; barber_name: string; total: number; confirmed: number; pending: number; cancelled: number }> = {};
-  const byDate: Record<string, { date: string; total: number; confirmed: number; pending: number; cancelled: number }> = {};
+  const byBarber: Record<
+    string,
+    {
+      barber_id: string;
+      barber_name: string;
+      total: number;
+      confirmed: number;
+      pending: number;
+      cancelled: number;
+    }
+  > = {};
+  const byDate: Record<
+    string,
+    {
+      date: string;
+      total: number;
+      confirmed: number;
+      pending: number;
+      cancelled: number;
+    }
+  > = {};
 
   for (const row of rows) {
     if (!byBarber[row.barber_id]) {
@@ -106,11 +155,16 @@ export async function GET(req: Request) {
         cancelled: 0,
       };
     }
-    
-    if (!byDate[row.date]) {
-      byDate[row.date] = { date: row.date, total: 0, confirmed: 0, pending: 0, cancelled: 0 };
-    }
 
+    if (!byDate[row.date]) {
+      byDate[row.date] = {
+        date: row.date,
+        total: 0,
+        confirmed: 0,
+        pending: 0,
+        cancelled: 0,
+      };
+    }
 
     byBarber[row.barber_id].total += 1;
     byDate[row.date].total += 1;
@@ -139,11 +193,16 @@ export async function GET(req: Request) {
       totals,
       rates,
       by_barber: Object.values(byBarber).sort((a, b) => b.total - a.total),
-       by_date: Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date)),
+      by_date: Object.values(byDate).sort((a, b) =>
+        a.date.localeCompare(b.date),
+      ),
       barbers: barbers ?? [],
       meta: {
         filters: { window, barberId: barberId || "all" },
-        counts: { raw_appointments: (appointments ?? []).length, filtered_appointments: rows.length },
+        counts: {
+          raw_appointments: (appointments ?? []).length,
+          filtered_appointments: rows.length,
+        },
         generated_at: new Date().toISOString(),
       },
     },

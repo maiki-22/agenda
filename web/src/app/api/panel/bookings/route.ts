@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
-import { getAuthenticatedAdmin } from "@/lib/auth/isAdmin";
+import { getAuthenticatedPanelUser } from "@/lib/auth/get-authenticated-panel-user";
 
-const VALID_STATUS = new Set(["booked", "needs_confirmation", "confirmed", "cancelled"]);
+const VALID_STATUS = new Set([
+  "booked",
+  "needs_confirmation",
+  "confirmed",
+  "cancelled",
+]);
 
 type BookingRow = {
   id: string;
@@ -19,10 +24,17 @@ type BookingRow = {
 
 export async function GET(req: Request) {
   const supabase = await supabaseServer();
-  const admin = await getAuthenticatedAdmin(supabase);
+  const panelUser = await getAuthenticatedPanelUser(supabase);
 
-  if (!admin.ok) {
-    return NextResponse.json({ error: admin.error }, { status: admin.status });
+  if (!panelUser.ok) {
+    return NextResponse.json(
+      { error: panelUser.error },
+      { status: panelUser.status },
+    );
+  }
+
+  if (panelUser.role !== "admin") {
+    return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   }
 
   const { searchParams } = new URL(req.url);
@@ -32,7 +44,10 @@ export async function GET(req: Request) {
   const status = searchParams.get("status") ?? "";
   const q = (searchParams.get("q") ?? "").trim();
   const page = Math.max(Number(searchParams.get("page") ?? "1") || 1, 1);
-  const pageSize = Math.min(Math.max(Number(searchParams.get("pageSize") ?? "10") || 10, 1), 50);
+  const pageSize = Math.min(
+    Math.max(Number(searchParams.get("pageSize") ?? "10") || 10, 1),
+    50,
+  );
 
   let query = supabase
     .from("appointments")
@@ -57,11 +72,14 @@ export async function GET(req: Request) {
   if (dateFrom) query = query.gte("date", dateFrom);
   if (dateTo) query = query.lte("date", dateTo);
   if (barberId && barberId !== "all") query = query.eq("barber_id", barberId);
-  if (status && status !== "all" && VALID_STATUS.has(status)) query = query.eq("status", status);
+  if (status && status !== "all" && VALID_STATUS.has(status))
+    query = query.eq("status", status);
 
   if (q) {
     const escaped = q.replace(/[%_]/g, "");
-    query = query.or(`customer_name.ilike.%${escaped}%,customer_phone.ilike.%${escaped}%`);
+    query = query.or(
+      `customer_name.ilike.%${escaped}%,customer_phone.ilike.%${escaped}%`,
+    );
   }
 
   const from = (page - 1) * pageSize;
@@ -88,7 +106,7 @@ export async function GET(req: Request) {
         customer_name: item.customer_name,
         customer_phone: item.customer_phone,
         barber_id: item.barber_id,
-       barber_name: item.barbers?.[0]?.name ?? item.barber_id,
+        barber_name: item.barbers?.[0]?.name ?? item.barber_id,
         service_id: item.service_id,
         service_name: item.services?.[0]?.name ?? item.service_id,
       })),
