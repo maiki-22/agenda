@@ -72,6 +72,30 @@ export type BookingsResponse = {
   total: number;
 };
 
+export type BarberBlockItem = {
+  id: string;
+  barber_id: string;
+  date: string;
+  start_at: string;
+  end_at: string;
+  reason: string | null;
+};
+
+export type BarberBlocksResponse = {
+  items: BarberBlockItem[];
+};
+
+export type BarberDayOffItem = {
+  id: string;
+  barber_id: string;
+  date: string;
+  reason: string | null;
+};
+
+export type BarberDaysOffResponse = {
+  items: BarberDayOffItem[];
+};
+
 export type SchedulingPayload = {
   barberId: string;
   date: string;

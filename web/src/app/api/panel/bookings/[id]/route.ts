@@ -21,9 +21,6 @@ export async function PATCH(
     );
   }
 
-  if (panelUser.role !== "admin") {
-    return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
-  }
 
   const { id } = await params;
   const parsed = UpdateBookingSchema.safeParse(
@@ -32,6 +29,23 @@ export async function PATCH(
 
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
+
+  const { data: appointment, error: appointmentError } = await supabase
+    .from("appointments")
+    .select("barber_id")
+    .eq("id", id)
+    .maybeSingle<{ barber_id: string }>();
+
+  if (appointmentError || !appointment) {
+    return NextResponse.json({ error: "Reserva no encontrada" }, { status: 404 });
+  }
+
+  if (
+    panelUser.role === "barber" &&
+    appointment.barber_id !== panelUser.barberId
+  ) {
+    return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   }
 
   const { error } = await supabase

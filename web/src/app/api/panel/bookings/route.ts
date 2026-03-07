@@ -33,9 +33,7 @@ export async function GET(req: Request) {
     );
   }
 
-  if (panelUser.role !== "admin") {
-    return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
-  }
+ 
 
   const { searchParams } = new URL(req.url);
   const dateFrom = searchParams.get("dateFrom") ?? "";
@@ -71,7 +69,11 @@ export async function GET(req: Request) {
 
   if (dateFrom) query = query.gte("date", dateFrom);
   if (dateTo) query = query.lte("date", dateTo);
-  if (barberId && barberId !== "all") query = query.eq("barber_id", barberId);
+  if (panelUser.role === "barber") {
+    query = query.eq("barber_id", panelUser.barberId);
+  } else if (barberId && barberId !== "all") {
+    query = query.eq("barber_id", barberId);
+  }
   if (status && status !== "all" && VALID_STATUS.has(status))
     query = query.eq("status", status);
 

@@ -32,6 +32,23 @@ export type AuthenticatedPanelUserResult =
   | AuthenticatedBarberPanelUser
   | AuthFailure;
 
+
+export type AuthenticatedPanelUser =
+  | AuthenticatedAdminPanelUser
+  | AuthenticatedBarberPanelUser;
+
+export function isAuthenticatedPanelUser(
+  panelUser: AuthenticatedPanelUserResult,
+): panelUser is AuthenticatedPanelUser {
+  return panelUser.ok;
+}
+
+export function isAdminPanelUser(
+  panelUser: AuthenticatedPanelUserResult,
+): panelUser is AuthenticatedAdminPanelUser {
+  return panelUser.ok && panelUser.role === "admin";
+}  
+
 function isAllowedRole(role: string | null): role is PanelRole {
   return role === "admin" || role === "barber";
 }
