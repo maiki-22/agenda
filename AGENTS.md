@@ -431,3 +431,12 @@ REGLAS DE ACCESO A DATOS:
 - appointments(status) — filtros del panel admin
 - appointments(customer_phone) — búsqueda de historial de cliente
 - barber_blocks(barber_id, start_at, end_at) — validación de bloqueos
+
+
+SEGURIDAD / RLS:
+
+- RLS habilitado en: appointments, profiles (verificar resto)
+- Policies en: `supabase/schema.md` sección RLS Policies
+- NUNCA saltarse RLS usando service_role key en el cliente
+- Las mutations del panel admin van por Server Actions con validación
+  de sesión + role antes de cualquier operación
