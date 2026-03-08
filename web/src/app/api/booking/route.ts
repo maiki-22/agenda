@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { BookingDraftSchema } from "@/features/booking/domain/booking.schema";
 import { listServices } from "@/features/booking/data/catalog.repo";
-import {
-  AGENDA_BLOCKING_APPOINTMENT_STATUSES,
-  BOOKING_UPDATABLE_STATUSES,
-} from "@/features/booking/domain/appointment-status";
+
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import {
   createBookingConfirmationToken,
@@ -43,14 +40,9 @@ type BookingRow = {
   services: { name: string; price_clp: number } | null;
 };
 
-type AppointmentCollisionRow = {
-  id: string;
-};
-
-type AppointmentUpdateCandidateRow = {
-  id: string;
-  barber_id: string;
-  timeslot: string;
+type ConfirmOrCancelBookingRow = {
+  booking_id: string;
+  status: string;
 };
 
 function getClientIp(req: Request): string {
@@ -88,26 +80,31 @@ function getErrorMessage(error: unknown): string {
   return "Error desconocido";
 }
 
-async function hasAppointmentCollision(input: {
-  appointmentId: string;
-  barberId: string;
-  timeslot: string;
-}): Promise<
-  { success: true; hasCollision: boolean } | { success: false; error: string }
-> {
-  const { data, error } = await supabaseAdmin
-    .from("appointments")
-    .select("id")
-    .eq("barber_id", input.barberId)
-    .neq("id", input.appointmentId)
-    .in("status", [...AGENDA_BLOCKING_APPOINTMENT_STATUSES])
-    .overlaps("timeslot", input.timeslot)
-    .limit(1)
-    .returns<AppointmentCollisionRow[]>();
+function mapBookingMutationError(error: {
+  code: string | null;
+  message: string;
+}): { status: number; code: string; error: string } {
+  if (error.code === "23P01" || error.message === "SLOT_TAKEN") {
+    return { status: 409, code: "SLOT_TAKEN", error: "Horario no disponible" };
+  }
 
-  if (error) return { success: false, error: error.message };
+  if (error.code === "P0001" && error.message === "BOOKING_NOT_UPDATABLE") {
+    return {
+      status: 409,
+      code: "BOOKING_NOT_UPDATABLE",
+      error: "La reserva no se pudo actualizar o el token ya fue utilizado",
+    };
+  }
 
-  return { success: true, hasCollision: (data ?? []).length > 0 };
+  if (error.code === "P0001" && error.message === "INVALID_ACTION") {
+    return {
+      status: 400,
+      code: "INVALID_ACTION",
+      error: "Acción inválida para la reserva",
+    };
+  }
+
+  return { status: 400, code: error.code ?? "DB_ERROR", error: error.message };
 }
 
 async function ensureConfirmationToken(
@@ -325,84 +322,34 @@ export async function PATCH(req: Request): Promise<Response> {
     );
   }
 
-  if (parsedBody.data.action === "confirmed") {
-    const { data: candidate, error: candidateError } = await supabaseAdmin
-      .from("appointments")
-      .select("id,barber_id,timeslot")
-      .eq("id", verified.claims.booking_id)
-      .eq("confirmation_token", verified.claims.booking_token)
-      .in("status", [...BOOKING_UPDATABLE_STATUSES])
-      .maybeSingle<AppointmentUpdateCandidateRow>();
+  const { data, error } = await supabaseAdmin.rpc(
+    "confirm_or_cancel_booking_by_token",
+    {
+      p_booking_id: verified.claims.booking_id,
+      p_booking_token: parsedConfirmationToken.data,
+      p_action: parsedBody.data.action,
+      p_cancel_reason: parsedBody.data.cancelReason ?? null,
+    },
+  );
 
-    if (candidateError) {
-      return NextResponse.json(
-        { error: candidateError.message, code: "DB_ERROR" },
-        { status: 400 },
-      );
-    }
-
-    if (!candidate) {
-      return NextResponse.json(
-        {
-          error: "La reserva no se pudo actualizar o el token ya fue utilizado",
-          code: "BOOKING_NOT_UPDATABLE",
-        },
-        { status: 409 },
-      );
-    }
-
-    const collisionResult = await hasAppointmentCollision({
-      appointmentId: candidate.id,
-      barberId: candidate.barber_id,
-      timeslot: candidate.timeslot,
+     if (error) {
+      const mapped = mapBookingMutationError({
+        code: getErrorCode(error),
+        message: getErrorMessage(error),
     });
 
-    if (!collisionResult.success) {
-      return NextResponse.json(
-        { error: collisionResult.error, code: "DB_ERROR" },
-        { status: 400 },
-      );
-    }
 
-    if (collisionResult.hasCollision) {
-      return NextResponse.json(
-        { error: "Horario no disponible", code: "SLOT_TAKEN" },
-        { status: 409 },
-      );
-    }
-  }
-
-  const updatePayload =
-    parsedBody.data.action === "confirmed"
-      ? {
-          status: "confirmed",
-          confirmed_at: new Date().toISOString(),
-          confirmation_token: null,
-          cancel_reason: null,
-        }
-      : {
-          status: "cancelled",
-          confirmation_token: null,
-          cancel_reason: parsedBody.data.cancelReason ?? null,
-        };
-
-  const { data, error } = await supabaseAdmin
-    .from("appointments")
-    .update(updatePayload)
-    .eq("id", verified.claims.booking_id)
-    .eq("confirmation_token", parsedConfirmationToken.data)
-    .in("status", [...BOOKING_UPDATABLE_STATUSES])
-    .select("id,status")
-    .maybeSingle<{ id: string; status: string }>();
-
-  if (error) {
     return NextResponse.json(
-      { error: error.message, code: "DB_ERROR" },
-      { status: 400 },
+      { error: mapped.error, code: mapped.code },
+      { status: mapped.status },
     );
   }
 
-  if (!data) {
+  const booking = Array.isArray(data)
+    ? (data[0] as ConfirmOrCancelBookingRow | undefined)
+    : undefined;
+
+  if (!booking) {
     return NextResponse.json(
       {
         error: "La reserva no se pudo actualizar o el token ya fue utilizado",
@@ -413,7 +360,7 @@ export async function PATCH(req: Request): Promise<Response> {
   }
 
   return NextResponse.json(
-    { success: true, bookingId: data.id, status: data.status },
+    { success: true, bookingId: booking.booking_id, status: booking.status },
     { status: 200 },
   );
 }

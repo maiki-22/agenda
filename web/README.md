@@ -126,3 +126,31 @@ Implementación actual:
 - Schemas compartidos: `src/validations/customer-name.schema.ts`, `src/validations/customer-phone.schema.ts`, `src/validations/cancel-reason.schema.ts`, `src/validations/confirmation-token.schema.ts`.
 - API booking (normalización/validación previa a RPC y update): `src/app/api/booking/route.ts`.
 - Enforcements en DB: `../supabase/migrations/20260308113000_appointments_input_constraints.sql`.
+
+
+## Contrato de errores backend: PATCH `/api/booking`
+
+La actualización de estado por token usa la RPC `confirm_or_cancel_booking_by_token` y normaliza errores SQL hacia códigos de negocio estables:
+
+| SQLSTATE | Mensaje SQL | HTTP | `code` backend | Mensaje para cliente |
+| --- | --- | --- | --- | --- |
+| `23P01` | `SLOT_TAKEN` | `409` | `SLOT_TAKEN` | `Horario no disponible` |
+| `P0001` | `BOOKING_NOT_UPDATABLE` | `409` | `BOOKING_NOT_UPDATABLE` | `La reserva no se pudo actualizar o el token ya fue utilizado` |
+| `P0001` | `INVALID_ACTION` | `400` | `INVALID_ACTION` | `Acción inválida para la reserva` |
+
+Fallback: cualquier error no mapeado retorna `400` con `code` SQL original (o `DB_ERROR` si no existe).
+
+### Prueba de concurrencia (integración)
+
+Se agregó una prueba de integración para validar dos `PATCH` simultáneos al mismo token:
+
+- Archivo: `scripts/integration/booking-confirmation-concurrency.test.mjs`
+- Ejecución:
+
+```bash
+BOOKING_API_BASE_URL=http://localhost:3000 \
+BOOKING_CONCURRENCY_TOKEN="<token_valido>" \
+node --test scripts/integration/booking-confirmation-concurrency.test.mjs
+```
+
+Resultado esperado: una request `200` y la otra `409` con `BOOKING_NOT_UPDATABLE`.
