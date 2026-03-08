@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ConfirmationTokenSchema } from "@/validations/confirmation-token.schema";
 
 export const BookingConfirmationRequestSchema = z
   .object({
@@ -17,7 +18,7 @@ export const BookingConfirmationRequestSchema = z
 
 export const BookingConfirmationClaimsSchema = z.object({
   booking_id: z.string().trim().min(1),
-  booking_token: z.string().trim().min(1),
+  booking_token: ConfirmationTokenSchema,
   iat: z.number().int().nonnegative(),
   exp: z.number().int().positive(),
   iss: z.literal("agenda-booking"),

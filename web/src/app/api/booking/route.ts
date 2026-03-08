@@ -20,6 +20,12 @@ import {
   BookingConfirmationActionSchema,
   BookingConfirmationRequestSchema,
 } from "@/validations/booking-confirmation.schema";
+import { CancelReasonSchema } from "@/validations/cancel-reason.schema";
+import { ConfirmationTokenSchema } from "@/validations/confirmation-token.schema";
+
+const BookingActionRequestSchema = BookingConfirmationActionSchema.extend({
+  cancelReason: CancelReasonSchema.optional(),
+});
 
 type BookingRow = {
   id: string;
@@ -86,7 +92,9 @@ async function hasAppointmentCollision(input: {
   appointmentId: string;
   barberId: string;
   timeslot: string;
-}): Promise<{ success: true; hasCollision: boolean } | { success: false; error: string }> {
+}): Promise<
+  { success: true; hasCollision: boolean } | { success: false; error: string }
+> {
   const { data, error } = await supabaseAdmin
     .from("appointments")
     .select("id")
@@ -281,7 +289,7 @@ export async function PATCH(req: Request): Promise<Response> {
     );
   }
 
-  const parsedBody = BookingConfirmationActionSchema.safeParse({
+  const parsedBody = BookingActionRequestSchema.safeParse({
     ...(typeof body === "object" && body !== null ? body : {}),
     token: tokenResult.token,
   });
@@ -299,6 +307,20 @@ export async function PATCH(req: Request): Promise<Response> {
   if (!verified.success) {
     return NextResponse.json(
       { error: verified.error, code: "INVALID_CONFIRMATION_TOKEN" },
+      { status: 401 },
+    );
+  }
+
+  const parsedConfirmationToken = ConfirmationTokenSchema.safeParse(
+    verified.claims.booking_token,
+  );
+
+  if (!parsedConfirmationToken.success) {
+    return NextResponse.json(
+      {
+        error: "Token de confirmación inválido",
+        code: "INVALID_CONFIRMATION_TOKEN",
+      },
       { status: 401 },
     );
   }
@@ -356,14 +378,19 @@ export async function PATCH(req: Request): Promise<Response> {
           status: "confirmed",
           confirmed_at: new Date().toISOString(),
           confirmation_token: null,
+          cancel_reason: null,
         }
-      : { status: "cancelled", confirmation_token: null };
+      : {
+          status: "cancelled",
+          confirmation_token: null,
+          cancel_reason: parsedBody.data.cancelReason ?? null,
+        };
 
   const { data, error } = await supabaseAdmin
     .from("appointments")
     .update(updatePayload)
     .eq("id", verified.claims.booking_id)
-    .eq("confirmation_token", verified.claims.booking_token)
+    .eq("confirmation_token", parsedConfirmationToken.data)
     .in("status", [...BOOKING_UPDATABLE_STATUSES])
     .select("id,status")
     .maybeSingle<{ id: string; status: string }>();
@@ -409,112 +436,121 @@ export async function POST(req: Request): Promise<Response> {
     return res;
   }
 
+  let body: unknown;
+
   try {
-    const body = await req.json();
-    const draft = BookingDraftSchema.parse(body);
-
-    const services = await listServices();
-    const svc = services.find((s) => s.id === draft.service);
-    if (!svc) {
-      return NextResponse.json(
-        { error: "Servicio inválido", code: "INVALID_SERVICE" },
-        { status: 400 },
-      );
-    }
-
-    const { data: bookingId, error } = await supabaseAdmin.rpc(
-      "create_booking",
-      {
-        p_barber_id: draft.barberId,
-        p_service_id: draft.service,
-        p_date: draft.date,
-        p_time: draft.time,
-        p_duration_min: svc.duration_min,
-        p_customer_name: draft.customerName,
-        p_customer_phone: draft.customerPhone,
-      },
-    );
-
-    if (error) {
-      const errorCode = getErrorCode(error);
-      const errorMessage = getErrorMessage(error);
-
-      if (errorCode === "P0001" && errorMessage.includes("MIN_LEAD_TIME")) {
-        return NextResponse.json(
-          {
-            error: "Debes reservar con al menos 30 minutos de anticipación",
-            code: "MIN_LEAD_TIME",
-          },
-          { status: 400 },
-        );
-      }
-
-      if (errorCode === "23P01") {
-        return NextResponse.json(
-          { error: "Horario no disponible", code: "SLOT_TAKEN" },
-          { status: 409 },
-        );
-      }
-
-      return NextResponse.json(
-        { error: errorMessage, code: errorCode ?? "DB_ERROR" },
-        { status: 400 },
-      );
-    }
-
-    if (typeof bookingId !== "string" || bookingId.length === 0) {
-      return NextResponse.json(
-        { error: "No se pudo crear la reserva", code: "INVALID_BOOKING_ID" },
-        { status: 500 },
-      );
-    }
-
-    const { data: appointment, error: fetchError } = await supabaseAdmin
-      .from("appointments")
-      .select("confirmation_token")
-      .eq("id", bookingId)
-      .maybeSingle<{ confirmation_token: string | null }>();
-
-    if (fetchError) {
-      return NextResponse.json(
-        { error: fetchError.message, code: "DB_ERROR" },
-        { status: 400 },
-      );
-    }
-
-    const confirmationTokenResult = await ensureConfirmationToken(
-      bookingId,
-      appointment?.confirmation_token ?? null,
-    );
-
-    if (!confirmationTokenResult.success) {
-      return NextResponse.json(
-        {
-          error: "No se pudo generar token de confirmación",
-          code: "BOOKING_TOKEN_ERROR",
-        },
-        { status: 500 },
-      );
-    }
-
-    const confirmationToken = createBookingConfirmationToken({
-      bookingId,
-      bookingToken: confirmationTokenResult.confirmationToken,
-    });
-
-    const confirmationUrl = `/reservar/confirmacion?token=${encodeURIComponent(confirmationToken)}`;
-
-    const res = NextResponse.json(
-      { bookingToken: confirmationToken, confirmationUrl },
-      { status: 201 },
-    );
-    applyRateLimitHeaders(res, rl);
-    return res;
-  } catch (e: unknown) {
-    const err = e instanceof Error ? e : new Error("Bad Request");
+    body = await req.json();
+  } catch {
     return NextResponse.json(
-      { error: err.message, code: "BAD_REQUEST" },
+      { error: "Body inválido", code: "INVALID_INPUT" },
       { status: 400 },
     );
   }
+
+  const draftResult = BookingDraftSchema.safeParse(body);
+
+  if (!draftResult.success) {
+    const message = draftResult.error.issues[0]?.message ?? "Body inválido";
+    return NextResponse.json(
+      { error: message, code: "INVALID_INPUT" },
+      { status: 400 },
+    );
+  }
+
+  const draft = draftResult.data;
+
+  const services = await listServices();
+  const svc = services.find((s) => s.id === draft.service);
+  if (!svc) {
+    return NextResponse.json(
+      { error: "Servicio inválido", code: "INVALID_SERVICE" },
+      { status: 400 },
+    );
+  }
+
+  const { data: bookingId, error } = await supabaseAdmin.rpc("create_booking", {
+    p_barber_id: draft.barberId,
+    p_service_id: draft.service,
+    p_date: draft.date,
+    p_time: draft.time,
+    p_duration_min: svc.duration_min,
+    p_customer_name: draft.customerName,
+    p_customer_phone: draft.customerPhone,
+  });
+
+  if (error) {
+    const errorCode = getErrorCode(error);
+    const errorMessage = getErrorMessage(error);
+
+    if (errorCode === "P0001" && errorMessage.includes("MIN_LEAD_TIME")) {
+      return NextResponse.json(
+        {
+          error: "Debes reservar con al menos 30 minutos de anticipación",
+          code: "MIN_LEAD_TIME",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (errorCode === "23P01") {
+      return NextResponse.json(
+        { error: "Horario no disponible", code: "SLOT_TAKEN" },
+        { status: 409 },
+      );
+    }
+
+    return NextResponse.json(
+      { error: errorMessage, code: errorCode ?? "DB_ERROR" },
+      { status: 400 },
+    );
+  }
+
+  if (typeof bookingId !== "string" || bookingId.length === 0) {
+    return NextResponse.json(
+      { error: "No se pudo crear la reserva", code: "INVALID_BOOKING_ID" },
+      { status: 500 },
+    );
+  }
+
+  const { data: appointment, error: fetchError } = await supabaseAdmin
+    .from("appointments")
+    .select("confirmation_token")
+    .eq("id", bookingId)
+    .maybeSingle<{ confirmation_token: string | null }>();
+
+  if (fetchError) {
+    return NextResponse.json(
+      { error: fetchError.message, code: "DB_ERROR" },
+      { status: 400 },
+    );
+  }
+
+  const confirmationTokenResult = await ensureConfirmationToken(
+    bookingId,
+    appointment?.confirmation_token ?? null,
+  );
+
+  if (!confirmationTokenResult.success) {
+    return NextResponse.json(
+      {
+        error: "No se pudo generar token de confirmación",
+        code: "BOOKING_TOKEN_ERROR",
+      },
+      { status: 500 },
+    );
+  }
+
+  const confirmationToken = createBookingConfirmationToken({
+    bookingId,
+    bookingToken: confirmationTokenResult.confirmationToken,
+  });
+
+  const confirmationUrl = `/reservar/confirmacion?token=${encodeURIComponent(confirmationToken)}`;
+
+  const res = NextResponse.json(
+    { bookingToken: confirmationToken, confirmationUrl },
+    { status: 201 },
+  );
+  applyRateLimitHeaders(res, rl);
+  return res;
 }

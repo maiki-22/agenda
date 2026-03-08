@@ -17,7 +17,7 @@
 | appointments     | confirmation_sent_at | timestamp with time zone | null                     | YES         | null                     | null            |
 | appointments     | confirmed_at         | timestamp with time zone | null                     | YES         | null                     | null            |
 | appointments     | cancel_reason        | text                     | null                     | YES         | null                     | null            |
-| appointments     | rescheduled_from     | uuid                     | null                     | YES         | null                     | FOREIGN KEY     |
+| appointments     | rescheduled_from     | uuid                     | null                     | YES         | null                     | FOREIGN KEY     |␊
 | barber_blocks    | id                   | uuid                     | null                     | NO          | gen_random_uuid()        | PRIMARY KEY     |
 | barber_blocks    | barber_id            | text                     | null                     | NO          | null                     | FOREIGN KEY     |
 | barber_blocks    | start_at             | timestamp with time zone | null                     | NO          | null                     | null            |
@@ -72,6 +72,26 @@
 | shop_settings    | about_text           | text                     | null                     | YES         | null                     | null            |
 | shop_settings    | cancellation_policy  | text                     | null                     | YES         | null                     | null            |
 | shop_settings    | updated_at           | timestamp with time zone | null                     | NO          | now()                    | null            |
+
+## Appointments — límites de input (app + DB)
+
+- `customer_name`
+  - Longitud: `2..80` caracteres (se evalúa con `btrim`).
+  - Formato permitido: letras (`A-Z`, `a-z`, `À-ÿ`), espacios, apóstrofe (`'`), punto (`.`) y guion (`-`).
+- `customer_phone`
+  - Formato obligatorio E.164: `^\+[1-9][0-9]{1,14}$`.
+  - Longitud total: `8..16` caracteres (incluye `+`).
+- `cancel_reason`
+  - Opcional (`NULL` permitido).
+  - Si se envía, longitud `3..280` caracteres (con `btrim`).
+- `confirmation_token`
+  - Opcional (`NULL` permitido).
+  - Si se envía, longitud `20..128` caracteres.
+  - Formato permitido: `^[A-Za-z0-9_-]+$`.
+
+Fuente de verdad técnica:
+- App schemas Zod en `web/src/validations/*`.
+- Constraints SQL en `supabase/migrations/20260308113000_appointments_input_constraints.sql`.
 
 ## RLS — Estado por tabla
 

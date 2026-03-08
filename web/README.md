@@ -111,3 +111,18 @@ Referencias: `src/lib/cn.ts`, `src/components/ui/Button.tsx`, `src/components/ui
 ### Fase 4: Radix (si aplica)
 
 En este momento no hay modales/dropdowns administrativos en el alcance actual del panel. Cuando se incorporen overlays de acciones, usar primitives de Radix como estándar.
+
+## Booking: límites de validación (alineados con DB)
+
+Estos límites deben mantenerse sincronizados entre Zod y Supabase:
+
+- `customer_name`: 2 a 80 caracteres, solo letras, espacios, `'`, `.` y `-`.
+- `customer_phone`: formato E.164 (`+` + código país + número), largo máximo 16.
+- `cancel_reason`: opcional; si se envía, máximo 280 caracteres.
+- `confirmation_token`: opcional; si se persiste en DB debe ser base64url-safe (`[A-Za-z0-9_-]`) con largo entre 20 y 128.
+
+Implementación actual:
+
+- Schemas compartidos: `src/validations/customer-name.schema.ts`, `src/validations/customer-phone.schema.ts`, `src/validations/cancel-reason.schema.ts`, `src/validations/confirmation-token.schema.ts`.
+- API booking (normalización/validación previa a RPC y update): `src/app/api/booking/route.ts`.
+- Enforcements en DB: `../supabase/migrations/20260308113000_appointments_input_constraints.sql`.
