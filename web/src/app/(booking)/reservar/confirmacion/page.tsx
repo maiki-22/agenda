@@ -1,20 +1,26 @@
 import { redirect } from "next/navigation";
+import { BookingConfirmationSearchParamsSchema } from "@/validations/booking-confirmation.schema";
 import ConfirmacionClient from "./ConfirmacionClient";
 
-type SearchParams = { bookingId?: string };
+type SearchParams = {
+  token?: string;
+};
 
 export default async function ConfirmacionPage({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { bookingId } = await searchParams;
+    const params = await searchParams;
+    const parsed = BookingConfirmationSearchParamsSchema.safeParse(params);
 
-  if (!bookingId) redirect("/reservar");
+  if (!parsed.success) {
+    redirect("/reservar");
+  }
 
   return (
     <main>
-      <ConfirmacionClient bookingId={bookingId} />
+      <ConfirmacionClient token={parsed.data.token} />
     </main>
   );
 }

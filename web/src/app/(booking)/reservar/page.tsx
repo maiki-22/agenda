@@ -113,8 +113,12 @@ export default function ReservarPage() {
         throw new Error(json?.error ?? "No se pudo crear la reserva");
       }
 
+       if (typeof json?.bookingToken !== "string" || json.bookingToken.length === 0) {
+        throw new Error("No se pudo generar el token de confirmación");
+      }
+
       router.push(
-        `/reservar/confirmacion?bookingId=${encodeURIComponent(json.bookingId)}`
+        `/reservar/confirmacion?token=${encodeURIComponent(json.bookingToken)}`
       );
       setTimeout(() => s.reset(), 0);
     } catch (e: unknown) {

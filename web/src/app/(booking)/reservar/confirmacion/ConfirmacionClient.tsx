@@ -2,23 +2,30 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Booking } from "@/features/booking/domain/booking.types";
 
 import CheckIcon from "@/components/icons/CheckIcon";
 import { SHOP_LOCATION } from "@/features/booking/config/location";
 
 type UIState = "loading" | "success";
 
-type BookingDTO = Booking & {
+type BookingDTO = {
+  id: string;
+  date: string;
+  time: string;
+  durationMinutes: number;
+  status: string;
+  createdAt: string;
+  customerName: string;
+  customerPhoneMasked: string;
   barberName?: string;
   serviceName?: string;
   servicePriceClp?: number | null;
 };
 
 export default function ConfirmacionClient({
-  bookingId,
+   token,
 }: {
-  bookingId: string;
+  token: string;
 }) {
   const router = useRouter();
 
@@ -35,7 +42,7 @@ export default function ConfirmacionClient({
 
       try {
         const res = await fetch(
-          `/api/booking?id=${encodeURIComponent(bookingId)}`,
+          `/api/booking?token=${encodeURIComponent(token)}`,
           {
             cache: "no-store",
           },
@@ -64,16 +71,16 @@ export default function ConfirmacionClient({
     return () => {
       alive = false;
     };
-  }, [bookingId, router]);
+   }, [token, router]);
 
   const barberName = useMemo(() => {
     if (!booking) return "";
-    return booking.barberName ?? booking.barberId;
+    return booking.barberName ?? "Barbero";
   }, [booking]);
 
   const serviceLabel = useMemo(() => {
     if (!booking) return "";
-    return booking.serviceName ?? booking.service;
+    return booking.serviceName ?? "Servicio";
   }, [booking]);
 
   const duration = booking?.durationMinutes ?? 30;
@@ -186,7 +193,7 @@ export default function ConfirmacionClient({
 
                 <div className="p-4 space-y-2 text-sm">
                   <Row label="Cliente" value={booking.customerName} />
-                  <Row label="Teléfono" value={booking.customerPhone} />
+                  <Row label="Teléfono" value={booking.customerPhoneMasked} />
                   <Row label="ID" value={booking.id} mono />
                 </div>
               </div>

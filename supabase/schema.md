@@ -98,15 +98,17 @@
 
 ### appointments
 
-| policy                            | roles         | cmd    | condición                                               |
-| --------------------------------- | ------------- | ------ | ------------------------------------------------------- |
-| appointments_anon_insert          | anon          | INSERT | with_check: status = 'needs_confirmation'               |
-| appointments_anon_select_token    | anon          | SELECT | confirmation_token coincide con JWT booking_token       |
-| appointments_anon_update_token    | anon          | UPDATE | token válido → solo puede pasar a confirmed o cancelled |
-| appointments_authenticated_select | authenticated | SELECT | admin O barbero propio                                  |
-| appointments_authenticated_insert | authenticated | INSERT | admin O barbero propio                                  |
-| appointments_authenticated_update | authenticated | UPDATE | admin O barbero propio                                  |
-| appointments_authenticated_delete | authenticated | DELETE | admin O barbero propio                                  |
+| policy                            | roles         | cmd    | condición                                                                          |
+| --------------------------------- | ------------- | ------ | ---------------------------------------------------------------------------------- |
+| appointments_anon_insert          | anon          | INSERT | with_check: status = 'needs_confirmation'                                          |
+| appointments_anon_select_token    | anon          | SELECT | auth.jwt()->>'booking_token' = confirmation_token y auth.jwt()->>'booking_id' = id |
+| appointments_anon_update_token    | anon          | UPDATE | token válido → solo puede pasar a confirmed o cancelled                            |
+| appointments_authenticated_select | authenticated | SELECT | admin O barbero propio                                                             |
+| appointments_authenticated_insert | authenticated | INSERT | admin O barbero propio                                                             |
+| appointments_authenticated_update | authenticated | UPDATE | admin O barbero propio                                                             |
+| appointments_authenticated_delete | authenticated | DELETE | admin O barbero propio                                                             |
+
+Nota de flujo: el `confirmation_token` debe invalidarse (`NULL`) al ejecutar confirmación/cancelación por token para evitar reutilización.
 
 ### barber_blocks / barber_days_off / barber_schedules
 
