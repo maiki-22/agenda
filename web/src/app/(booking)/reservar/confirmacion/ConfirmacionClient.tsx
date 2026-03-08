@@ -2,76 +2,35 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useConfirmacion } from "@/hooks/booking/use-confirmacion";
 
 import CheckIcon from "@/components/icons/CheckIcon";
 import { SHOP_LOCATION } from "@/features/booking/config/location";
 
-type UIState = "loading" | "success";
-
-type BookingDTO = {
-  id: string;
-  date: string;
-  time: string;
-  durationMinutes: number;
-  status: string;
-  createdAt: string;
-  customerName: string;
-  customerPhoneMasked: string;
-  barberName?: string;
-  serviceName?: string;
-  servicePriceClp?: number | null;
-};
-
-export default function ConfirmacionClient({
-   token,
-}: {
-  token: string;
-}) {
+export default function ConfirmacionClient({ token }: { token: string }) {
   const router = useRouter();
 
-  const [booking, setBooking] = useState<BookingDTO | null>(null);
-  const [state, setState] = useState<UIState>("loading");
+  const { booking, isLoading, error } = useConfirmacion(token);
   const [showTicket, setShowTicket] = useState(false);
 
   useEffect(() => {
-    let alive = true;
-
-    async function load() {
-      setState("loading");
+    if (isLoading) {
       setShowTicket(false);
-
-      try {
-        const res = await fetch(
-          `/api/booking?token=${encodeURIComponent(token)}`,
-          {
-            cache: "no-store",
-          },
-        );
-
-        if (res.status === 404) {
-          router.replace("/reservar");
-          return;
-        }
-
-        const json = await res.json();
-        if (!res.ok) throw new Error(json?.error ?? "Error cargando reserva");
-        if (!alive) return;
-
-        setBooking(json.booking as BookingDTO);
-        setState("success");
-        setTimeout(() => {
-          if (alive) setShowTicket(true);
-        }, 220);
-      } catch {
-        router.replace("/reservar");
-      }
+      return;
     }
 
-    load();
+    if (error || !booking) {
+      router.replace("/reservar");
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setShowTicket(true);
+    }, 220);
     return () => {
-      alive = false;
+      clearTimeout(timeout);
     };
-   }, [token, router]);
+  }, [booking, error, isLoading, router]);
 
   const barberName = useMemo(() => {
     if (!booking) return "";
@@ -115,7 +74,7 @@ export default function ConfirmacionClient({
       <div className="flex-1 overflow-auto py-6 pb-40 sm:pb-36">
         <div className="page-container space-y-5">
           <div className="flex flex-col items-center text-center gap-4">
-            {state === "loading" ? (
+            {isLoading ? (
               <>
                 <div className="h-20 w-20 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface))] grid place-items-center">
                   <div className="h-10 w-10 rounded-full border-4 border-white/10 border-t-[rgb(var(--primary))] animate-spin" />
@@ -134,7 +93,8 @@ export default function ConfirmacionClient({
                 <div
                   className="h-20 w-20 rounded-full bg-[rgb(var(--primary))] grid place-items-center pop-in"
                   style={{
-                    filter: "drop-shadow(0 18px 50px rgb(var(--primary-glow) / 0.35))",
+                    filter:
+                      "drop-shadow(0 18px 50px rgb(var(--primary-glow) / 0.35))",
                   }}
                 >
                   <CheckIcon size={48} className="text-white" />

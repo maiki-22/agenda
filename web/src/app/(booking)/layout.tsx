@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { PanelQueryClientProvider } from "@/components/providers/query-client-provider";
 
 export default function BookingLayout({ children }: { children: ReactNode }) {
   return (
@@ -35,7 +36,9 @@ export default function BookingLayout({ children }: { children: ReactNode }) {
         }}
       />
 
-      <div className="relative min-h-dvh">{children}</div>
+      <PanelQueryClientProvider>
+        <div className="relative min-h-dvh">{children}</div>
+      </PanelQueryClientProvider>
     </div>
   );
 }
