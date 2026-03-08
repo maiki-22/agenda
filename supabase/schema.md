@@ -72,3 +72,78 @@
 | shop_settings    | about_text           | text                     | null                     | YES         | null                     | null            |
 | shop_settings    | cancellation_policy  | text                     | null                     | YES         | null                     | null            |
 | shop_settings    | updated_at           | timestamp with time zone | null                     | NO          | now()                    | null            |
+
+## RLS — Estado por tabla
+
+| tabla            | rls activo | lectura pública  | escritura anon                                 | escritura autenticado      |
+| ---------------- | ---------- | ---------------- | ---------------------------------------------- | -------------------------- |
+| appointments     | ✅         | ❌               | ✅ (solo INSERT con status needs_confirmation) | admin + barber propio      |
+| barber_blocks    | ✅         | ❌               | ❌                                             | admin + barber propio      |
+| barber_days_off  | ✅         | ❌               | ❌                                             | admin + barber propio      |
+| barber_schedules | ✅         | ❌               | ❌                                             | admin + barber propio      |
+| barbers          | ✅         | ✅ (solo SELECT) | ❌                                             | ❌                         |
+| profiles         | ✅         | ❌               | ❌                                             | admin (ALL), self (SELECT) |
+| services         | ✅         | ✅ (solo SELECT) | ❌                                             | solo admin                 |
+| shop_closed_days | ✅         | ✅ (solo SELECT) | ❌                                             | solo admin                 |
+| shop_settings    | ✅         | ✅ (solo SELECT) | ❌                                             | ❌                         |
+
+## RLS — Helper functions usadas en policies
+
+- `is_admin()` → verifica que el usuario autenticado tenga rol admin en `profiles`
+- `is_authenticated_admin()` → igual que is_admin() pero exige rol `authenticated`
+- `is_authenticated_barber_for(barber_id)` → verifica que el usuario autenticado sea el barbero dueño del recurso
+- `my_barber_id()` → retorna el `barber_id` del usuario autenticado desde `profiles`
+
+## RLS — Policies detalladas
+
+### appointments
+
+| policy                            | roles         | cmd    | condición                                               |
+| --------------------------------- | ------------- | ------ | ------------------------------------------------------- |
+| appointments_anon_insert          | anon          | INSERT | with_check: status = 'needs_confirmation'               |
+| appointments_anon_select_token    | anon          | SELECT | confirmation_token coincide con JWT booking_token       |
+| appointments_anon_update_token    | anon          | UPDATE | token válido → solo puede pasar a confirmed o cancelled |
+| appointments_authenticated_select | authenticated | SELECT | admin O barbero propio                                  |
+| appointments_authenticated_insert | authenticated | INSERT | admin O barbero propio                                  |
+| appointments_authenticated_update | authenticated | UPDATE | admin O barbero propio                                  |
+| appointments_authenticated_delete | authenticated | DELETE | admin O barbero propio                                  |
+
+### barber_blocks / barber_days_off / barber_schedules
+
+Mismo patrón en las tres tablas: admin O barbero dueño del recurso (`barber_id = my_barber_id()`) para SELECT, INSERT, UPDATE, DELETE.
+
+### barbers
+
+Solo lectura pública (`SELECT true`). Sin escritura por RLS — modificar solo desde panel admin con service_role.
+
+### profiles
+
+- Admin puede leer y actualizar cualquier perfil
+- Cada usuario puede leer solo su propio perfil (`auth.uid() = user_id`)
+- Sin INSERT por RLS — los perfiles se crean vía trigger en auth.users
+
+### services / shop_closed_days
+
+- Lectura pública libre
+- Escritura solo admin (`is_admin()`)
+
+### shop_settings
+
+- Solo lectura pública. Sin política de escritura definida por RLS — usar service_role desde servidor. |
+
+## RLS — Estado de habilitación por tabla
+
+| tabla            | rls_enabled | rls_forced |
+| ---------------- | :---------: | :--------: |
+| appointments     |     ✅      |     ❌     |
+| barber_blocks    |     ✅      |     ❌     |
+| barber_days_off  |     ✅      |     ❌     |
+| barber_schedules |     ✅      |     ❌     |
+| barbers          |     ✅      |     ❌     |
+| profiles         |     ✅      |     ❌     |
+| services         |     ✅      |     ❌     |
+| shop_closed_days |     ✅      |     ❌     |
+| shop_settings    |     ✅      |     ❌     |
+
+> RLS habilitado en todas las tablas. `rls_forced = false` significa que el service_role
+> bypasea RLS — usar con cuidado solo en Server Actions o funciones de servidor de confianza.
