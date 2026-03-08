@@ -2,12 +2,8 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getAuthenticatedPanelUser } from "@/lib/auth/get-authenticated-panel-user";
 
-const VALID_STATUS = new Set([
-  "booked",
-  "needs_confirmation",
-  "confirmed",
-  "cancelled",
-]);
+import { getTypedSearchParams } from "@/lib/search-params";
+import { panelBookingsQuerySchema } from "@/validations/panel-bookings-query.schema";
 
 type BookingRow = {
   id: string;
@@ -35,17 +31,19 @@ export async function GET(req: Request) {
 
  
 
-  const { searchParams } = new URL(req.url);
-  const dateFrom = searchParams.get("dateFrom") ?? "";
-  const dateTo = searchParams.get("dateTo") ?? "";
-  const barberId = searchParams.get("barberId") ?? "";
-  const status = searchParams.get("status") ?? "";
-  const q = (searchParams.get("q") ?? "").trim();
-  const page = Math.max(Number(searchParams.get("page") ?? "1") || 1, 1);
-  const pageSize = Math.min(
-    Math.max(Number(searchParams.get("pageSize") ?? "10") || 10, 1),
-    50,
+const parsedQuery = panelBookingsQuerySchema.safeParse(
+    getTypedSearchParams(req),
   );
+
+  if (!parsedQuery.success) {
+    const message = parsedQuery.error.issues[0]?.message ?? "Parámetros inválidos";
+    return NextResponse.json(
+      { error: message, code: "INVALID_PANEL_BOOKINGS_QUERY" },
+      { status: 400 },
+    );
+  }
+
+  const { dateFrom, dateTo, barberId, status, q, page, pageSize } = parsedQuery.data;
 
   let query = supabase
     .from("appointments")
@@ -74,8 +72,7 @@ export async function GET(req: Request) {
   } else if (barberId && barberId !== "all") {
     query = query.eq("barber_id", barberId);
   }
-  if (status && status !== "all" && VALID_STATUS.has(status))
-    query = query.eq("status", status);
+  if (status !== "all") query = query.eq("status", status);
 
   if (q) {
     const escaped = q.replace(/[%_]/g, "");
@@ -91,7 +88,7 @@ export async function GET(req: Request) {
   const { data, count, error } = await query;
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: error.message, code: "PANEL_BOOKINGS_QUERY_ERROR" }, { status: 400 });
   }
 
   return NextResponse.json(

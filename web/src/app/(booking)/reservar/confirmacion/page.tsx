@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { BookingConfirmationSearchParamsSchema } from "@/validations/booking-confirmation.schema";
+import { normalizeSearchParamObject } from "@/lib/search-params";
+import { bookingConfirmationEndpointSchema } from "@/validations/booking-confirmation-endpoint.schema";
 import ConfirmacionClient from "./ConfirmacionClient";
 
 type SearchParams = {
@@ -12,9 +13,11 @@ export default async function ConfirmacionPage({
   searchParams: Promise<SearchParams>;
 }) {
     const params = await searchParams;
-    const parsed = BookingConfirmationSearchParamsSchema.safeParse(params);
+    const parsed = bookingConfirmationEndpointSchema.safeParse(
+      normalizeSearchParamObject(params),
+    );
 
-  if (!parsed.success) {
+  if (!parsed.success || !parsed.data.token) {
     redirect("/reservar");
   }
 

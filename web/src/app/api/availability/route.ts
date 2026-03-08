@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getAvailabilityService } from "@/features/booking/services/getAvailability";
 import { listServices } from "@/features/booking/data/catalog.repo";
 import { applyRateLimitHeaders, availabilityRatelimit, limitWithFailover } from "@/lib/ratelimit";
+import { getTypedSearchParams } from "@/lib/search-params";
+import { availabilityQuerySchema } from "@/validations/availability-query.schema";
 
 function getClientIp(req: Request) {
   const xfwd = req.headers.get("x-forwarded-for");
@@ -28,13 +30,17 @@ export async function GET(req: Request) {
   }
 
   try {
-    const { searchParams } = new URL(req.url);
-    const barberId = searchParams.get("barberId") ?? "";
-    const date = searchParams.get("date") ?? "";
-    const serviceId = searchParams.get("service") ?? "";
+    const parsedQuery = availabilityQuerySchema.safeParse(getTypedSearchParams(req));
 
-    if (!barberId) return NextResponse.json({ error: "Missing barberId" }, { status: 400 });
-    if (!date) return NextResponse.json({ error: "Missing date" }, { status: 400 });
+    if (!parsedQuery.success) {
+      const message = parsedQuery.error.issues[0]?.message ?? "Parámetros inválidos";
+      return NextResponse.json(
+        { error: message, code: "INVALID_AVAILABILITY_QUERY" },
+        { status: 400 },
+      );
+    }
+
+    const { barberId, date, service: serviceId } = parsedQuery.data;
 
     let durationMinutes: number | undefined;
 
@@ -56,7 +62,7 @@ export async function GET(req: Request) {
     applyRateLimitHeaders(res, rl);
     return res;
   } catch (e: unknown) {
-    const err = e instanceof Error ? e : new Error("Bad Request");
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    const err = e instanceof Error ? e : new Error("Solicitud inválida");
+    return NextResponse.json({ error: err.message, code: "AVAILABILITY_BAD_REQUEST" }, { status: 400 });
   }
 }
