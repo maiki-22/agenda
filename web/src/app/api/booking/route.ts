@@ -47,7 +47,6 @@ type AppointmentUpdateCandidateRow = {
   timeslot: string;
 };
 
-
 function getClientIp(req: Request): string {
   const xfwd = req.headers.get("x-forwarded-for");
   if (xfwd) return xfwd.split(",")[0]?.trim() ?? "unknown";
@@ -210,53 +209,6 @@ export async function GET(req: Request): Promise<Response> {
     );
   }
 
-   if (parsedBody.data.action === "confirmed") {
-    const { data: candidate, error: candidateError } = await supabaseAdmin
-      .from("appointments")
-      .select("id,barber_id,timeslot")
-      .eq("id", verified.claims.booking_id)
-      .eq("confirmation_token", verified.claims.booking_token)
-      .in("status", [...BOOKING_UPDATABLE_STATUSES])
-      .maybeSingle<AppointmentUpdateCandidateRow>();
-
-    if (candidateError) {
-      return NextResponse.json(
-        { error: candidateError.message, code: "DB_ERROR" },
-        { status: 400 },
-      );
-    }
-
-    if (!candidate) {
-      return NextResponse.json(
-        {
-          error: "La reserva no se pudo actualizar o el token ya fue utilizado",
-          code: "BOOKING_NOT_UPDATABLE",
-        },
-        { status: 409 },
-      );
-    }
-
-    const collisionResult = await hasAppointmentCollision({
-      appointmentId: candidate.id,
-      barberId: candidate.barber_id,
-      timeslot: candidate.timeslot,
-    });
-
-    if (!collisionResult.success) {
-      return NextResponse.json(
-        { error: collisionResult.error, code: "DB_ERROR" },
-        { status: 400 },
-      );
-    }
-
-    if (collisionResult.hasCollision) {
-      return NextResponse.json(
-        { error: "Horario no disponible", code: "SLOT_TAKEN" },
-        { status: 409 },
-      );
-    }
-  }
-
   const { data, error } = await supabaseAdmin
     .from("appointments")
     .select(
@@ -351,6 +303,53 @@ export async function PATCH(req: Request): Promise<Response> {
     );
   }
 
+  if (parsedBody.data.action === "confirmed") {
+    const { data: candidate, error: candidateError } = await supabaseAdmin
+      .from("appointments")
+      .select("id,barber_id,timeslot")
+      .eq("id", verified.claims.booking_id)
+      .eq("confirmation_token", verified.claims.booking_token)
+      .in("status", [...BOOKING_UPDATABLE_STATUSES])
+      .maybeSingle<AppointmentUpdateCandidateRow>();
+
+    if (candidateError) {
+      return NextResponse.json(
+        { error: candidateError.message, code: "DB_ERROR" },
+        { status: 400 },
+      );
+    }
+
+    if (!candidate) {
+      return NextResponse.json(
+        {
+          error: "La reserva no se pudo actualizar o el token ya fue utilizado",
+          code: "BOOKING_NOT_UPDATABLE",
+        },
+        { status: 409 },
+      );
+    }
+
+    const collisionResult = await hasAppointmentCollision({
+      appointmentId: candidate.id,
+      barberId: candidate.barber_id,
+      timeslot: candidate.timeslot,
+    });
+
+    if (!collisionResult.success) {
+      return NextResponse.json(
+        { error: collisionResult.error, code: "DB_ERROR" },
+        { status: 400 },
+      );
+    }
+
+    if (collisionResult.hasCollision) {
+      return NextResponse.json(
+        { error: "Horario no disponible", code: "SLOT_TAKEN" },
+        { status: 409 },
+      );
+    }
+  }
+
   const updatePayload =
     parsedBody.data.action === "confirmed"
       ? {
@@ -365,7 +364,7 @@ export async function PATCH(req: Request): Promise<Response> {
     .update(updatePayload)
     .eq("id", verified.claims.booking_id)
     .eq("confirmation_token", verified.claims.booking_token)
-     .in("status", [...BOOKING_UPDATABLE_STATUSES])
+    .in("status", [...BOOKING_UPDATABLE_STATUSES])
     .select("id,status")
     .maybeSingle<{ id: string; status: string }>();
 
