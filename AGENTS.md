@@ -347,3 +347,87 @@ LO QUE NUNCA HARÁS
 ✗ Crear un componente que haga más de una cosa
 ✗ Saltarte RLS o autenticación "temporalmente"
 ✗ Generar código que funcione pero que no escale
+
+## Patrones por fases (implementación incremental)
+
+### Fase 1 — Login con formularios tipados y feedback de envío
+
+- Stack estándar de formulario: `react-hook-form` + `@hookform/resolvers/zod` + schema en `/validations`.
+- El submit debe:
+  - deshabilitar todo el `fieldset`,
+  - mostrar estado loading en botón,
+  - mapear errores HTTP a mensajes en español por tipo (`401`, `429`, `5xx`),
+  - notificar éxito/error con el proveedor de toast del proyecto.
+- Ejemplo de referencia: `web/src/app/panel/login/PanelLoginForm.tsx`.
+
+### Fase 2 — Panel admin con TanStack Query (queries + mutations)
+
+- Patrón obligatorio: `page.tsx` (Server Component) obtiene `initialData` y el cliente usa `useQuery` con la misma `queryKey`.
+- Queries deben incluir TODOS los filtros activos en `queryKey`.
+- Mutaciones deben invalidar llaves relacionadas (`panel-overview`, `panel-bookings`) para mantener consistencia.
+- Ejemplos de referencia:
+  - `web/src/app/panel/admin/page.tsx`
+  - `web/src/hooks/panel/use-overview.ts`
+  - `web/src/hooks/panel/use-bookings.ts`
+
+### Fase 3 — Variantes reutilizables en `components/ui`
+
+- Todas las clases reutilizables en componentes base deben salir de una única utilidad de variantes (`cva`) + merge de clases (`twMerge`) vía helper central.
+- Para este repositorio, el helper vive en `web/src/lib/cn.ts` y se consume desde `Button`, `Input` y `SelectCard`.
+- Evitar concatenaciones manuales de strings en cada componente UI.
+
+### Fase 4 — Radix para overlays/admin actions (si aplica)
+
+- Si existen modales, dropdowns o popovers de acciones administrativas, priorizar primitives de Radix.
+- Si no existe ese tipo de UI en el alcance actual, documentar explícitamente que la fase no aplica y mantener backlog técnico.
+
+
+════════════════════════════════════════════════════════
+BASE DE DATOS (Supabase / PostgreSQL)
+════════════════════════════════════════════════════════
+
+Schema en: `supabase/schema.md`
+
+TABLAS Y RELACIONES:
+
+- `barbers` → id: text (PK), barberos del local
+- `services` → id: text (PK), servicios con precio (price_clp) y duración
+- `barber_schedules` → horario semanal por barbero (dow 0-6), con break opcional
+- `barber_days_off` → días libres individuales por barbero
+- `barber_blocks` → bloqueos puntuales de tiempo por barbero
+- `shop_closed_days` → días cerrados globales del local
+- `shop_settings` → fila única (id = 'main') con config del negocio
+- `profiles` → vincula auth.users de Supabase con rol ('admin'|'barber') y barbero asignado
+- `appointments` → reservas con status enum: booked | confirmed | cancelled | rescheduled
+
+RELACIONES CLAVE:
+- appointments.barber_id → barbers.id
+- appointments.service_id → services.id
+- appointments.rescheduled_from → appointments.id (auto-referencia)
+- barber_schedules.barber_id → barbers.id
+- barber_days_off.barber_id → barbers.id
+- barber_blocks.barber_id → barbers.id
+- profiles.barber_id → barbers.id
+
+PARTICULARIDADES Y DEUDA TÉCNICA CONOCIDA:
+
+- `appointments.date` y `appointments.time` son TEXT (no date/time nativo).
+  Existe `start_at` y `end_at` como timestamptz — usar SIEMPRE estos para lógica de tiempo.
+- `appointments.timeslot` es tstzrange — usar para detección de solapamientos con operador &&.
+- `barbers.id` y `services.id` son TEXT (no UUID) — respetar este patrón al hacer queries.
+- `barber_blocks.date` y `barber_days_off.date` son TEXT — sólo referenciales, usar start_at/end_at para lógica.
+
+REGLAS DE ACCESO A DATOS:
+
+- NUNCA acceder a tablas directamente desde componentes. Siempre vía /services/.
+- Toda query a appointments debe considerar el status ('booked','confirmed','cancelled','rescheduled').
+- Al crear/modificar appointments, verificar disponibilidad con timeslot && para evitar colisiones.
+- shop_settings siempre se consulta con .eq('id', 'main').single().
+- Los tipos de DB se generan con: `supabase gen types typescript --local > src/types/supabase.ts`
+  Nunca escribir tipos de DB a mano.
+
+ÍNDICES PENDIENTES (deuda conocida — no agregar sin migración):
+- appointments(barber_id, start_at) — queries de disponibilidad
+- appointments(status) — filtros del panel admin
+- appointments(customer_phone) — búsqueda de historial de cliente
+- barber_blocks(barber_id, start_at, end_at) — validación de bloqueos
