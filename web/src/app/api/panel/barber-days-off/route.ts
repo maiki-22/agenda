@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { z } from "zod";
+import { BarberIdSchema } from "@/validations/barber-id.schema";
 import {
   getAuthenticatedPanelUser,
   isAuthenticatedPanelUser,
 } from "@/lib/auth/get-authenticated-panel-user";
 
 const createBarberDayOffSchema = z.object({
-  barber_id: z.string().uuid(),
+  barber_id: BarberIdSchema,
   date: z.string().min(1),
   reason: z.string().optional().nullable(),
 });

@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { AGENDA_BLOCKING_APPOINTMENT_STATUSES } from "../domain/appointment-status";
 import type { AvailabilityResult } from "../domain/booking.types";
 
 function toMinutes(hhmm: string): number {
@@ -84,19 +85,21 @@ export async function getAvailability(
   // 4) Reservas existentes del día
   const { data: takenRows, error: takenErr } = await supabaseAdmin
     .from("appointments")
-    .select("time,duration_min")
+    .select("start_at,end_at")
     .eq("barber_id", q.barberId)
     .eq("date", q.date)
-    .eq("status", "booked");
+    .in("status", [...AGENDA_BLOCKING_APPOINTMENT_STATUSES]);
 
   if (takenErr) throw takenErr;
 
-  const taken: Array<{ start: number; end: number }> = (takenRows ?? []).map(
-    (b) => {
-      const s = toMinutes(b.time);
-      return { start: s, end: s + (b.duration_min ?? 30) };
-    },
-  );
+ const taken: Array<{ start: number; end: number }> = (takenRows ?? []).map((b) => {
+    const startHHmm = hhmmInSantiago(b.start_at);
+    const endHHmm = hhmmInSantiago(b.end_at);
+    return {
+      start: toMinutes(startHHmm),
+      end: toMinutes(endHHmm),
+    };
+  });
 
   // 5) Colación como ocupado
   if (sched.break_start && sched.break_end) {

@@ -9,10 +9,11 @@ import type {
   BarberDaysOffResponse,
   BookingsResponse,
 } from "@/types/panel";
+import { BarberIdSchema } from "@/validations/barber-id.schema";
 import { BarberDashboardClient } from "./BarberDashboardClient";
 
 const searchSchema = z.object({
-  barberId: z.string().uuid().optional(),
+  barberId: BarberIdSchema.optional(),
 });
 
 function getDateRange(): { dateFrom: string; dateTo: string } {

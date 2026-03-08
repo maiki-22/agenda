@@ -14,6 +14,7 @@ export function createBooking(draft: BookingDraft & { durationMinutes: number })
   const booking: Booking = {
     ...draft,
     id: makeId(),
+    status: "booked",
     durationMinutes: draft.durationMinutes,
     createdAt: new Date().toISOString(),
   };

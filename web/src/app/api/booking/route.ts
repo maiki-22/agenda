@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { BookingDraftSchema } from "@/features/booking/domain/booking.schema";
 import { listServices } from "@/features/booking/data/catalog.repo";
+import {
+  AGENDA_BLOCKING_APPOINTMENT_STATUSES,
+  BOOKING_UPDATABLE_STATUSES,
+} from "@/features/booking/domain/appointment-status";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import {
   createBookingConfirmationToken,
@@ -32,6 +36,17 @@ type BookingRow = {
   barbers: { name: string } | null;
   services: { name: string; price_clp: number } | null;
 };
+
+type AppointmentCollisionRow = {
+  id: string;
+};
+
+type AppointmentUpdateCandidateRow = {
+  id: string;
+  barber_id: string;
+  timeslot: string;
+};
+
 
 function getClientIp(req: Request): string {
   const xfwd = req.headers.get("x-forwarded-for");
@@ -66,6 +81,26 @@ function getErrorCode(error: unknown): string | null {
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   return "Error desconocido";
+}
+
+async function hasAppointmentCollision(input: {
+  appointmentId: string;
+  barberId: string;
+  timeslot: string;
+}): Promise<{ success: true; hasCollision: boolean } | { success: false; error: string }> {
+  const { data, error } = await supabaseAdmin
+    .from("appointments")
+    .select("id")
+    .eq("barber_id", input.barberId)
+    .neq("id", input.appointmentId)
+    .in("status", [...AGENDA_BLOCKING_APPOINTMENT_STATUSES])
+    .overlaps("timeslot", input.timeslot)
+    .limit(1)
+    .returns<AppointmentCollisionRow[]>();
+
+  if (error) return { success: false, error: error.message };
+
+  return { success: true, hasCollision: (data ?? []).length > 0 };
 }
 
 async function ensureConfirmationToken(
@@ -173,6 +208,53 @@ export async function GET(req: Request): Promise<Response> {
       { error: verified.error, code: "INVALID_CONFIRMATION_TOKEN" },
       { status: 401 },
     );
+  }
+
+   if (parsedBody.data.action === "confirmed") {
+    const { data: candidate, error: candidateError } = await supabaseAdmin
+      .from("appointments")
+      .select("id,barber_id,timeslot")
+      .eq("id", verified.claims.booking_id)
+      .eq("confirmation_token", verified.claims.booking_token)
+      .in("status", [...BOOKING_UPDATABLE_STATUSES])
+      .maybeSingle<AppointmentUpdateCandidateRow>();
+
+    if (candidateError) {
+      return NextResponse.json(
+        { error: candidateError.message, code: "DB_ERROR" },
+        { status: 400 },
+      );
+    }
+
+    if (!candidate) {
+      return NextResponse.json(
+        {
+          error: "La reserva no se pudo actualizar o el token ya fue utilizado",
+          code: "BOOKING_NOT_UPDATABLE",
+        },
+        { status: 409 },
+      );
+    }
+
+    const collisionResult = await hasAppointmentCollision({
+      appointmentId: candidate.id,
+      barberId: candidate.barber_id,
+      timeslot: candidate.timeslot,
+    });
+
+    if (!collisionResult.success) {
+      return NextResponse.json(
+        { error: collisionResult.error, code: "DB_ERROR" },
+        { status: 400 },
+      );
+    }
+
+    if (collisionResult.hasCollision) {
+      return NextResponse.json(
+        { error: "Horario no disponible", code: "SLOT_TAKEN" },
+        { status: 409 },
+      );
+    }
   }
 
   const { data, error } = await supabaseAdmin
@@ -283,7 +365,7 @@ export async function PATCH(req: Request): Promise<Response> {
     .update(updatePayload)
     .eq("id", verified.claims.booking_id)
     .eq("confirmation_token", verified.claims.booking_token)
-    .in("status", ["needs_confirmation", "booked"])
+     .in("status", [...BOOKING_UPDATABLE_STATUSES])
     .select("id,status")
     .maybeSingle<{ id: string; status: string }>();
 
