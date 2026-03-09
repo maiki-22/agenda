@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getAuthenticatedPanelUser } from "@/lib/auth/get-authenticated-panel-user";
+import { formatDateInSantiago, getSantiagoDayBounds } from "@/lib/datetime/santiago";
 
 type AppointmentRow = {
   barber_id: string;
   status: string;
-  date: string;
+  start_at: string;
 };
 
 const PENDING_STATUSES = new Set(["booked", "needs_confirmation"]);
@@ -52,7 +53,7 @@ function resolveWindow(
   return "last_30_days";
 }
 
-export async function GET(req: Request) {
+export async function GET(req: Request): Promise<Response> {
   const supabase = await supabaseServer();
   const panelUser = await getAuthenticatedPanelUser(supabase);
 
@@ -75,6 +76,8 @@ export async function GET(req: Request) {
   const barberId = searchParams.get("barberId") ?? "";
 
   const { startDate, endDate } = getDateWindow(window);
+  const { startAtIso: startAtFrom } = getSantiagoDayBounds(startDate);
+  const { endAtIso: startAtTo } = getSantiagoDayBounds(endDate);
 
   const barbersQuery = supabase
     .from("barbers")
@@ -82,10 +85,10 @@ export async function GET(req: Request) {
     .order("sort_order", { ascending: true });
   const appointmentsQuery = supabase
     .from("appointments")
-    .select("barber_id, status, date")
-    .gte("date", startDate)
-    .lte("date", endDate)
-    .order("date", { ascending: true });
+    .select("barber_id, status, start_at")
+    .gte("start_at", startAtFrom)
+    .lte("start_at", startAtTo)
+    .order("start_at", { ascending: true });
 
   const [
     { data: barbers, error: barbersError },
@@ -156,9 +159,11 @@ export async function GET(req: Request) {
       };
     }
 
-    if (!byDate[row.date]) {
-      byDate[row.date] = {
-        date: row.date,
+    const rowDate = formatDateInSantiago(row.start_at);
+
+    if (!byDate[rowDate]) {
+      byDate[rowDate] = {
+        date: rowDate,
         total: 0,
         confirmed: 0,
         pending: 0,
@@ -166,22 +171,22 @@ export async function GET(req: Request) {
       };
     }
 
-    byBarber[row.barber_id].total += 1;
-    byDate[row.date].total += 1;
+     byBarber[row.barber_id].total += 1;
+     byDate[rowDate].total += 1;
 
     if (row.status === "confirmed") {
       byBarber[row.barber_id].confirmed += 1;
-      byDate[row.date].confirmed += 1;
+      byDate[rowDate].confirmed += 1;
     }
 
     if (PENDING_STATUSES.has(row.status)) {
       byBarber[row.barber_id].pending += 1;
-      byDate[row.date].pending += 1;
+      byDate[rowDate].pending += 1;
     }
 
     if (row.status === "cancelled") {
       byBarber[row.barber_id].cancelled += 1;
-      byDate[row.date].cancelled += 1;
+      byDate[rowDate].cancelled += 1;
     }
   }
 

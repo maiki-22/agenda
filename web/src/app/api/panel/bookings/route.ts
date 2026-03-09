@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedPanelUser } from "@/lib/auth/get-authenticated-panel-user";
+import {
+  formatDateInSantiago,
+  formatTimeInSantiago,
+  getSantiagoDayBounds,
+} from "@/lib/datetime/santiago";
 import { getTypedSearchParams } from "@/lib/search-params";
 import { supabaseServer } from "@/lib/supabase/server";
 import { panelBookingsQuerySchema } from "@/validations/panel-bookings-query.schema";
 
-type SearchBookingsRow = {
+type BookingRow = {
   id: string;
   date: string;
   time: string;
@@ -13,9 +18,9 @@ type SearchBookingsRow = {
   customer_phone: string;
   barber_id: string;
   service_id: string;
-  barber_name: string | null;
-  service_name: string | null;
-  total_count: number;
+  start_at: string;
+  barbers: Array<{ name: string }> | null;
+  services: Array<{ name: string }> | null;
 };
 
 export async function GET(req: Request): Promise<Response> {
@@ -48,15 +53,40 @@ const parsedQuery = panelBookingsQuerySchema.safeParse(getTypedSearchParams(req)
       ? barberId
       : null;
 
-  const { data, error } = await supabase.rpc("search_bookings", {
-    p_barber_id: scopedBarberId,
-    p_date_from: dateFrom ?? null,
-    p_date_to: dateTo ?? null,
-    p_page: page,
-    p_page_size: pageSize,
-    p_query: q || null,
-    p_status: status === "all" ? null : status,
-  });
+const dateFromBound = dateFrom ? getSantiagoDayBounds(dateFrom).startAtIso : null;
+  const dateToBound = dateTo ? getSantiagoDayBounds(dateTo).endAtIso : null;
+
+  let query = supabase
+    .from("appointments")
+    .select(
+      "id, status, customer_name, customer_phone, barber_id, service_id, start_at, barbers(name), services(name)",
+      { count: "exact" },
+    )
+    .order("start_at", { ascending: true });
+
+  if (scopedBarberId) {
+    query = query.eq("barber_id", scopedBarberId);
+  }
+
+  if (dateFromBound) {
+    query = query.gte("start_at", dateFromBound);
+  }
+
+  if (dateToBound) {
+    query = query.lte("start_at", dateToBound);
+  }
+
+  if (status !== "all") {
+    query = query.eq("status", status);
+  }
+
+  if (q) {
+    query = query.or(`customer_name.ilike.%${q}%,customer_phone.ilike.%${q}%`);
+  }
+
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  const { data, error, count } = await query.range(from, to);
 
   if (error) {
     return NextResponse.json(
@@ -65,25 +95,25 @@ const parsedQuery = panelBookingsQuerySchema.safeParse(getTypedSearchParams(req)
     );
   }
 
-const bookings = (data ?? []) as SearchBookingsRow[];
+const bookings = (data ?? []) as BookingRow[];
 
   return NextResponse.json(
     {
       ok: true,
       page,
       pageSize,
-      total: bookings[0]?.total_count ?? 0,
+      total: count ?? 0,
       items: bookings.map((item) => ({
         id: item.id,
-        date: item.date,
-        time: item.time,
+        date: formatDateInSantiago(item.start_at),
+        time: formatTimeInSantiago(item.start_at),
         status: item.status,
         customer_name: item.customer_name,
         customer_phone: item.customer_phone,
         barber_id: item.barber_id,
-        barber_name: item.barber_name ?? item.barber_id,
+        barber_name: item.barbers?.[0]?.name ?? item.barber_id,
         service_id: item.service_id,
-        service_name: item.service_name ?? item.service_id,
+        service_name: item.services?.[0]?.name ?? item.service_id,
       })),
     },
     { status: 200 },

@@ -75,6 +75,13 @@
 
 ## Appointments — límites de input (app + DB)
 
+## Appointments — campos temporales (fuente de verdad)
+
+- `start_at` y `end_at` (`timestamptz`) son la fuente de verdad para toda lógica temporal:
+  filtros por rango, orden cronológico, disponibilidad y métricas.
+- `date` y `time` (`text`) se mantienen como campos **legacy** de presentación/compatibilidad.
+  No deben usarse para ordenar ni filtrar ventanas de tiempo en backend.
+
 - `customer_name`
   - Longitud: `2..80` caracteres (se evalúa con `btrim`).
   - Formato permitido: letras (`A-Z`, `a-z`, `À-ÿ`), espacios, apóstrofe (`'`), punto (`.`) y guion (`-`).
