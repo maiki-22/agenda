@@ -2,6 +2,7 @@
 
 import { type ReactNode, useState } from "react";
 import { BookingsSection } from "@/components/panel/bookings/bookings-section";
+import { PanelHeader } from "@/components/panel/panel-header";
 import { BarberBlockForm } from "@/components/panel/scheduling/barber-block-form";
 import { DayOffForm } from "@/components/panel/scheduling/day-off-form";
 import { Button } from "@/components/ui/Button";
@@ -25,6 +26,7 @@ interface BarberDashboardClientProps {
   initialBookings: BookingsResponse | null;
   initialBlocks: BarberBlocksResponse | null;
   initialDaysOff: BarberDaysOffResponse | null;
+  role: "barber";
 }
 
 export function BarberDashboardClient({
@@ -34,6 +36,7 @@ export function BarberDashboardClient({
   initialBookings,
   initialBlocks,
   initialDaysOff,
+  role,
 }: BarberDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<BarberTab>("citas");
   const toast = useToast();
@@ -60,15 +63,7 @@ export function BarberDashboardClient({
 
   return (
     <main className="page-container py-5 sm:py-8 space-y-5 sm:space-y-6">
-      <header className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 sm:p-6 shadow-[var(--shadow-soft)]">
-        <p className="text-[11px] tracking-[0.24em] uppercase text-[rgb(var(--muted))]">
-          Panel barbero
-        </p>
-        <h1 className="text-2xl sm:text-3xl font-bold mt-1">Tu agenda</h1>
-        <p className="text-sm text-[rgb(var(--muted))] mt-2">
-          Solo se muestran tus datos ({barberId}). Sin métricas globales.
-        </p>
-      </header>
+      <PanelHeader role={role} />
 
       <nav
         className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-1.5 shadow-[var(--shadow-soft)]"

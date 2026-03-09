@@ -39,6 +39,7 @@ export default async function AdminPanelPage() {
     <AdminDashboardClient
       initialOverview={initialOverview}
       initialBookings={initialBookings}
+      role="admin"
     />
   );
 }

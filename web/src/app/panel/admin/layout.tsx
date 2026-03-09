@@ -28,7 +28,7 @@ export default async function PanelLayout({
 
   return (
     <PanelQueryClientProvider>
-      <PanelHeader userEmail={userEmail} role={panelUser.role} />
+      <PanelHeader role={panelUser.role} />
       <main className="page-container py-4 sm:py-6">{children}</main>
     </PanelQueryClientProvider>
   );
