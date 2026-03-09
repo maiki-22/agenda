@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import { useConfirmacion } from "@/hooks/booking/use-confirmacion";
 
@@ -9,43 +9,28 @@ import { SHOP_LOCATION } from "@/features/booking/config/location";
 
 export default function ConfirmacionClient({ token }: { token: string }) {
   const router = useRouter();
+  const errorCardRef = useRef<HTMLDivElement | null>(null);
 
-  const { booking, isLoading, error } = useConfirmacion(token);
-  const [showTicket, setShowTicket] = useState(false);
+  const { booking, isLoading, isError, error, refetch } = useConfirmacion(token);
 
   useEffect(() => {
-    if (isLoading) {
-      setShowTicket(false);
+    if (!isError) {
       return;
     }
 
-    if (error || !booking) {
-      router.replace("/reservar");
-      return;
-    }
+    errorCardRef.current?.focus();
+  }, [isError]);
 
-    const timeout = setTimeout(() => {
-      setShowTicket(true);
-    }, 220);
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [booking, error, isLoading, router]);
-
-  const barberName = useMemo(() => {
-    if (!booking) return "";
-    return booking.barberName ?? "Barbero";
-  }, [booking]);
-
-  const serviceLabel = useMemo(() => {
-    if (!booking) return "";
-    return booking.serviceName ?? "Servicio";
-  }, [booking]);
+  const barberName = booking?.barberName ?? "Barbero";
+  const serviceLabel = booking?.serviceName ?? "Servicio";
 
   const duration = booking?.durationMinutes ?? 30;
 
-  const dateLong = useMemo(() => {
-    if (!booking?.date) return "";
+  const dateLong = (() => {
+    if (!booking?.date) {
+      return "";
+    }
+
     const d = new Date(`${booking.date}T00:00:00`);
     const fmt = new Intl.DateTimeFormat("es-CL", {
       weekday: "long",
@@ -54,10 +39,13 @@ export default function ConfirmacionClient({ token }: { token: string }) {
     });
     const s = fmt.format(d);
     return s.charAt(0).toUpperCase() + s.slice(1);
-  }, [booking?.date]);
+  })();
 
-  const timeRange = useMemo(() => {
-    if (!booking?.time) return "";
+  const timeRange = (() => {
+    if (!booking?.time) {
+      return "";
+    }
+
     const [hh, mm] = booking.time.split(":").map(Number);
     const start = hh * 60 + mm;
     const end = start + duration;
@@ -67,29 +55,34 @@ export default function ConfirmacionClient({ token }: { token: string }) {
       return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
     };
     return `${fmt(start)} – ${fmt(end)}`;
-  }, [booking?.time, duration]);
+  })();
 
   return (
     <div className="min-h-dvh flex flex-col">
       <div className="flex-1 overflow-auto py-6 pb-40 sm:pb-36">
         <div className="page-container space-y-5">
-          <div className="flex flex-col items-center text-center gap-4">
-            {isLoading ? (
-              <>
-                <div className="h-20 w-20 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface))] grid place-items-center">
-                  <div className="h-10 w-10 rounded-full border-4 border-white/10 border-t-[rgb(var(--primary))] animate-spin" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold">
-                    Confirmando tu reserva
-                  </div>
-                  <div className="text-sm text-[rgb(var(--muted))] mt-1">
-                    Un momento… estamos guardando tu cita.
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
+          {isLoading && <LoadingState />}
+
+          {isError && (
+            <ErrorState
+              errorCode={error?.code ?? "UNKNOWN_ERROR"}
+              errorMessage={
+                error?.message ??
+                "No pudimos confirmar tu reserva en este momento."
+              }
+              onRetry={(): void => {
+                void refetch();
+              }}
+              onBack={(): void => {
+                router.push("/reservar");
+              }}
+              errorCardRef={errorCardRef}
+            />
+          )}
+
+          {!isLoading && !isError && (
+            <>
+              <div className="flex flex-col items-center text-center gap-4">
                 <div
                   className="h-20 w-20 rounded-full bg-[rgb(var(--primary))] grid place-items-center pop-in"
                   style={{
@@ -108,11 +101,11 @@ export default function ConfirmacionClient({ token }: { token: string }) {
                     WhatsApp.
                   </div>
                 </div>
-              </>
-            )}
-          </div>
+              </div>
+            </>
+          )}
 
-          {booking && showTicket && (
+          {!isLoading && !isError && booking && (
             <div
               className={[
                 "ticket relative isolate rounded-3xl fade-up",
@@ -162,34 +155,114 @@ export default function ConfirmacionClient({ token }: { token: string }) {
         </div>
       </div>
 
-      <div className="footer-fixed">
-        <div className="page-container pt-3 grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className="
+      {!isError && (
+        <div className="footer-fixed">
+          <div className="page-container pt-3 grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="
               rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]
               px-4 py-3 text-sm font-semibold
               hover:brightness-110 active:scale-[0.98] touch-manipulation
               min-h-[48px]
             "
-          >
-            Ir al inicio
-          </button>
+            >
+              Ir al inicio
+            </button>
 
-          <button
-            type="button"
-            onClick={() => router.push("/reservar")}
-            className="
+            <button
+              type="button"
+              onClick={() => router.push("/reservar")}
+              className="
               rounded-2xl bg-[rgb(var(--primary))]
               px-4 py-3 text-sm font-semibold text-[rgb(var(--primary-foreground))]
               hover:brightness-110 active:scale-[0.98] touch-manipulation
               min-h-[48px]
             "
-          >
-            Reservar otra
-          </button>
+            >
+              Reservar otra
+            </button>
+          </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="flex flex-col items-center text-center gap-4" aria-live="polite">
+      <div className="h-20 w-20 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface))] grid place-items-center">
+        <div className="h-10 w-10 rounded-full border-4 border-white/10 border-t-[rgb(var(--primary))] animate-spin" />
+      </div>
+      <div>
+        <div className="text-2xl font-bold">Confirmando tu reserva</div>
+        <div className="text-sm text-[rgb(var(--muted))] mt-1">
+          Un momento… estamos guardando tu cita.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ErrorState({
+  errorCode,
+  errorMessage,
+  onRetry,
+  onBack,
+  errorCardRef,
+}: {
+  errorCode: string;
+  errorMessage: string;
+  onRetry: () => void;
+  onBack: () => void;
+  errorCardRef: RefObject<HTMLDivElement | null>;
+}) {
+  return (
+    <div
+      ref={errorCardRef}
+      tabIndex={-1}
+      role="alert"
+      aria-live="assertive"
+      className="
+        w-full max-w-xl mx-auto rounded-3xl border border-[rgb(var(--border))]
+        bg-[rgb(var(--surface))] p-4 sm:p-6 shadow-[0_12px_40px_rgba(0,0,0,0.12)]
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary))]
+      "
+    >
+      <div className="space-y-2 text-center sm:text-left">
+        <p className="text-xs uppercase tracking-widest text-[rgb(var(--muted))]">
+          Error de confirmación
+        </p>
+        <h2 className="text-xl font-bold">No pudimos confirmar tu reserva</h2>
+        <p className="text-sm text-[rgb(var(--muted))]">{errorMessage}</p>
+        <p className="text-xs text-[rgb(var(--muted))]">Código: {errorCode}</p>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
+        <button
+          type="button"
+          onClick={onRetry}
+          className="
+            rounded-2xl bg-[rgb(var(--primary))] px-4 py-3 text-sm font-semibold
+            text-[rgb(var(--primary-foreground))] hover:brightness-110
+            active:scale-[0.98] min-h-[48px] touch-manipulation
+          "
+        >
+          Reintentar
+        </button>
+        <button
+          type="button"
+          onClick={onBack}
+          className="
+            rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]
+            px-4 py-3 text-sm font-semibold hover:brightness-110
+            active:scale-[0.98] min-h-[48px] touch-manipulation
+          "
+        >
+          Volver a reservar
+        </button>
       </div>
     </div>
   );
