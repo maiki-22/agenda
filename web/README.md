@@ -154,3 +154,36 @@ node --test scripts/integration/booking-confirmation-concurrency.test.mjs
 ```
 
 Resultado esperado: una request `200` y la otra `409` con `BOOKING_NOT_UPDATABLE`.
+## Content Security Policy (Report-Only)
+
+Se configuró la cabecera `Content-Security-Policy-Report-Only` en `next.config.ts`.
+
+### Cómo pasar de Report-Only a enforcement
+
+Cuando quieras aplicar CSP en modo estricto (bloqueando recursos), reemplaza en `headers()`:
+
+- `Content-Security-Policy-Report-Only` → `Content-Security-Policy`
+
+No cambies el valor de la política al hacer este switch inicial; primero monitorea que no existan violaciones relevantes.
+
+### Dominios incluidos y por qué
+
+La política actual permite únicamente los orígenes mínimos detectados en el proyecto:
+
+- `'self'`: recursos locales de la app.
+- `https://fonts.googleapis.com`: hoja de estilos de `next/font/google` (Inter).
+- `https://fonts.gstatic.com`: archivos de fuente de Google Fonts.
+- `https://www.google.com`: `iframe` de Google Maps embebido en la landing.
+- `https://<SUPABASE_HOST>` y `wss://<SUPABASE_HOST>`: tráfico de Supabase (REST/Auth/Realtime), donde `SUPABASE_HOST` se obtiene dinámicamente desde `NEXT_PUBLIC_SUPABASE_URL`.
+
+También se permite `data:` y `blob:` solo para `img-src`, y `data:` para `font-src`, de acuerdo con la política definida.
+
+### Cómo detectar violaciones en DevTools
+
+1. Abre la app en el navegador y luego **DevTools** (`F12`).
+2. Ve a la pestaña **Console** y filtra por `CSP` o `Content Security Policy`.
+3. Busca mensajes del tipo:
+   - `Refused to load ... because it violates the following Content Security Policy directive...`
+4. En **Network**, revisa la respuesta del documento (`/`) y confirma que exista la cabecera:
+   - `Content-Security-Policy-Report-Only`
+5. Repite el flujo en rutas clave (marketing, booking, panel) para detectar orígenes no contemplados.
