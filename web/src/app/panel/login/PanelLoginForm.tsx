@@ -18,6 +18,7 @@ const DEFAULT_LOGIN_ERROR_MESSAGE =
   "No se pudo iniciar sesión. Inténtalo nuevamente.";
 const DEFAULT_PROFILE_ERROR_MESSAGE =
   "No pudimos cargar tu perfil. Inténtalo nuevamente.";
+const MIN_PASSWORD_LENGTH = 8;
 
 const meResponseSchema = z.object({
   profile: z
@@ -41,12 +42,15 @@ function getLoginErrorMessage(status: number, fallbackMessage: string): string {
   }
   if (status >= 500) {
     return "Tuvimos un problema interno. Vuelve a intentar en unos minutos.";
-    }
+  }
 
   return fallbackMessage;
 }
 
-function getProfileErrorMessage(status: number, fallbackMessage: string): string {
+function getProfileErrorMessage(
+  status: number,
+  fallbackMessage: string,
+): string {
   if (status === 401) {
     return "Tu sesión no es válida. Inicia sesión nuevamente.";
   }
@@ -75,6 +79,13 @@ export function PanelLoginForm() {
   const onSubmit = async (values: AuthLoginInput): Promise<void> => {
     setSubmitError("");
 
+    if (values.password.length < MIN_PASSWORD_LENGTH) {
+      const message = "La contraseña debe tener al menos 8 caracteres.";
+      setSubmitError(message);
+      toast.error(message);
+      return;
+    }
+
     try {
       const loginRes = await fetch("/api/auth/login", {
         method: "POST",
@@ -99,7 +110,10 @@ export function PanelLoginForm() {
         return;
       }
 
-      const meRes = await fetch("/api/me", { method: "GET", cache: "no-store" });
+      const meRes = await fetch("/api/me", {
+        method: "GET",
+        cache: "no-store",
+      });
       const meJsonRaw: unknown = await meRes.json().catch(() => ({}));
 
       if (!meRes.ok) {
@@ -111,7 +125,10 @@ export function PanelLoginForm() {
             ? meJsonRaw.error
             : DEFAULT_PROFILE_ERROR_MESSAGE;
 
-        const errorMessage = getProfileErrorMessage(meRes.status, fallbackMessage);
+        const errorMessage = getProfileErrorMessage(
+          meRes.status,
+          fallbackMessage,
+        );
 
         setSubmitError(errorMessage);
         toast.error(errorMessage);

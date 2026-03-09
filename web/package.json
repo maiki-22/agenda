@@ -9,10 +9,10 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "ci": "npm run typecheck && npm run lint && npm run build",
-     "test": "rm -rf .tmp-tests && tsc --skipLibCheck --moduleResolution bundler --module esnext --target es2022 --outDir .tmp-tests src/proxy.ts src/lib/auth/panel-route-protection.ts src/proxy.test.ts && node --test .tmp-tests/proxy.test.js"
+    "test": "rm -rf .tmp-tests && tsc --skipLibCheck --moduleResolution bundler --module esnext --target es2022 --outDir .tmp-tests src/proxy.ts src/lib/auth/panel-route-protection.ts src/proxy.test.ts && node --test .tmp-tests/proxy.test.js"
   },
   "dependencies": {
-    "@hookform/resolvers": "^3.10.0",
+    "@hookform/resolvers": "^5.0.1",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.97.0",
     "@tanstack/react-query": "^5.90.21",
