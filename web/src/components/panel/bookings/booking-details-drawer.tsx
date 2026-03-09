@@ -2,6 +2,7 @@
 
 import type { BookingItem } from "@/types/panel";
 import { STATUS_BADGE, STATUS_LABELS } from "@/types/panel";
+import { formatDateShortCL } from "@/lib/datetime/ui-date-format";
 
 interface BookingDetailsDrawerProps {
   booking: BookingItem | null;
@@ -57,7 +58,7 @@ export function BookingDetailsDrawer({
           </p>
           <p>
             <span className="text-[rgb(var(--muted))]">Fecha:</span>{" "}
-            {booking.date}
+            {formatDateShortCL(booking.date)}
           </p>
           <p>
             <span className="text-[rgb(var(--muted))]">Hora:</span>{" "}

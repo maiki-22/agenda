@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/Button";
 import type { OverviewResponse } from "@/types/panel";
+import { formatDateShortCL } from "@/lib/datetime/ui-date-format";
 
 interface OverviewBreakdownProps {
   overview: OverviewResponse | null;
@@ -59,7 +60,7 @@ export function OverviewBreakdown({
                 className="grid grid-cols-[90px_1fr_40px] gap-2 items-center text-xs sm:text-sm"
               >
                 <span className="text-[rgb(var(--muted))]">
-                  {row.date.slice(5)}
+                  {formatDateShortCL(row.date)}
                 </span>
                 <div className="h-2.5 rounded-full bg-[rgb(var(--surface))] overflow-hidden">
                   <div

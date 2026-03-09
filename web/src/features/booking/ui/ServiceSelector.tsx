@@ -57,7 +57,7 @@ export function ServiceSelector({
             <SelectCard
               key={s.id}
               title={s.name}
-              subtitle={`${s.duration_min} min • ${formatCLP(s.price_clp)}`}
+              subtitle={formatCLP(s.price_clp)}
               selected={value === (s.id as ServiceType)}
               onClick={() => onChange(s.id as ServiceType)}
             />

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { BookingDetailsDrawer } from "@/components/panel/bookings/booking-details-drawer";
 import { Button } from "@/components/ui/Button";
+import { formatDateShortCL } from "@/lib/datetime/ui-date-format";
 
 import type {
   BookingItem,
@@ -107,7 +108,7 @@ export function BookingsSection(props: BookingsSectionProps) {
               <div>
                 <p className="text-sm font-semibold">{booking.customer_name}</p>
                 <p className="text-xs text-[rgb(var(--muted))] mt-0.5">
-                  {booking.date} · {booking.time} · {booking.barber_name}
+                  {formatDateShortCL(booking.date)} · {booking.time} · {booking.barber_name}
                 </p>
               </div>
               <span

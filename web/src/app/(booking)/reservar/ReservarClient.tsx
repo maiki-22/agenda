@@ -15,6 +15,7 @@ import { DateScroller } from "@/features/booking/ui/DateScroller";
 import BookingHeader from "@/components/booking/BookingHeader";
 import MessageReportIcon from "@/components/icons/MessageReportIcon";
 import { useCatalog, type CatalogData } from "@/hooks/booking/use-catalog";
+import { formatDateShortCL } from "@/lib/datetime/ui-date-format";
 
 const TOTAL_STEPS = 6;
 
@@ -221,7 +222,7 @@ export function ReservarClient({ initialCatalog }: ReservarClientProps) {
                 <div className="space-y-2 text-sm">
                   <Row label="Barbero" value={barberNameFromId(s.barberId)} />
                   <Row label="Servicio" value={serviceLabelFromId(s.service)} />
-                  <Row label="Fecha" value={s.date} />
+                  <Row label="Fecha" value={formatDateShortCL(s.date)} />
                   <Row label="Hora" value={s.time} />
                 </div>
               </div>

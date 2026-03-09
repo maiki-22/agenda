@@ -3,6 +3,7 @@
 import { useEffect, useRef, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import { useConfirmacion } from "@/hooks/booking/use-confirmacion";
+import { formatDateLongCL } from "@/lib/datetime/ui-date-format";
 
 import CheckIcon from "@/components/icons/CheckIcon";
 import { SHOP_LOCATION } from "@/features/booking/config/location";
@@ -26,20 +27,7 @@ export default function ConfirmacionClient({ token }: { token: string }) {
 
   const duration = booking?.durationMinutes ?? 30;
 
-  const dateLong = (() => {
-    if (!booking?.date) {
-      return "";
-    }
-
-    const d = new Date(`${booking.date}T00:00:00`);
-    const fmt = new Intl.DateTimeFormat("es-CL", {
-      weekday: "long",
-      day: "2-digit",
-      month: "long",
-    });
-    const s = fmt.format(d);
-    return s.charAt(0).toUpperCase() + s.slice(1);
-  })();
+  const dateLong = booking?.date ? formatDateLongCL(booking.date) : "";
 
   const timeRange = (() => {
     if (!booking?.time) {

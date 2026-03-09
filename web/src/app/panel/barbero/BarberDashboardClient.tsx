@@ -7,6 +7,8 @@ import { DayOffForm } from "@/components/panel/scheduling/day-off-form";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/toast-provider";
 import { useBarberPanel } from "@/hooks/panel/use-barber-panel";
+import { formatDateShortCL } from "@/lib/datetime/ui-date-format";
+
 import type {
   BarberBlocksResponse,
   BarberDaysOffResponse,
@@ -140,7 +142,7 @@ export function BarberDashboardClient({
                   key={block.id}
                   className="rounded-2xl border border-[rgb(var(--border))] p-3 text-sm"
                 >
-                  {block.date} · {block.start_at.slice(11, 16)}-
+                  {formatDateShortCL(block.date)} · {block.start_at.slice(11, 16)}-
                   {block.end_at.slice(11, 16)}
                 </li>
               ))}
@@ -178,7 +180,7 @@ export function BarberDashboardClient({
                   key={dayOff.id}
                   className="rounded-2xl border border-[rgb(var(--border))] p-3 text-sm"
                 >
-                  {dayOff.date} {dayOff.reason ? `· ${dayOff.reason}` : ""}
+                  {formatDateShortCL(dayOff.date)} {dayOff.reason ? `· ${dayOff.reason}` : ""}
                 </li>
               ))}
             </ul>
