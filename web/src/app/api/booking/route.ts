@@ -77,7 +77,44 @@ function getErrorCode(error: unknown): string | null {
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.length > 0) {
+      return message;
+    }
+  }
   return "Error desconocido";
+}
+
+function logBookingValidationIssues(issues: unknown): void {
+  console.error(
+    "BOOKING_400_ISSUES",
+    JSON.stringify(issues, null, 2),
+  );
+}
+
+function logBookingRpcError(error: unknown): void {
+  const payload =
+    typeof error === "object" && error !== null
+      ? {
+          code:
+            "code" in error && typeof (error as { code?: unknown }).code === "string"
+              ? (error as { code: string }).code
+              : null,
+          message: getErrorMessage(error),
+          details:
+            "details" in error &&
+            typeof (error as { details?: unknown }).details === "string"
+              ? (error as { details: string }).details
+              : null,
+          hint:
+            "hint" in error && typeof (error as { hint?: unknown }).hint === "string"
+              ? (error as { hint: string }).hint
+              : null,
+        }
+      : { message: getErrorMessage(error) };
+
+  console.error("BOOKING_RPC_ERROR", JSON.stringify(payload, null, 2));
 }
 
 function mapBookingMutationError(error: {
@@ -332,12 +369,11 @@ export async function PATCH(req: Request): Promise<Response> {
     },
   );
 
-     if (error) {
-      const mapped = mapBookingMutationError({
-        code: getErrorCode(error),
-        message: getErrorMessage(error),
+  if (error) {
+    const mapped = mapBookingMutationError({
+      code: getErrorCode(error),
+      message: getErrorMessage(error),
     });
-
 
     return NextResponse.json(
       { error: mapped.error, code: mapped.code },
@@ -397,6 +433,7 @@ export async function POST(req: Request): Promise<Response> {
   const draftResult = BookingDraftSchema.safeParse(body);
 
   if (!draftResult.success) {
+    logBookingValidationIssues(draftResult.error.issues);
     const message = draftResult.error.issues[0]?.message ?? "Body inválido";
     return NextResponse.json(
       { error: message, code: "INVALID_INPUT" },
@@ -426,6 +463,7 @@ export async function POST(req: Request): Promise<Response> {
   });
 
   if (error) {
+    logBookingRpcError(error);
     const errorCode = getErrorCode(error);
     const errorMessage = getErrorMessage(error);
 
@@ -487,10 +525,22 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
-  const confirmationToken = createBookingConfirmationToken({
-    bookingId,
-    bookingToken: confirmationTokenResult.confirmationToken,
-  });
+  let confirmationToken: string;
+
+  try {
+    confirmationToken = createBookingConfirmationToken({
+      bookingId,
+      bookingToken: confirmationTokenResult.confirmationToken,
+    });
+  } catch {
+    return NextResponse.json(
+      {
+        error: "No se pudo generar el enlace de confirmación",
+        code: "BOOKING_CONFIRMATION_CONFIG_ERROR",
+      },
+      { status: 500 },
+    );
+  }
 
   const confirmationUrl = `/reservar/confirmacion?token=${encodeURIComponent(confirmationToken)}`;
 
