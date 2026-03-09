@@ -2,6 +2,29 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { AGENDA_BLOCKING_APPOINTMENT_STATUSES } from "../domain/appointment-status";
 import type { AvailabilityResult } from "../domain/booking.types";
 
+const AVAILABILITY_SOURCE_ERROR_CODE = "AVAILABILITY_SOURCE_ERROR" as const;
+
+class AvailabilitySourceError extends Error {
+  readonly code = AVAILABILITY_SOURCE_ERROR_CODE;
+
+  constructor(source: string, message?: string) {
+    super(message ?? `No se pudo validar disponibilidad (${source}).`);
+    this.name = "AvailabilitySourceError";
+  }
+}
+
+export function isAvailabilitySourceError(error: unknown): boolean {
+  return (
+    error instanceof AvailabilitySourceError ||
+    (error instanceof Error && "code" in error && error.code === AVAILABILITY_SOURCE_ERROR_CODE)
+  );
+}
+
+function throwAvailabilitySourceError(source: string, message?: string): never {
+  throw new AvailabilitySourceError(source, message);
+}
+
+
 function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(":").map(Number);
   return h * 60 + m;
@@ -49,21 +72,30 @@ export async function getAvailability(
   const dow = dowFromISO(q.date);
 
   // 1) Cierre global
-  const { data: closed } = await supabaseAdmin
+  const { data: closed, error: closedErr } = await supabaseAdmin
     .from("shop_closed_days")
     .select("date")
     .eq("date", q.date)
     .maybeSingle();
 
+    if (closedErr) {
+    throwAvailabilitySourceError("shop_closed_days", closedErr.message);
+  }
+
   if (closed) return { slots: [] };
 
   // 2) Día libre del barbero
-  const { data: dayOff } = await supabaseAdmin
+  const { data: dayOff, error: dayOffErr } = await supabaseAdmin
     .from("barber_days_off")
     .select("date")
     .eq("barber_id", q.barberId)
     .eq("date", q.date)
     .maybeSingle();
+
+    if (dayOffErr) {
+    throwAvailabilitySourceError("barber_days_off", dayOffErr.message);
+  }
+
 
   if (dayOff) return { slots: [] };
 
@@ -76,7 +108,9 @@ export async function getAvailability(
     .eq("active", true)
     .maybeSingle();
 
-  if (schedErr) throw schedErr;
+  if (schedErr) {
+    throwAvailabilitySourceError("barber_schedules", schedErr.message);
+  }
   if (!sched) return { slots: [] };
 
   const startMin = toMinutes(String(sched.start_time).slice(0, 5));
@@ -90,9 +124,11 @@ export async function getAvailability(
     .eq("date", q.date)
     .in("status", [...AGENDA_BLOCKING_APPOINTMENT_STATUSES]);
 
-  if (takenErr) throw takenErr;
+  if (takenErr) {
+    throwAvailabilitySourceError("appointments", takenErr.message);
+  }
 
- const taken: Array<{ start: number; end: number }> = (takenRows ?? []).map((b) => {
+  const taken: Array<{ start: number; end: number }> = (takenRows ?? []).map((b) => {
     const startHHmm = hhmmInSantiago(b.start_at);
     const endHHmm = hhmmInSantiago(b.end_at);
     return {
@@ -115,7 +151,9 @@ export async function getAvailability(
     .eq("barber_id", q.barberId)
     .eq("date", q.date);
 
-  if (blocksErr) throw blocksErr;
+  if (blocksErr) {
+    throwAvailabilitySourceError("barber_blocks", blocksErr.message);
+  }
 
   for (const b of blocks ?? []) {
     const startHHmm = hhmmInSantiago(b.start_at);

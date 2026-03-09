@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 import { listServices } from "@/features/booking/data/catalog.repo";
+import { isAvailabilitySourceError } from "@/features/booking/data/availability.repo";
 import { getAvailabilityService } from "@/features/booking/services/getAvailability";
 import {
   applyRateLimitHeaders,
@@ -136,7 +137,24 @@ export async function GET(req: Request) {
     applyRateLimitHeaders(res, rl);
     return res;
   } catch (e: unknown) {
+
+    if (isAvailabilitySourceError(e)) {
+      const res = NextResponse.json(
+        {
+          error: "No se pudo validar disponibilidad en este momento.",
+          code: "AVAILABILITY_SOURCE_ERROR",
+        },
+        { status: 503 },
+      );
+      applyRateLimitHeaders(res, rl);
+      return res;
+    }
+
+
     const err = e instanceof Error ? e : new Error("Bad Request");
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    return NextResponse.json(
+      { error: err.message, code: "AVAILABILITY_BAD_REQUEST" },
+      { status: 400 },
+    );
   }
 }

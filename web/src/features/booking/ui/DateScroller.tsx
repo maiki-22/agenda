@@ -38,6 +38,15 @@ type DayItem = {
   monthShort: string;
 };
 
+type AvailabilityStatus = "available" | "unavailable" | "error";
+
+function isAvailabilitySourceFailure(payload: unknown): boolean {
+  if (!payload || typeof payload !== "object") return false;
+  const code = (payload as { code?: unknown }).code;
+  return code === "AVAILABILITY_SOURCE_ERROR";
+}
+
+
 export function DateScroller({
   value,
   onChange,
@@ -51,10 +60,9 @@ export function DateScroller({
   service: string;
   daysAhead?: number;
 }) {
-  const [availabilityByDate, setAvailabilityByDate] = useState<
-    Record<string, boolean>
-  >({});
+  const [availabilityByDate, setAvailabilityByDate] = useState<Record<string, AvailabilityStatus>>({});
   const [loadingAvailability, setLoadingAvailability] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const drag = useRef({
     active: false,
@@ -111,10 +119,12 @@ export function DateScroller({
     async function run() {
       if (!barberId || !service) {
         setAvailabilityByDate({});
+        setAvailabilityError(false);
         return;
       }
 
       setLoadingAvailability(true);
+      setAvailabilityError(false);
       try {
         const from = items[0]?.iso;
         const to = items[items.length - 1]?.iso;
@@ -133,7 +143,10 @@ export function DateScroller({
               const hasValidSlots = slots.some((slot: string) =>
                 isSlotAtLeastMinutesFromNow(it.iso, slot, MIN_LEAD_MINUTES),
               );
-              return [it.iso, hasValidSlots] as const;
+              return [
+                it.iso,
+                hasValidSlots ? "available" : "unavailable",
+              ] as const;
             }),
           );
 
@@ -155,6 +168,12 @@ export function DateScroller({
             slotsByDate = json?.slotsByDate ?? {};
             batchOk = true;
             continue;
+          }
+
+          const errorPayload = await res.json().catch(() => null);
+          if (isAvailabilitySourceFailure(errorPayload)) {
+            if (ok) setAvailabilityError(true);
+            break;
           }
 
           if (res.status === 429) break;
@@ -185,15 +204,28 @@ export function DateScroller({
                 cache: "no-store",
               },
             );
-            if (!res.ok) return [it.iso, false] as const;
+            if (!res.ok) {
+              const errorPayload = await res.json().catch(() => null);
+              if (isAvailabilitySourceFailure(errorPayload)) {
+                return [it.iso, "error"] as const;
+              }
+              return [it.iso, "unavailable"] as const;
+            }
             const json = await res.json();
             const daySlots = Array.isArray(json?.slots) ? json.slots : [];
-            return [it.iso, daySlots] as const;
+            const hasValidSlots = daySlots.some((slot: string) =>
+              isSlotAtLeastMinutesFromNow(it.iso, slot, MIN_LEAD_MINUTES),
+            );
+            return [it.iso, hasValidSlots ? "available" : "unavailable"] as const;
           }),
         );
 
         if (!ok) return;
-        setAvailabilityByDate(toAvailabilityMap(Object.fromEntries(checks)));
+        const nextMap = Object.fromEntries(checks);
+        setAvailabilityByDate(nextMap);
+        if (Object.values(nextMap).includes("error")) {
+          setAvailabilityError(true);
+        }
       } finally {
         if (ok) setLoadingAvailability(false);
       }
@@ -209,7 +241,7 @@ export function DateScroller({
   useEffect(() => {
     if (!value) return;
     if (loadingAvailability) return;
-    if (availabilityByDate[value] === false) onChange("");
+    if (availabilityByDate[value] === "unavailable") onChange("");
   }, [value, loadingAvailability, availabilityByDate, onChange]);
 
   // Evita disparar onChange si el usuario estaba arrastrando
@@ -253,7 +285,7 @@ export function DateScroller({
         {items.map((it) => {
           const selected = value === it.iso;
           const disabled =
-            loadingAvailability || availabilityByDate[it.iso] === false;
+            loadingAvailability || availabilityByDate[it.iso] === "unavailable";
 
           return (
             <button
@@ -306,6 +338,13 @@ export function DateScroller({
       {loadingAvailability ? (
         <p className="text-sm text-[rgb(var(--muted))]">
           Cargando disponibilidad…
+        </p>
+      ) : null}
+
+      {availabilityError ? (
+        <p className="text-sm text-amber-300">
+          No se pudo validar disponibilidad para algunos días. Esto es distinto a
+          “sin cupos”. Intenta nuevamente en unos segundos.
         </p>
       ) : null}
 

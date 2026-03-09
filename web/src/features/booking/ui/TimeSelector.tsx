@@ -13,6 +13,13 @@ function isSlotAtLeastMinutesFromNow(dateYYYYMMDD: string, hhmm: string, minMinu
   return slot - Date.now() >= minMinutes * 60 * 1000;
 }
 
+function isAvailabilitySourceFailure(payload: unknown): boolean {
+  if (!payload || typeof payload !== "object") return false;
+  const code = (payload as { code?: unknown }).code;
+  return code === "AVAILABILITY_SOURCE_ERROR";
+}
+
+
 export function TimeSelector({
   barberId,
   date,
@@ -30,6 +37,7 @@ export function TimeSelector({
 }) {
   const [slots, setSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState(false);
   const canLoad = Boolean(barberId && date && service);
 
   const url = useMemo(() => {
@@ -48,10 +56,18 @@ export function TimeSelector({
     async function run() {
       if (!url) return;
       setLoading(true);
+      setAvailabilityError(false);
       try {
         const res = await fetch(url, { cache: "no-store" });
         const json = await res.json();
         if (!ok) return;
+
+        if (!res.ok) {
+          setSlots([]);
+          setAvailabilityError(isAvailabilitySourceFailure(json));
+          return;
+        }
+
         setSlots(Array.isArray(json.slots) ? json.slots : []);
       } finally {
         if (ok) setLoading(false);
@@ -102,6 +118,13 @@ export function TimeSelector({
       {loading ? (
         <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 text-sm text-[rgb(var(--muted))]">
           Cargando horarios...
+        </div>
+        ) : availabilityError ? (
+        <div className="rounded-2xl border border-amber-400/60 bg-[rgb(var(--surface-2))] p-4 text-sm text-amber-200">
+          No se pudo validar disponibilidad en este momento.
+          <div className="mt-2 text-xs">
+            Intenta nuevamente. Este estado es distinto a “sin horarios disponibles”.
+          </div>
         </div>
       ) : filteredSlots.length === 0 ? (
         <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 text-sm text-[rgb(var(--muted))]">
