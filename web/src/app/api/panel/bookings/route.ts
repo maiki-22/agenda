@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
 import { getAuthenticatedPanelUser } from "@/lib/auth/get-authenticated-panel-user";
-
 import { getTypedSearchParams } from "@/lib/search-params";
+import { supabaseServer } from "@/lib/supabase/server";
 import { panelBookingsQuerySchema } from "@/validations/panel-bookings-query.schema";
 
-type BookingRow = {
+type SearchBookingsRow = {
   id: string;
   date: string;
   time: string;
@@ -14,11 +13,12 @@ type BookingRow = {
   customer_phone: string;
   barber_id: string;
   service_id: string;
-  barbers: { name: string }[] | null;
-  services: { name: string }[] | null;
+  barber_name: string | null;
+  service_name: string | null;
+  total_count: number;
 };
 
-export async function GET(req: Request) {
+export async function GET(req: Request): Promise<Response> {
   const supabase = await supabaseServer();
   const panelUser = await getAuthenticatedPanelUser(supabase);
 
@@ -31,9 +31,7 @@ export async function GET(req: Request) {
 
  
 
-const parsedQuery = panelBookingsQuerySchema.safeParse(
-    getTypedSearchParams(req),
-  );
+const parsedQuery = panelBookingsQuerySchema.safeParse(getTypedSearchParams(req));
 
   if (!parsedQuery.success) {
     const message = parsedQuery.error.issues[0]?.message ?? "Parámetros inválidos";
@@ -44,60 +42,38 @@ const parsedQuery = panelBookingsQuerySchema.safeParse(
   }
 
   const { dateFrom, dateTo, barberId, status, q, page, pageSize } = parsedQuery.data;
+  const scopedBarberId = panelUser.role === "barber"
+    ? panelUser.barberId
+    : barberId && barberId !== "all"
+      ? barberId
+      : null;
 
-  let query = supabase
-    .from("appointments")
-    .select(
-      `
-      id,
-      date,
-      time,
-      status,
-      customer_name,
-      customer_phone,
-      barber_id,
-      service_id,
-      barbers(name),
-      services(name)
-    `,
-      { count: "exact" },
-    )
-    .order("date", { ascending: true })
-    .order("time", { ascending: true });
+  const { data, error } = await supabase.rpc("search_bookings", {
+    p_barber_id: scopedBarberId,
+    p_date_from: dateFrom ?? null,
+    p_date_to: dateTo ?? null,
+    p_page: page,
+    p_page_size: pageSize,
+    p_query: q || null,
+    p_status: status === "all" ? null : status,
+  });
 
-  if (dateFrom) query = query.gte("date", dateFrom);
-  if (dateTo) query = query.lte("date", dateTo);
-  if (panelUser.role === "barber") {
-    query = query.eq("barber_id", panelUser.barberId);
-  } else if (barberId && barberId !== "all") {
-    query = query.eq("barber_id", barberId);
-  }
-  if (status !== "all") query = query.eq("status", status);
-
-  if (q) {
-    const escaped = q.replace(/[%_]/g, "");
-    query = query.or(
-      `customer_name.ilike.%${escaped}%,customer_phone.ilike.%${escaped}%`,
+  if (error) {
+    return NextResponse.json(
+      { error: error.message, code: "PANEL_BOOKINGS_QUERY_ERROR" },
+      { status: 400 },
     );
   }
 
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-  query = query.range(from, to);
-
-  const { data, count, error } = await query;
-
-  if (error) {
-    return NextResponse.json({ error: error.message, code: "PANEL_BOOKINGS_QUERY_ERROR" }, { status: 400 });
-  }
+const bookings = (data ?? []) as SearchBookingsRow[];
 
   return NextResponse.json(
     {
       ok: true,
       page,
       pageSize,
-      total: count ?? 0,
-      items: ((data ?? []) as BookingRow[]).map((item) => ({
+      total: bookings[0]?.total_count ?? 0,
+      items: bookings.map((item) => ({
         id: item.id,
         date: item.date,
         time: item.time,
@@ -105,9 +81,9 @@ const parsedQuery = panelBookingsQuerySchema.safeParse(
         customer_name: item.customer_name,
         customer_phone: item.customer_phone,
         barber_id: item.barber_id,
-        barber_name: item.barbers?.[0]?.name ?? item.barber_id,
+        barber_name: item.barber_name ?? item.barber_id,
         service_id: item.service_id,
-        service_name: item.services?.[0]?.name ?? item.service_id,
+        service_name: item.service_name ?? item.service_id,
       })),
     },
     { status: 200 },
