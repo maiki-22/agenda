@@ -1,8 +1,14 @@
 "use client";
 
 import { type ReactNode, useState } from "react";
+import {
+  DashboardTabs,
+  type DashboardTabKey,
+} from "@/components/panel/admin/dashboard-tabs";
 import { BookingsSection } from "@/components/panel/bookings/bookings-section";
 import { PanelHeader } from "@/components/panel/panel-header";
+import { DashboardStatsCards } from "@/components/panel/overview/dashboard-stats-cards";
+import { UpcomingBookingsPanel } from "@/components/panel/overview/upcoming-bookings-panel";
 import { BarberBlockForm } from "@/components/panel/scheduling/barber-block-form";
 import { DayOffForm } from "@/components/panel/scheduling/day-off-form";
 import { Button } from "@/components/ui/Button";
@@ -16,8 +22,6 @@ import type {
   BookingStatus,
   BookingsResponse,
 } from "@/types/panel";
-
-type BarberTab = "citas" | "bloqueos" | "dias-libres";
 
 interface BarberDashboardClientProps {
   barberId: string;
@@ -38,7 +42,10 @@ export function BarberDashboardClient({
   initialDaysOff,
   role,
 }: BarberDashboardClientProps) {
-  const [activeTab, setActiveTab] = useState<BarberTab>("citas");
+  const [activeTab, setActiveTab] = useState<DashboardTabKey>("summary");
+  const [upcomingFilter, setUpcomingFilter] = useState<"today" | "all">(
+    "today",
+  );
   const toast = useToast();
   const panel = useBarberPanel({
     barberId,
@@ -58,41 +65,28 @@ export function BarberDashboardClient({
       toast.error(`No se pudo actualizar la cita: ${error}`);
       return;
     }
+
     toast.success("Cita actualizada correctamente");
   }
 
   return (
-    <main className="page-container py-5 sm:py-8 space-y-5 sm:space-y-6">
+    <main className="page-container space-y-5 py-5 pb-24 sm:space-y-6 sm:py-8 sm:pb-8">
       <PanelHeader role={role} />
+      <DashboardTabs activeTab={activeTab} onChange={setActiveTab} />
 
-      <nav
-        className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-1.5 shadow-[var(--shadow-soft)]"
-        aria-label="Secciones de barbero"
-      >
-        <ul className="grid grid-cols-3 gap-1">
-          {[
-            ["citas", "Citas"],
-            ["bloqueos", "Bloqueos"],
-            ["dias-libres", "Días libres"],
-          ].map(([key, label]) => (
-            <li key={key}>
-              <button
-                type="button"
-                onClick={() => setActiveTab(key as BarberTab)}
-                className={`w-full rounded-2xl px-3 py-2 text-xs sm:text-sm font-medium transition ${
-                  activeTab === key
-                    ? "bg-[rgb(var(--primary))] text-[rgb(var(--on-primary))]"
-                    : "text-[rgb(var(--muted))]"
-                }`}
-              >
-                {label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      {activeTab === "summary" ? (
+        <section className="space-y-3">
+          <DashboardStatsCards bookings={panel.bookings?.items ?? []} />
+          <UpcomingBookingsPanel
+            bookings={panel.bookings?.items ?? []}
+            filter={upcomingFilter}
+            onFilterChange={setUpcomingFilter}
+            onViewFullAgenda={() => setActiveTab("bookings")}
+          />
+        </section>
+      ) : null}
 
-      {activeTab === "citas" ? (
+      {activeTab === "bookings" ? (
         <BookingsSection
           bookings={panel.bookings}
           loading={panel.bookingsLoading}
@@ -101,19 +95,19 @@ export function BarberDashboardClient({
           bookingStatus="all"
           onSearchChange={() => undefined}
           onStatusChange={() => undefined}
-          onRetry={async () => {
+          onRetry={async (): Promise<void> => {
             await panel.retryBookings();
           }}
           onUpdateStatus={handleBookingStatus}
         />
       ) : null}
 
-      {activeTab === "bloqueos" ? (
+      {activeTab === "operations" ? (
         <section className="space-y-4">
           <BarberBlockForm
             selectedBarber={barberId}
             loading={panel.schedulingLoading}
-            onSubmit={async (input) => {
+            onSubmit={async (input): Promise<void> => {
               const error = await panel.createBlock(input);
               if (error) {
                 toast.error(`No se pudo crear el bloqueo: ${error}`);
@@ -122,12 +116,13 @@ export function BarberDashboardClient({
               toast.success("Bloqueo creado correctamente");
             }}
           />
+
           <ModuleState
             title="Bloqueos próximos"
             loading={panel.blocksLoading}
             error={panel.blocksError}
             empty={panel.blocks.length === 0}
-            onRetry={async () => {
+            onRetry={async (): Promise<void> => {
               await panel.retryBlocks();
             }}
           >
@@ -143,15 +138,11 @@ export function BarberDashboardClient({
               ))}
             </ul>
           </ModuleState>
-        </section>
-      ) : null}
 
-      {activeTab === "dias-libres" ? (
-        <section className="space-y-4">
           <DayOffForm
             selectedBarber={barberId}
             loading={panel.schedulingLoading}
-            onSubmit={async (input) => {
+            onSubmit={async (input): Promise<void> => {
               const error = await panel.createDayOff(input);
               if (error) {
                 toast.error(`No se pudo crear el día libre: ${error}`);
@@ -160,12 +151,13 @@ export function BarberDashboardClient({
               toast.success("Día libre creado correctamente");
             }}
           />
+
           <ModuleState
             title="Días libres registrados"
             loading={panel.daysOffLoading}
             error={panel.daysOffError}
             empty={panel.daysOff.length === 0}
-            onRetry={async () => {
+            onRetry={async (): Promise<void> => {
               await panel.retryDaysOff();
             }}
           >
@@ -175,7 +167,8 @@ export function BarberDashboardClient({
                   key={dayOff.id}
                   className="rounded-2xl border border-[rgb(var(--border))] p-3 text-sm"
                 >
-                  {formatDateShortCL(dayOff.date)} {dayOff.reason ? `· ${dayOff.reason}` : ""}
+                  {formatDateShortCL(dayOff.date)}{" "}
+                  {dayOff.reason ? `· ${dayOff.reason}` : ""}
                 </li>
               ))}
             </ul>
@@ -203,12 +196,14 @@ function ModuleState({
   onRetry,
   children,
 }: ModuleStateProps) {
-  if (loading)
+  if (loading) {
     return (
       <p className="text-sm text-[rgb(var(--muted))]">
         Cargando {title.toLowerCase()}...
       </p>
     );
+  }
+
   if (error) {
     return (
       <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4">
@@ -220,11 +215,14 @@ function ModuleState({
       </div>
     );
   }
-  if (empty)
+
+  if (empty) {
     return (
       <p className="text-sm text-[rgb(var(--muted))]">
         No hay {title.toLowerCase()}.
       </p>
     );
+  }
+
   return children;
 }

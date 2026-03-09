@@ -47,7 +47,6 @@ export function PanelHeader({ role }: PanelHeaderProps) {
     <header className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-3 py-3 shadow-[var(--shadow-soft)] sm:px-5 sm:py-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <LogoAdaptive className="w-9 sm:w-10" />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold sm:text-base">
               La Sucursal Barber Shop
@@ -85,7 +84,11 @@ export function PanelHeader({ role }: PanelHeaderProps) {
       </div>
 
       {signOutError ? (
-        <p className="mt-2 text-sm text-red-500" role="status" aria-live="polite">
+        <p
+          className="mt-2 text-sm text-red-500"
+          role="status"
+          aria-live="polite"
+        >
           {signOutError}
         </p>
       ) : null}

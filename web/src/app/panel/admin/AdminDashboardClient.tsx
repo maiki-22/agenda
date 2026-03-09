@@ -8,9 +8,9 @@ import {
   type DashboardTabKey,
 } from "@/components/panel/admin/dashboard-tabs";
 import { BookingsSection } from "@/components/panel/bookings/bookings-section";
-import { OverviewBreakdown } from "@/components/panel/overview/overview-breakdown";
 import { OverviewFilters } from "@/components/panel/overview/overview-filters";
-import { OverviewSummary } from "@/components/panel/overview/overview-summary";
+import { DashboardStatsCards } from "@/components/panel/overview/dashboard-stats-cards";
+import { UpcomingBookingsPanel } from "@/components/panel/overview/upcoming-bookings-panel";
 import { useToast } from "@/components/ui/toast-provider";
 import { useBarberBlocks } from "@/hooks/panel/use-barber-blocks";
 import { useBookings } from "@/hooks/panel/use-bookings";
@@ -37,6 +37,7 @@ export function AdminDashboardClient({
   const toast = useToast();
   const [liveMessage, setLiveMessage] = useState<string>("");
   const [activeTab, setActiveTab] = useState<DashboardTabKey>("summary");
+  const [upcomingFilter, setUpcomingFilter] = useState<"today" | "all">("today");
   const overviewState = useOverview(initialOverview);
   const bookingsState = useBookings({
     overview: overviewState.overview,
@@ -69,7 +70,7 @@ export function AdminDashboardClient({
   }
 
   return (
-    <main className="page-container py-5 sm:py-8 space-y-5 sm:space-y-6">
+    <main className="page-container space-y-5 py-5 pb-24 sm:space-y-6 sm:py-8 sm:pb-8">
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {liveMessage}
       </p>
@@ -99,27 +100,30 @@ export function AdminDashboardClient({
       ) : null}
 
       {activeTab === "summary" ? (
-        <>
-          <OverviewSummary
-            overview={overviewState.overview}
-            error={overviewState.error}
-            onRetry={overviewState.reloadOverview}
-          />
-          <OverviewBreakdown
-            overview={overviewState.overview}
-            error={overviewState.error}
-            onRetry={overviewState.reloadOverview}
-            onToggleBarberStatus={overviewState.onToggleBarberStatus}
-            onFeedback={(message, type) => {
-              if (type === "error") {
-                toast.error(message);
-              } else {
-                toast.success(message);
-              }
-              setLiveMessage(message);
-            }}
-          />
-        </>
+        <section className="space-y-3">
+          {overviewState.error ? (
+            <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4">
+              <h2 className="font-semibold">No se pudo cargar el resumen</h2>
+              <p className="mt-1 text-sm text-[rgb(var(--muted))]">{overviewState.error}</p>
+            </section>
+          ) : null}
+
+          <DashboardStatsCards bookings={bookingsState.bookings?.items ?? []} />
+
+          {bookingsState.error ? (
+            <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4">
+              <h2 className="font-semibold">No se pudieron cargar las próximas citas</h2>
+              <p className="mt-1 text-sm text-[rgb(var(--muted))]">{bookingsState.error}</p>
+            </section>
+          ) : (
+            <UpcomingBookingsPanel
+              bookings={bookingsState.bookings?.items ?? []}
+              filter={upcomingFilter}
+              onFilterChange={setUpcomingFilter}
+              onViewFullAgenda={() => setActiveTab("bookings")}
+            />
+          )}
+        </section>
       ) : null}
 
       {activeTab === "bookings" ? (
