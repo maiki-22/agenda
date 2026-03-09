@@ -48,11 +48,39 @@ export function DashboardStatsCards({ bookings }: DashboardStatsCardsProps) {
 
   return (
     <section
-      className="grid grid-cols-2 gap-3"
+      className="grid grid-cols-1 gap-4 sm:grid-cols-2"
       aria-label="Indicadores de reservas"
     >
-      <StatCard label="Reservas hoy" value={reservationsToday} />
-      <StatCard label="Esta semana" value={reservationsThisWeek} />
+      <StatCard
+        label="Reservas hoy"
+        value={reservationsToday}
+        icon={
+          <svg viewBox="0 0 24 24" fill="none" className="h-full w-full">
+            <path
+              d="M7 3v3M17 3v3M4 9h16M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        }
+      />
+      <StatCard
+        label="Esta semana"
+        value={reservationsThisWeek}
+        icon={
+          <svg viewBox="0 0 24 24" fill="none" className="h-full w-full">
+            <path
+              d="M4 7h16M6 4h12a2 2 0 0 1 2 2v11a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a2 2 0 0 1 2-2ZM9 11h6M9 15h4"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        }
+      />
     </section>
   );
 }

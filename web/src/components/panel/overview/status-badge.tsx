@@ -6,11 +6,11 @@ interface StatusBadgeProps {
 
 const STATUS_STYLES: Record<BookingStatus, string> = {
   needs_confirmation:
-    "bg-orange-100 text-orange-900 dark:bg-orange-500/20 dark:text-orange-200",
+    "bg-amber-500/10 text-amber-700 dark:text-amber-300 [&>span]:bg-amber-500",
   confirmed:
-    "bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200",
-  booked: "bg-sky-100 text-sky-900 dark:bg-sky-500/20 dark:text-sky-200",
-  cancelled: "bg-zinc-200 text-zinc-900 dark:bg-zinc-500/20 dark:text-zinc-200",
+    "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 [&>span]:bg-emerald-500",
+  booked: "bg-sky-500/10 text-sky-700 dark:text-sky-300 [&>span]:bg-sky-500",
+  cancelled: "bg-zinc-500/10 text-zinc-700 dark:text-zinc-300 [&>span]:bg-zinc-500",
 };
 
 const STATUS_LABELS: Record<BookingStatus, string> = {
@@ -23,9 +23,10 @@ const STATUS_LABELS: Record<BookingStatus, string> = {
 export function StatusBadge({ status }: StatusBadgeProps) {
   return (
     <span
-      className={`inline-flex rounded-full px-2 py-1 text-[11px] font-medium ${STATUS_STYLES[status]}`}
+      className={`inline-flex min-h-7 items-center gap-2 rounded-full px-2.5 py-1 text-xs font-normal ${STATUS_STYLES[status]}`}
       aria-label={`Estado: ${STATUS_LABELS[status]}`}
     >
+      <span className="h-1.5 w-1.5 rounded-full" aria-hidden="true" />
       {STATUS_LABELS[status]}
     </span>
   );

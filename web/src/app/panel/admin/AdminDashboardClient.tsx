@@ -29,6 +29,48 @@ interface AdminDashboardClientProps {
   role: "admin";
 }
 
+function SummaryStatsSkeleton() {
+  return (
+    <section
+      className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+      aria-label="Cargando indicadores"
+    >
+      {Array.from({ length: 2 }).map((_, index) => (
+        <article
+          key={`stats-skeleton-${index}`}
+          className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4"
+        >
+          <div className="h-3 w-24 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
+          <div className="mt-3 h-10 w-20 rounded-xl bg-[rgb(var(--surface))] animate-pulse" />
+        </article>
+      ))}
+    </section>
+  );
+}
+
+function UpcomingBookingsSkeleton() {
+  return (
+    <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-5">
+      <div className="h-5 w-44 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
+      <div className="mt-6 space-y-3">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={`booking-skeleton-${index}`}
+            className="grid grid-cols-[96px_minmax(0,1fr)_auto] items-center gap-4 py-3"
+          >
+            <div className="h-4 w-14 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-4 w-2/3 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
+              <div className="h-3 w-1/2 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
+            </div>
+            <div className="h-6 w-20 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function AdminDashboardClient({
   initialOverview,
   initialBookings,
@@ -37,7 +79,9 @@ export function AdminDashboardClient({
   const toast = useToast();
   const [liveMessage, setLiveMessage] = useState<string>("");
   const [activeTab, setActiveTab] = useState<DashboardTabKey>("summary");
-  const [upcomingFilter, setUpcomingFilter] = useState<"today" | "all">("today");
+  const [upcomingFilter, setUpcomingFilter] = useState<"today" | "all">(
+    "today",
+  );
   const overviewState = useOverview(initialOverview);
   const bookingsState = useBookings({
     overview: overviewState.overview,
@@ -75,7 +119,7 @@ export function AdminDashboardClient({
         {liveMessage}
       </p>
 
-       <PanelHeader role={role} />
+      <PanelHeader role={role} />
 
       <DashboardTabs activeTab={activeTab} onChange={setActiveTab} />
 
@@ -104,17 +148,31 @@ export function AdminDashboardClient({
           {overviewState.error ? (
             <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4">
               <h2 className="font-semibold">No se pudo cargar el resumen</h2>
-              <p className="mt-1 text-sm text-[rgb(var(--muted))]">{overviewState.error}</p>
+              <p className="mt-1 text-sm text-[rgb(var(--muted))]">
+                {overviewState.error}
+              </p>
             </section>
           ) : null}
 
-          <DashboardStatsCards bookings={bookingsState.bookings?.items ?? []} />
+          {overviewState.loading || bookingsState.loading ? (
+            <SummaryStatsSkeleton />
+          ) : (
+            <DashboardStatsCards
+              bookings={bookingsState.bookings?.items ?? []}
+            />
+          )}
 
           {bookingsState.error ? (
             <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4">
-              <h2 className="font-semibold">No se pudieron cargar las próximas citas</h2>
-              <p className="mt-1 text-sm text-[rgb(var(--muted))]">{bookingsState.error}</p>
+              <h2 className="font-semibold">
+                No se pudieron cargar las próximas citas
+              </h2>
+              <p className="mt-1 text-sm text-[rgb(var(--muted))]">
+                {bookingsState.error}
+              </p>
             </section>
+          ) : bookingsState.loading ? (
+            <UpcomingBookingsSkeleton />
           ) : (
             <UpcomingBookingsPanel
               bookings={bookingsState.bookings?.items ?? []}
