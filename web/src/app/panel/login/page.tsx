@@ -1,5 +1,7 @@
+import { redirect } from "next/navigation";
+import { getAuthenticatedPanelUser } from "@/lib/auth/get-authenticated-panel-user";
+import { supabaseServer } from "@/lib/supabase/server";
 import { PanelLoginForm } from "./PanelLoginForm";
-
 
 const TRUST_BADGES = [
   "Acceso seguro con sesión validada en servidor",
@@ -7,11 +9,17 @@ const TRUST_BADGES = [
   "Soporte rápido para recuperación de acceso",
 ] as const;
 
+export default async function PanelLoginPage() {
+  const supabase = await supabaseServer();
+  const panelUser = await getAuthenticatedPanelUser(supabase);
 
-export default function PanelLoginPage() {
+  if (panelUser.ok) {
+    redirect(panelUser.role === "admin" ? "/panel/admin" : "/panel/barbero");
+  }
+
   return (
     <main className="page-container py-8 sm:py-12">
-       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-stretch">
+      <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-stretch">
         <aside className="rounded-[var(--card-radius)] border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5 shadow-[var(--shadow-soft)] sm:p-6 lg:p-8">
           <p className="text-xs tracking-widest uppercase text-[rgb(var(--muted))]">
             Acceso seguro
@@ -37,7 +45,9 @@ export default function PanelLoginPage() {
             <p className="text-xs tracking-widest uppercase text-[rgb(var(--muted))]">
               Inicio de sesión
             </p>
-            <h2 className="text-xl font-semibold sm:text-2xl">Bienvenido de vuelta</h2>
+            <h2 className="text-xl font-semibold sm:text-2xl">
+              Bienvenido de vuelta
+            </h2>
             <p className="text-sm text-[rgb(var(--muted))]">
               Ingresa con tu cuenta de administrador para acceder al panel.
             </p>
