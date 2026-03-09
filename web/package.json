@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "ci": "npm run typecheck && npm run lint && npm run build"
+    "ci": "npm run typecheck && npm run lint && npm run build",
+    "test": "rm -rf .tmp-tests && tsc --skipLibCheck --moduleResolution bundler --module esnext --target es2022 --outDir .tmp-tests src/middleware.ts src/lib/auth/panel-route-protection.ts src/middleware.test.ts && node --test .tmp-tests/middleware.test.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
