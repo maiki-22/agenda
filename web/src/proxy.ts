@@ -13,7 +13,7 @@ type CookieToSet = {
   options: CookieOptions;
 };
 
-export async function middleware(request: NextRequest): Promise<NextResponse> {
+export async function proxy(request: NextRequest): Promise<NextResponse> {
   const response = NextResponse.next();
 
   const supabase = createServerClient(
