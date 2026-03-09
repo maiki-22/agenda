@@ -1,5 +1,6 @@
 "use client";
-import { useRef, useCallback, useMemo, useEffect, useState } from "react";
+import { useRef, useCallback, useMemo, useEffect } from "react";
+import { useAvailabilityBatch } from "@/hooks/booking/use-availability-batch";
 
 const MIN_LEAD_MINUTES = 30;
 
@@ -27,10 +28,6 @@ function isSlotAtLeastMinutesFromNow(
   return slot - Date.now() >= minMinutes * 60 * 1000;
 }
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 type DayItem = {
   iso: string;
   labelTop: string;
@@ -38,14 +35,7 @@ type DayItem = {
   monthShort: string;
 };
 
-type AvailabilityStatus = "available" | "unavailable" | "error";
-
-function isAvailabilitySourceFailure(payload: unknown): boolean {
-  if (!payload || typeof payload !== "object") return false;
-  const code = (payload as { code?: unknown }).code;
-  return code === "AVAILABILITY_SOURCE_ERROR";
-}
-
+type AvailabilityStatus = "available" | "unavailable";
 
 export function DateScroller({
   value,
@@ -60,9 +50,6 @@ export function DateScroller({
   service: string;
   daysAhead?: number;
 }) {
-  const [availabilityByDate, setAvailabilityByDate] = useState<Record<string, AvailabilityStatus>>({});
-  const [loadingAvailability, setLoadingAvailability] = useState(false);
-  const [availabilityError, setAvailabilityError] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const drag = useRef({
     active: false,
@@ -113,130 +100,40 @@ export function DateScroller({
     return out;
   }, [daysAhead]);
 
-  useEffect(() => {
-    let ok = true;
+  const from = items[0]?.iso ?? "";
+  const to = items[items.length - 1]?.iso ?? "";
+  const dateRange = `${from}:${to}:${service}`;
 
-    async function run() {
-      if (!barberId || !service) {
-        setAvailabilityByDate({});
-        setAvailabilityError(false);
-        return;
-      }
+  const availabilityBatchQuery = useAvailabilityBatch({
+    barberId,
+    from,
+    to,
+    service,
+    dateRange,
+    dates: items.map((item) => item.iso),
+  });
 
-      setLoadingAvailability(true);
-      setAvailabilityError(false);
-      try {
-        const from = items[0]?.iso;
-        const to = items[items.length - 1]?.iso;
-
-        if (!from || !to) {
-          if (ok) setAvailabilityByDate({});
-          return;
-        }
-
-        const toAvailabilityMap = (slotsByDate: Record<string, string[]>) =>
-          Object.fromEntries(
-            items.map((it) => {
-              const slots = Array.isArray(slotsByDate[it.iso])
-                ? slotsByDate[it.iso]
-                : [];
-              const hasValidSlots = slots.some((slot: string) =>
-                isSlotAtLeastMinutesFromNow(it.iso, slot, MIN_LEAD_MINUTES),
-              );
-              return [
-                it.iso,
-                hasValidSlots ? "available" : "unavailable",
-              ] as const;
-            }),
-          );
-
-        const params = new URLSearchParams({ barberId, service, from, to });
-
-        let batchOk = false;
-        let slotsByDate: Record<string, string[]> = {};
-
-        for (let attempt = 0; attempt < 2 && !batchOk; attempt += 1) {
-          const res = await fetch(
-            `/api/availability/batch?${params.toString()}`,
-            {
-              cache: "no-store",
-            },
-          );
-
-          if (res.ok) {
-            const json = await res.json();
-            slotsByDate = json?.slotsByDate ?? {};
-            batchOk = true;
-            continue;
-          }
-
-          const errorPayload = await res.json().catch(() => null);
-          if (isAvailabilitySourceFailure(errorPayload)) {
-            if (ok) setAvailabilityError(true);
-            break;
-          }
-
-          if (res.status === 429) break;
-
-          if (attempt === 0) {
-            await sleep(250);
-          }
-        }
-
-        if (batchOk) {
-          if (!ok) return;
-          setAvailabilityByDate(toAvailabilityMap(slotsByDate));
-          return;
-        }
-
-        // Fallback: consulta por día individual
-        const checks = await Promise.all(
-          items.map(async (it) => {
-            const singleParams = new URLSearchParams({
-              barberId,
-              date: it.iso,
-              service,
-            });
-
-            const res = await fetch(
-              `/api/availability?${singleParams.toString()}`,
-              {
-                cache: "no-store",
-              },
-            );
-            if (!res.ok) {
-              const errorPayload = await res.json().catch(() => null);
-              if (isAvailabilitySourceFailure(errorPayload)) {
-                return [it.iso, "error"] as const;
-              }
-              return [it.iso, "unavailable"] as const;
-            }
-            const json = await res.json();
-            const daySlots = Array.isArray(json?.slots) ? json.slots : [];
-            const hasValidSlots = daySlots.some((slot: string) =>
-              isSlotAtLeastMinutesFromNow(it.iso, slot, MIN_LEAD_MINUTES),
-            );
-            return [it.iso, hasValidSlots ? "available" : "unavailable"] as const;
-          }),
-        );
-
-        if (!ok) return;
-        const nextMap = Object.fromEntries(checks);
-        setAvailabilityByDate(nextMap);
-        if (Object.values(nextMap).includes("error")) {
-          setAvailabilityError(true);
-        }
-      } finally {
-        if (ok) setLoadingAvailability(false);
-      }
+  const availabilityByDate = useMemo<Record<string, AvailabilityStatus>>(() => {
+    if (!barberId || !service) {
+      return {};
     }
 
-    run();
+    return Object.fromEntries(
+      items.map((it) => {
+        const slots = Array.isArray(availabilityBatchQuery.slotsByDate[it.iso])
+          ? availabilityBatchQuery.slotsByDate[it.iso]
+          : [];
+        const hasValidSlots = slots.some((slot: string) =>
+          isSlotAtLeastMinutesFromNow(it.iso, slot, MIN_LEAD_MINUTES),
+        );
 
-    return () => {
-      ok = false;
-    };
-  }, [barberId, service, items]);
+        return [it.iso, hasValidSlots ? "available" : "unavailable"] as const;
+      }),
+    );
+  }, [availabilityBatchQuery.slotsByDate, barberId, items, service]);
+
+  const loadingAvailability = availabilityBatchQuery.isLoading;
+  const availabilityError = availabilityBatchQuery.code === "AVAILABILITY_SOURCE_ERROR";
 
   useEffect(() => {
     if (!value) return;
@@ -244,7 +141,6 @@ export function DateScroller({
     if (availabilityByDate[value] === "unavailable") onChange("");
   }, [value, loadingAvailability, availabilityByDate, onChange]);
 
-  // Evita disparar onChange si el usuario estaba arrastrando
   const makeClickHandler = useCallback(
     (iso: string, disabled: boolean) => (e: React.MouseEvent) => {
       if (drag.current.moved) {
@@ -344,7 +240,7 @@ export function DateScroller({
       {availabilityError ? (
         <p className="text-sm text-amber-300">
           No se pudo validar disponibilidad para algunos días. Esto es distinto a
-          “sin cupos”. Intenta nuevamente en unos segundos.
+          "sin cupos". Intenta nuevamente en unos segundos.
         </p>
       ) : null}
 

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import type { ServiceType } from "../domain/booking.types";
+import { useAvailability } from "@/hooks/booking/use-availability";
 
 const MIN_LEAD_MINUTES = 30;
 
@@ -12,13 +13,6 @@ function isSlotAtLeastMinutesFromNow(dateYYYYMMDD: string, hhmm: string, minMinu
   const slot = new Date(y, m - 1, d, hh, mm, 0, 0).getTime();
   return slot - Date.now() >= minMinutes * 60 * 1000;
 }
-
-function isAvailabilitySourceFailure(payload: unknown): boolean {
-  if (!payload || typeof payload !== "object") return false;
-  const code = (payload as { code?: unknown }).code;
-  return code === "AVAILABILITY_SOURCE_ERROR";
-}
-
 
 export function TimeSelector({
   barberId,
@@ -35,56 +29,25 @@ export function TimeSelector({
   onChange: (v: string) => void;
   refreshKey: number;
 }) {
-  const [slots, setSlots] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [availabilityError, setAvailabilityError] = useState(false);
   const canLoad = Boolean(barberId && date && service);
-
-  const url = useMemo(() => {
-    if (!canLoad) return "";
-    const params = new URLSearchParams({
-      barberId,
-      date,
-      service: service as string,
-    });
-    return `/api/availability?${params.toString()}`;
-  }, [barberId, date, service, canLoad]);
+  const availabilityQuery = useAvailability({
+    barberId,
+    date,
+    service: service as string,
+  });
 
   useEffect(() => {
-    let ok = true;
-
-    async function run() {
-      if (!url) return;
-      setLoading(true);
-      setAvailabilityError(false);
-      try {
-        const res = await fetch(url, { cache: "no-store" });
-        const json = await res.json();
-        if (!ok) return;
-
-        if (!res.ok) {
-          setSlots([]);
-          setAvailabilityError(isAvailabilitySourceFailure(json));
-          return;
-        }
-
-        setSlots(Array.isArray(json.slots) ? json.slots : []);
-      } finally {
-        if (ok) setLoading(false);
-      }
-    }
-
-    run();
-
-    return () => {
-      ok = false;
-    };
-  }, [url, refreshKey]);
+    if (!canLoad) return;
+    void availabilityQuery.reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
 
   const filteredSlots = useMemo(() => {
     if (!date) return [];
-    return slots.filter((t) => isSlotAtLeastMinutesFromNow(date, t, MIN_LEAD_MINUTES));
-  }, [slots, date]);
+    return availabilityQuery.slots.filter((t) => isSlotAtLeastMinutesFromNow(date, t, MIN_LEAD_MINUTES));
+  }, [availabilityQuery.slots, date]);
+
+  const availabilityError = availabilityQuery.code === "AVAILABILITY_SOURCE_ERROR";
 
   // Si el usuario tenía seleccionada una hora que quedó inválida, la limpiamos
   useEffect(() => {
@@ -115,7 +78,7 @@ export function TimeSelector({
         <div className="text-xl font-semibold">Hora</div>
       </div>
 
-      {loading ? (
+      {availabilityQuery.isLoading ? (
         <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 text-sm text-[rgb(var(--muted))]">
           Cargando horarios...
         </div>
@@ -123,7 +86,7 @@ export function TimeSelector({
         <div className="rounded-2xl border border-amber-400/60 bg-[rgb(var(--surface-2))] p-4 text-sm text-amber-200">
           No se pudo validar disponibilidad en este momento.
           <div className="mt-2 text-xs">
-            Intenta nuevamente. Este estado es distinto a “sin horarios disponibles”.
+            Intenta nuevamente. Este estado es distinto a "sin horarios disponibles".
           </div>
         </div>
       ) : filteredSlots.length === 0 ? (

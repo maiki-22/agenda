@@ -10,14 +10,14 @@ const cspReportOnly = [
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  "script-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob:",
-  `connect-src 'self' https://${supabaseHost} wss://${supabaseHost}`,
+  `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://maps.googleapis.com`,
   "frame-src 'self' https://www.google.com",
-  "upgrade-insecure-requests",
 ].join("; ");
+
 
 
 const nextConfig: NextConfig = {
