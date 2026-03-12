@@ -54,9 +54,6 @@ export function AdminDashboardClient({
   const [liveMessage, setLiveMessage] = useState<string>("");
   const [activeTab, setActiveTab] = useState<DashboardTabKey>("summary");
   const [operationsBarberId, setOperationsBarberId] = useState<string>("");
-  const [upcomingFilter, setUpcomingFilter] = useState<"today" | "all">(
-    "today",
-  );
   const barbersState = useBarbers();
   const overviewState = useOverview(initialOverview);
   const bookingsState = useBookings({
@@ -151,9 +148,9 @@ export function AdminDashboardClient({
           ) : (
             <UpcomingBookingsPanel
               bookings={bookingsState.bookings?.items ?? []}
-              filter={upcomingFilter}
+
               loading={bookingsState.loading}
-              onFilterChange={setUpcomingFilter}
+
               onViewFullAgenda={() => setActiveTab("bookings")}
             />
           )}

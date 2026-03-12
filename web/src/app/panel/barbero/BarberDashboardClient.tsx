@@ -41,9 +41,7 @@ export function BarberDashboardClient({
   initialDaysOff,
 }: BarberDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<DashboardTabKey>("summary");
-  const [upcomingFilter, setUpcomingFilter] = useState<"today" | "all">(
-    "today",
-  );
+  
   const toast = useToast();
   const panel = useBarberPanel({
     barberId,
@@ -76,9 +74,9 @@ export function BarberDashboardClient({
           <DashboardStatsCards bookings={panel.bookings?.items ?? []} />
           <UpcomingBookingsPanel
             bookings={panel.bookings?.items ?? []}
-            filter={upcomingFilter}
+
             loading={panel.bookingsLoading}
-            onFilterChange={setUpcomingFilter}
+
             onViewFullAgenda={() => setActiveTab("bookings")}
           />
         </section>

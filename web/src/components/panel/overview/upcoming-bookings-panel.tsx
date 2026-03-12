@@ -3,39 +3,15 @@ import type { BookingItem } from "@/types/panel";
 
 import { StatusBadge } from "./status-badge";
 
-type UpcomingFilter = "today" | "all";
-
 interface UpcomingBookingsPanelProps {
   bookings: BookingItem[];
-  filter: UpcomingFilter;
+
   loading?: boolean;
-  onFilterChange: (filter: UpcomingFilter) => void;
+
   onViewFullAgenda: () => void;
 }
 
 const UPCOMING_SKELETON_ROWS = 4;
-
-function getTodayInSantiago(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Santiago",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
-
-function getVisibleBookings(
-  bookings: BookingItem[],
-  filter: UpcomingFilter,
-): BookingItem[] {
-  const today = getTodayInSantiago();
-  const filtered =
-    filter === "today"
-      ? bookings.filter((booking) => booking.date === today)
-      : bookings;
-
-  return filtered.slice(0, 5);
-}
 
 function formatHourRange(startAt: string, endAt: string): string {
   const formatter = new Intl.DateTimeFormat("es-CL", {
@@ -67,43 +43,19 @@ function UpcomingCardSkeleton() {
 
 export function UpcomingBookingsPanel({
   bookings,
-  filter,
+
   loading = false,
-  onFilterChange,
+
   onViewFullAgenda,
 }: UpcomingBookingsPanelProps) {
-  const visibleBookings = getVisibleBookings(bookings, filter);
+  const visibleBookings = bookings.slice(0, 5);
 
   return (
     <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-5">
       <div className="flex items-center justify-between gap-4">
-        <h2 className="text-base font-bold text-[rgb(var(--fg))]">Próximas citas</h2>
-        <div className="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-1">
-          <button
-            type="button"
-            onClick={() => onFilterChange("today")}
-             className={`min-h-9 min-w-20 px-4 text-xs font-bold uppercase tracking-wide transition-colors duration-200 ease-out ${
-              filter === "today"
-              ? "btn-gold"
-                : "rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] text-[rgb(var(--fg))] hover:bg-[rgb(var(--border))]"
-            }`}
-            aria-pressed={filter === "today"}
-          >
-            Hoy
-          </button>
-          <button
-            type="button"
-            onClick={() => onFilterChange("all")}
-           className={`min-h-9 min-w-20 px-4 text-xs font-bold uppercase tracking-wide transition-colors duration-200 ease-out ${
-              filter === "all"
-              ? "btn-gold"
-                : "rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] text-[rgb(var(--fg))] hover:bg-[rgb(var(--border))]"
-            }`}
-            aria-pressed={filter === "all"}
-          >
-            Todos
-          </button>
-        </div>
+        <h2 className="text-base font-bold text-[rgb(var(--fg))]">
+          Próximas citas
+        </h2>
       </div>
 
       {loading ? (
@@ -119,11 +71,11 @@ export function UpcomingBookingsPanel({
             aria-hidden="true"
           />
           <p className="text-sm font-medium text-[rgb(var(--muted))]">
-            Sin citas para este filtro
+            Sin citas próximas
           </p>
         </div>
       ) : (
-         <ul className="mt-6 space-y-3">
+        <ul className="mt-6 space-y-3">
           {visibleBookings.map((booking) => (
             <li
               key={booking.id}
@@ -136,7 +88,7 @@ export function UpcomingBookingsPanel({
 
                 <StatusBadge status={booking.status} />
               </div>
-           <p className="text-xs text-[rgb(var(--muted))]">
+              <p className="text-xs text-[rgb(var(--muted))]">
                 {booking.customer_name} · {booking.customer_phone}
               </p>
               <p className="text-xs text-[rgb(var(--muted))]">

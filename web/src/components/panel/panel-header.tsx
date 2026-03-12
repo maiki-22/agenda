@@ -46,16 +46,12 @@ export function PanelHeader({ role }: PanelHeaderProps) {
      <header className="fixed inset-x-0 top-0 z-50 border-b border-[rgb(var(--border))] bg-[rgb(var(--bg))]/90 backdrop-blur-md sm:static">
       <div className="page-container flex items-center justify-between gap-3 pb-3 pt-[calc(env(safe-area-inset-top)+12px)]">
         <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 flex-col items-start justify-center gap-0.5">
-            <span className="truncate text-sm font-semibold uppercase tracking-[0.12em] text-[rgb(var(--fg))]">
+          <div className="flex flex-col justify-center">
+            <span className="truncate font-semibold leading-tight text-[rgb(var(--fg))]">
               La Sucursal
             </span>
-            <span className="flex items-center gap-1.5 text-[rgb(var(--muted))] opacity-60">
-              <span className="block h-px w-6 bg-current" />
-              <span className="text-[8px] font-medium uppercase tracking-[0.3em]">
-                Barber Shop
-              </span>
-              <span className="block h-px w-6 bg-current" />
+            <span className="text-xs leading-tight text-[rgb(var(--muted))]">
+              Panel interno
             </span>
           </div>
         </div>

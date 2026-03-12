@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { AlertCircle } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -172,11 +173,14 @@ export function PanelLoginForm() {
         className="space-y-4 disabled:opacity-70"
       >
         <label className="block space-y-4 text-sm" htmlFor="email">
-          <span className="text-[rgb(var(--muted))]">Email</span>
+          <span className="text-[11px] uppercase tracking-widest text-[rgb(var(--muted))]">
+            Email
+          </span>
           <Input
             id="email"
             type="email"
             autoComplete="email"
+            className="border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] py-3 focus:border-[rgb(var(--primary))]"
             {...register("email")}
             aria-invalid={errors.email ? "true" : "false"}
             placeholder="admin@tudominio.com"
@@ -187,11 +191,14 @@ export function PanelLoginForm() {
         </label>
 
         <label className="block space-y-4 text-sm" htmlFor="password">
-          <span className="text-[rgb(var(--muted))]">Contraseña</span>
+          <span className="text-[11px] uppercase tracking-widest text-[rgb(var(--muted))]">
+            Contraseña
+          </span>
           <Input
             id="password"
             type="password"
             autoComplete="current-password"
+            className="border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] py-3 focus:border-[rgb(var(--primary))]"
             {...register("password")}
             aria-invalid={errors.password ? "true" : "false"}
             placeholder="••••••••"
@@ -201,11 +208,18 @@ export function PanelLoginForm() {
           ) : null}
         </label>
 
-        <p aria-live="polite" className="text-sm text-red-500" role="status">
-          {submitError}
-        </p>
+        {submitError ? (
+          <p
+            aria-live="polite"
+            className="flex items-start gap-2 text-sm text-red-400"
+            role="status"
+          >
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>{submitError}</span>
+          </p>
+        ) : null}
 
-        <Button type="submit" disabled={isSubmitting} fullWidth>
+        <Button type="submit" disabled={isSubmitting} className="btn-gold w-full">
           {isSubmitting ? "Ingresando..." : "Iniciar sesión"}
         </Button>
       </fieldset>
