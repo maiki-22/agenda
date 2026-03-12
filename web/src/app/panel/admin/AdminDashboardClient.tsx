@@ -16,7 +16,6 @@ import { useBarbers } from "@/hooks/panel/use-barbers";
 import { useBookings } from "@/hooks/panel/use-bookings";
 import { useDaysOff } from "@/hooks/panel/use-days-off";
 import { useOverview } from "@/hooks/panel/use-overview";
-import { WINDOW_LABELS } from "@/types/panel";
 import type {
   BookingStatus,
   BookingsResponse,
@@ -141,17 +140,6 @@ export function AdminDashboardClient({
           </p>
         </section>
       ) : null}
-
-      {activeTab === "summary" && overviewState.overview ? (
-        <p className="text-xs rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-3 py-2.5 text-[rgb(var(--muted))]">
-          Ventana: {WINDOW_LABELS[overviewState.overview.window]} ·{" "}
-          {overviewState.overview.date_window.startDate} →{" "}
-          {overviewState.overview.date_window.endDate} · Registros:{" "}
-          {overviewState.overview.meta.counts.filtered_appointments}/
-          {overviewState.overview.meta.counts.raw_appointments}
-        </p>
-      ) : null}
-
       {activeTab === "summary" ? (
         <section className="space-y-3">
           {overviewState.error ? (
