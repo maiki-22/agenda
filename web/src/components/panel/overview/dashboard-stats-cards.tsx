@@ -1,86 +1,110 @@
+import { Calendar } from "lucide-react";
 import type { BookingItem } from "@/types/panel";
-import { StatCard } from "./stat-card";
+
 
 interface DashboardStatsCardsProps {
   bookings: BookingItem[];
 }
 
-function getTodayInSantiago(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Santiago",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
-
-function getCurrentWeekRange(date: Date): { start: string; end: string } {
-  const day = date.getDay();
-  const mondayOffset = day === 0 ? -6 : 1 - day;
-  const startDate = new Date(date);
-  startDate.setDate(date.getDate() + mondayOffset);
-  const endDate = new Date(startDate);
-  endDate.setDate(startDate.getDate() + 6);
-
+const SANTIAGO_TIME_ZONE = "America/Santiago";
+function getSantiagoDateParts(date: Date): { year: number; month: number; day: number } {
   const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Santiago",
+    timeZone: SANTIAGO_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   });
+  const parts = formatter.formatToParts(date);
+  const year = Number(parts.find((part) => part.type === "year")?.value ?? "0");
+  const month = Number(parts.find((part) => part.type === "month")?.value ?? "0");
+  const day = Number(parts.find((part) => part.type === "day")?.value ?? "0");
+
+  return { year, month, day };
+}
+
+function getDayOfWeekInSantiago(date: Date): number {
+  const weekdayName = new Intl.DateTimeFormat("en-US", {
+    timeZone: SANTIAGO_TIME_ZONE,
+    weekday: "short",
+  }).format(date);
+  const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  return weekdays.indexOf(weekdayName);
+}
+
+function toDayNumber(dateParts: { year: number; month: number; day: number }): number {
+  return dateParts.year * 10_000 + dateParts.month * 100 + dateParts.day;
+}
+
+function getTodayAndWeekRangeInSantiago(): {
+  today: number;
+  weekStart: number;
+  weekEnd: number;
+} {
+  const now = new Date();
+  const todayParts = getSantiagoDateParts(now);
+  const dayOfWeek = getDayOfWeekInSantiago(now);
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+
+  const weekStartDate = new Date(now);
+  weekStartDate.setUTCDate(weekStartDate.getUTCDate() + mondayOffset);
+  const weekEndDate = new Date(weekStartDate);
+  weekEndDate.setUTCDate(weekEndDate.getUTCDate() + 6);
+
+  
 
   return {
-    start: formatter.format(startDate),
-    end: formatter.format(endDate),
+    today: toDayNumber(todayParts),
+    weekStart: toDayNumber(getSantiagoDateParts(weekStartDate)),
+    weekEnd: toDayNumber(getSantiagoDateParts(weekEndDate)),
   };
 }
 
 export function DashboardStatsCards({ bookings }: DashboardStatsCardsProps) {
-  const today = getTodayInSantiago();
-  const { start, end } = getCurrentWeekRange(new Date());
+  const { today, weekStart, weekEnd } = getTodayAndWeekRangeInSantiago();
 
-  const reservationsToday = bookings.filter(
-    (booking) => booking.date === today,
-  ).length;
-  const reservationsThisWeek = bookings.filter(
-    (booking) => booking.date >= start && booking.date <= end,
-  ).length;
+  const reservationsToday = bookings.filter((booking) => {
+    const bookingDay = toDayNumber(getSantiagoDateParts(new Date(booking.start_at)));
+    return bookingDay === today;
+  }).length;
+
+  const reservationsThisWeek = bookings.filter((booking) => {
+    const bookingDay = toDayNumber(getSantiagoDateParts(new Date(booking.start_at)));
+    return bookingDay >= weekStart && bookingDay <= weekEnd;
+  }).length;
 
   return (
-    <section
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2"
-      aria-label="Indicadores de reservas"
-    >
-      <StatCard
-        label="Reservas hoy"
-        value={reservationsToday}
-        icon={
-          <svg viewBox="0 0 24 24" fill="none" className="h-full w-full">
-            <path
-              d="M7 3v3M17 3v3M4 9h16M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        }
-      />
-      <StatCard
-        label="Esta semana"
-        value={reservationsThisWeek}
-        icon={
-          <svg viewBox="0 0 24 24" fill="none" className="h-full w-full">
-            <path
-              d="M4 7h16M6 4h12a2 2 0 0 1 2 2v11a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a2 2 0 0 1 2-2ZM9 11h6M9 15h4"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        }
-      />
+   <section className="grid grid-cols-2 gap-4" aria-label="Indicadores de reservas">
+      <article className="surface-card fade-up rounded-[var(--card-radius)] p-4">
+        <div className="flex items-center gap-2">
+          <Calendar
+            className="text-[rgb(var(--primary))]"
+            size={18}
+            aria-hidden="true"
+          />
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[rgb(var(--muted))]">
+            Reservas hoy
+          </p>
+        </div>
+        <p className="mt-3 text-4xl font-bold leading-none text-[rgb(var(--fg))]">
+          {reservationsToday}
+        </p>
+      </article>
+
+      <article className="surface-card fade-up rounded-[var(--card-radius)] p-4">
+        <div className="flex items-center gap-2">
+          <Calendar
+            className="text-[rgb(var(--primary))]"
+            size={18}
+            aria-hidden="true"
+          />
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[rgb(var(--muted))]">
+            Esta semana
+          </p>
+        </div>
+        <p className="mt-3 text-4xl font-bold leading-none text-[rgb(var(--fg))]">
+          {reservationsThisWeek}
+        </p>
+      </article>
     </section>
   );
 }

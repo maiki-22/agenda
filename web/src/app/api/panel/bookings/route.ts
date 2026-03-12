@@ -11,14 +11,13 @@ import { panelBookingsQuerySchema } from "@/validations/panel-bookings-query.sch
 
 type BookingRow = {
   id: string;
-  date: string;
-  time: string;
   status: string;
   customer_name: string;
   customer_phone: string;
   barber_id: string;
   service_id: string;
   start_at: string;
+  end_at: string;
   barbers: Array<{ name: string }> | null;
   services: Array<{ name: string }> | null;
 };
@@ -36,7 +35,7 @@ export async function GET(req: Request): Promise<Response> {
 
  
 
-const parsedQuery = panelBookingsQuerySchema.safeParse(getTypedSearchParams(req));
+  const parsedQuery = panelBookingsQuerySchema.safeParse(getTypedSearchParams(req));
 
   if (!parsedQuery.success) {
     const message = parsedQuery.error.issues[0]?.message ?? "Parámetros inválidos";
@@ -59,7 +58,7 @@ const dateFromBound = dateFrom ? getSantiagoDayBounds(dateFrom).startAtIso : nul
   let query = supabase
     .from("appointments")
     .select(
-      "id, status, customer_name, customer_phone, barber_id, service_id, start_at, barbers(name), services(name)",
+      "id, status, customer_name, customer_phone, barber_id, service_id, start_at, end_at, barbers(name), services(name)",
       { count: "exact" },
     )
     .order("start_at", { ascending: true });
@@ -95,7 +94,7 @@ const dateFromBound = dateFrom ? getSantiagoDayBounds(dateFrom).startAtIso : nul
     );
   }
 
-const bookings = (data ?? []) as BookingRow[];
+  const bookings = (data ?? []) as BookingRow[];
 
   return NextResponse.json(
     {
@@ -107,6 +106,8 @@ const bookings = (data ?? []) as BookingRow[];
         id: item.id,
         date: formatDateInSantiago(item.start_at),
         time: formatTimeInSantiago(item.start_at),
+        start_at: item.start_at,
+        end_at: item.end_at,
         status: item.status,
         customer_name: item.customer_name,
         customer_phone: item.customer_phone,

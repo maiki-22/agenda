@@ -61,6 +61,8 @@ export type BookingItem = {
   id: string;
   date: string;
   time: string;
+  start_at: string;
+  end_at: string;
   status: BookingStatus;
   customer_name: string;
   customer_phone: string;

@@ -13,6 +13,8 @@ const bookingsSchema: z.ZodType<BookingsResponse> = z.object({
       id: z.string(),
       date: z.string(),
       time: z.string(),
+      start_at: z.string(),
+      end_at: z.string(),
       status: z.enum([
         "booked",
         "needs_confirmation",
