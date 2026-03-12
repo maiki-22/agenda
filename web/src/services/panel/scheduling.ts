@@ -1,9 +1,11 @@
 import { z } from "zod";
 import { requestJson } from "./http";
 import type {
+  BarberScheduleResponse,
   BarberBlocksResponse,
   BarberDaysOffResponse,
   ServiceResult,
+  UpdateBarberScheduleInput,
 } from "@/types/panel";
 
 const okSchema = z.record(z.string(), z.unknown()).transform(() => ({ ok: true as const }));
@@ -31,6 +33,64 @@ const barberDaysOffSchema: z.ZodType<BarberDaysOffResponse> = z.object({
     }),
   ),
 });
+
+const barberScheduleSchema: z.ZodType<BarberScheduleResponse> = z.object({
+  barberId: z.string(),
+  days: z.array(
+    z.object({
+      dow: z.number().int().min(0).max(6),
+      active: z.boolean(),
+      startTime: z.string(),
+      endTime: z.string(),
+      breaks: z.array(
+        z.object({
+          startTime: z.string(),
+          endTime: z.string(),
+        }),
+      ),
+    }),
+  ),
+});
+
+const okOnlySchema = z.object({ ok: z.boolean() });
+
+export async function getBarberSchedule(params: {
+  barberId: string;
+}): Promise<ServiceResult<BarberScheduleResponse>> {
+  const searchParams = new URLSearchParams({ barberId: params.barberId });
+  const response = await requestJson(
+    `/api/panel/schedule?${searchParams.toString()}`,
+    { cache: "no-store" },
+    z.object({ success: z.literal(true), data: barberScheduleSchema }),
+  );
+
+  if (!response.success) {
+    return response;
+  }
+
+  return { success: true, data: response.data.data };
+}
+
+export async function updateBarberSchedule(
+  input: UpdateBarberScheduleInput,
+): Promise<ServiceResult<{ ok: boolean }>> {
+  const response = await requestJson(
+    "/api/panel/schedule",
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+    z.object({ success: z.literal(true), data: okOnlySchema }),
+  );
+
+  if (!response.success) {
+    return response;
+  }
+
+  return { success: true, data: response.data.data };
+}
+
 
 export async function getBarberBlocks(params: {
   barberId: string;

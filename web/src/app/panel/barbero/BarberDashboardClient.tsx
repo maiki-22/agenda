@@ -10,6 +10,7 @@ import { DashboardStatsCards } from "@/components/panel/overview/dashboard-stats
 import { UpcomingBookingsPanel } from "@/components/panel/overview/upcoming-bookings-panel";
 import { BarberBlockForm } from "@/components/panel/scheduling/barber-block-form";
 import { DayOffForm } from "@/components/panel/scheduling/day-off-form";
+import { ScheduleEditor } from "@/components/panel/scheduling/schedule-editor";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/toast-provider";
 import { useBarberPanel } from "@/hooks/panel/use-barber-panel";
@@ -100,76 +101,80 @@ export function BarberDashboardClient({
       ) : null}
 
       {activeTab === "operations" ? (
-        <section className="space-y-4">
-          <BarberBlockForm
-            selectedBarber={barberId}
-            loading={panel.schedulingLoading}
-            onSubmit={async (input): Promise<void> => {
-              const error = await panel.createBlock(input);
-              if (error) {
-                toast.error(`No se pudo crear el bloqueo: ${error}`);
-                return;
-              }
-              toast.success("Bloqueo creado correctamente");
-            }}
-          />
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <ScheduleEditor key={barberId} barberId={barberId} />
+          <div className="surface-card rounded-[var(--card-radius)] p-5">
+            <BarberBlockForm
+              selectedBarber={barberId}
+              loading={panel.schedulingLoading}
+              onSubmit={async (input): Promise<void> => {
+                const error = await panel.createBlock(input);
+                if (error) {
+                  toast.error(`No se pudo crear el bloqueo: ${error}`);
+                  return;
+                }
+                toast.success("Bloqueo creado correctamente");
+              }}
+            />
 
-          <ModuleState
-            title="Bloqueos próximos"
-            loading={panel.blocksLoading}
-            error={panel.blocksError}
-            empty={panel.blocks.length === 0}
-            onRetry={async (): Promise<void> => {
-              await panel.retryBlocks();
-            }}
-          >
-            <ul className="space-y-2">
-              {panel.blocks.map((block) => (
-                <li
-                  key={block.id}
-                  className="rounded-2xl border border-[rgb(var(--border))] p-3 text-sm"
-                >
-                  {formatDateShortCL(block.date)} · {block.start_at.slice(11, 16)}-
-                  {block.end_at.slice(11, 16)}
-                </li>
-              ))}
-            </ul>
-          </ModuleState>
+            <ModuleState
+              title="Bloqueos próximos"
+              loading={panel.blocksLoading}
+              error={panel.blocksError}
+              empty={panel.blocks.length === 0}
+              onRetry={async (): Promise<void> => {
+                await panel.retryBlocks();
+              }}
+            >
+              <ul className="space-y-2">
+                {panel.blocks.map((block) => (
+                  <li
+                    key={block.id}
+                    className="rounded-lg border border-[rgb(var(--border))] p-3 text-sm"
+                  >
+                    {formatDateShortCL(block.date)} · {block.start_at.slice(11, 16)}-
+                    {block.end_at.slice(11, 16)}
+                  </li>
+                ))}
+              </ul>
+            </ModuleState>
+          </div>
 
-          <DayOffForm
-            selectedBarber={barberId}
-            loading={panel.schedulingLoading}
-            onSubmit={async (input): Promise<void> => {
-              const error = await panel.createDayOff(input);
-              if (error) {
-                toast.error(`No se pudo crear el día libre: ${error}`);
-                return;
-              }
-              toast.success("Día libre creado correctamente");
-            }}
-          />
+          <div className="surface-card rounded-[var(--card-radius)] p-5">
+            <DayOffForm
+              selectedBarber={barberId}
+              loading={panel.schedulingLoading}
+              onSubmit={async (input): Promise<void> => {
+                const error = await panel.createDayOff(input);
+                if (error) {
+                  toast.error(`No se pudo crear el día libre: ${error}`);
+                  return;
+                }
+                toast.success("Día libre creado correctamente");
+              }}
+            />
 
-          <ModuleState
-            title="Días libres registrados"
-            loading={panel.daysOffLoading}
-            error={panel.daysOffError}
-            empty={panel.daysOff.length === 0}
-            onRetry={async (): Promise<void> => {
-              await panel.retryDaysOff();
-            }}
-          >
-            <ul className="space-y-2">
-              {panel.daysOff.map((dayOff) => (
-                <li
-                  key={dayOff.id}
-                  className="rounded-2xl border border-[rgb(var(--border))] p-3 text-sm"
-                >
-                  {formatDateShortCL(dayOff.date)}{" "}
-                  {dayOff.reason ? `· ${dayOff.reason}` : ""}
-                </li>
-              ))}
-            </ul>
-          </ModuleState>
+            <ModuleState
+              title="Días libres registrados"
+              loading={panel.daysOffLoading}
+              error={panel.daysOffError}
+              empty={panel.daysOff.length === 0}
+              onRetry={async (): Promise<void> => {
+                await panel.retryDaysOff();
+              }}
+            >
+              <ul className="space-y-2">
+                {panel.daysOff.map((dayOff) => (
+                  <li
+                    key={dayOff.id}
+                    className="rounded-lg border border-[rgb(var(--border))] p-3 text-sm"
+                  >
+                    {formatDateShortCL(dayOff.date)} {dayOff.reason ? `· ${dayOff.reason}` : ""}
+                  </li>
+                ))}
+              </ul>
+            </ModuleState>
+          </div>
         </section>
       ) : null}
     </main>

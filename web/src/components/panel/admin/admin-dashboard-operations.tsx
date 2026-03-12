@@ -1,19 +1,24 @@
 "use client";
 
 import { CollapsiblePanelCard } from "@/components/panel/admin/collapsible-panel-card";
+import { BarberPills } from "@/components/panel/overview/barber-pills";
+import { ScheduleEditor } from "@/components/panel/scheduling/schedule-editor";
 import { BarberBlockForm } from "@/components/panel/scheduling/barber-block-form";
 import { DayOffForm } from "@/components/panel/scheduling/day-off-form";
 import { ShopClosedForm } from "@/components/panel/scheduling/shop-closed-form";
 import type { useBarberBlocks } from "@/hooks/panel/use-barber-blocks";
 import type { useDaysOff } from "@/hooks/panel/use-days-off";
 import type { useToast } from "@/components/ui/toast-provider";
+import type { Barber } from "@/types/panel";
 
 type BlocksState = ReturnType<typeof useBarberBlocks>;
 type DaysOffState = ReturnType<typeof useDaysOff>;
 type ToastState = ReturnType<typeof useToast>;
 
 interface AdminDashboardOperationsProps {
+  barbers: Barber[];
   selectedBarber: string;
+  onSelectBarber: (barberId: string) => void;
   blocksState: BlocksState;
   daysOffState: DaysOffState;
   toast: ToastState;
@@ -21,7 +26,9 @@ interface AdminDashboardOperationsProps {
 }
 
 export function AdminDashboardOperations({
+  barbers,
   selectedBarber,
+  onSelectBarber,
   blocksState,
   daysOffState,
   toast,
@@ -38,7 +45,21 @@ export function AdminDashboardOperations({
   };
 
   return (
-    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+    <section className="space-y-4">
+      <div className="surface-card rounded-[var(--card-radius)] p-5">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[rgb(var(--muted))]">
+          Barbero
+        </p>
+        <BarberPills
+          barbers={barbers}
+          value={selectedBarber}
+          includeAll={false}
+          onChange={onSelectBarber}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {selectedBarber ? <ScheduleEditor key={selectedBarber} barberId={selectedBarber} /> : null}
       <CollapsiblePanelCard
         title="Bloquear horario"
         description="Reservá bloques para pausas o eventos puntuales."
@@ -108,6 +129,7 @@ export function AdminDashboardOperations({
           }}
         />
       </CollapsiblePanelCard>
+      </div>
     </section>
   );
 }

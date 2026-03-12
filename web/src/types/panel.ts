@@ -107,6 +107,29 @@ export type SchedulingPayload = {
   reason: string;
 };
 
+export type ScheduleBreak = {
+  startTime: string;
+  endTime: string;
+};
+
+export type ScheduleDay = {
+  dow: number;
+  active: boolean;
+  startTime: string;
+  endTime: string;
+  breaks: ScheduleBreak[];
+};
+
+export type BarberScheduleResponse = {
+  barberId: string;
+  days: ScheduleDay[];
+};
+
+export type UpdateBarberScheduleInput = {
+  barberId: string;
+  days: ScheduleDay[];
+};
+
 export const WINDOW_LABELS: Record<WindowOption, string> = {
   today: "Hoy",
   next_7_days: "Próximos 7 días",

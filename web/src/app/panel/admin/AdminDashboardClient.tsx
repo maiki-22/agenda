@@ -53,6 +53,7 @@ export function AdminDashboardClient({
   const toast = useToast();
   const [liveMessage, setLiveMessage] = useState<string>("");
   const [activeTab, setActiveTab] = useState<DashboardTabKey>("summary");
+  const [operationsBarberId, setOperationsBarberId] = useState<string>("");
   const [upcomingFilter, setUpcomingFilter] = useState<"today" | "all">(
     "today",
   );
@@ -65,6 +66,9 @@ export function AdminDashboardClient({
   });
   const blocksState = useBarberBlocks();
   const daysOffState = useDaysOff();
+
+  const selectedOperationsBarberId =
+    operationsBarberId || barbersState.barbers[0]?.id || "";
 
   async function handleBookingStatus(
     id: string,
@@ -172,7 +176,9 @@ export function AdminDashboardClient({
 
       {activeTab === "operations" ? (
         <AdminDashboardOperations
-          selectedBarber={overviewState.selectedBarber}
+          barbers={barbersState.barbers}
+          selectedBarber={selectedOperationsBarberId}
+          onSelectBarber={setOperationsBarberId}
           blocksState={blocksState}
           daysOffState={daysOffState}
           toast={toast}
