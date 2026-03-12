@@ -43,11 +43,15 @@ export async function getOverview(params: {
   barberId?: string;
 }): Promise<ServiceResult<OverviewResponse>> {
   const searchParams = new URLSearchParams({ window: params.window });
-  if (params.barberId) {
+  if (params.barberId && params.barberId !== "all") {
     searchParams.set("barberId", params.barberId);
   }
 
-  return requestJson(`/api/panel/overview?${searchParams.toString()}`, { cache: "no-store" }, overviewSchema);
+  return requestJson(
+    `/api/panel/overview?${searchParams.toString()}`,
+    { cache: "no-store", credentials: "include" },
+    overviewSchema,
+  );;
 }
 
 export async function toggleBarberStatus(

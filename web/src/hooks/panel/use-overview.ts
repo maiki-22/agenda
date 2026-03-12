@@ -36,11 +36,11 @@ export function useOverview(initialOverview: OverviewResponse | null): {
   );
 
   const overviewQuery = useQuery<OverviewResponse, MutationError>({
-    queryKey: ["panel-overview", windowKey, selectedBarber || "all"],
+    queryKey: ["panel-overview", windowKey, barberId],
     queryFn: async (): Promise<OverviewResponse> => {
       const result = await getOverview({
         window: windowKey,
-        barberId: selectedBarber || undefined,
+        barberId: barberId === "all" ? undefined : barberId,
       });
 
       if (!result.success) {

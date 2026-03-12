@@ -13,6 +13,7 @@ import { DashboardStatsCards } from "@/components/panel/overview/dashboard-stats
 import { UpcomingBookingsPanel } from "@/components/panel/overview/upcoming-bookings-panel";
 import { useToast } from "@/components/ui/toast-provider";
 import { useBarberBlocks } from "@/hooks/panel/use-barber-blocks";
+import { useBarbers } from "@/hooks/panel/use-barbers";
 import { useBookings } from "@/hooks/panel/use-bookings";
 import { useDaysOff } from "@/hooks/panel/use-days-off";
 import { useOverview } from "@/hooks/panel/use-overview";
@@ -82,6 +83,7 @@ export function AdminDashboardClient({
   const [upcomingFilter, setUpcomingFilter] = useState<"today" | "all">(
     "today",
   );
+  const barbersState = useBarbers();
   const overviewState = useOverview(initialOverview);
   const bookingsState = useBookings({
     overview: overviewState.overview,
@@ -127,11 +129,20 @@ export function AdminDashboardClient({
         <DashboardFilters
           windowKey={overviewState.windowKey}
           barberId={overviewState.barberId}
-          barbers={overviewState.overview?.barbers ?? []}
+          barbers={barbersState.barbers}
           onWindowChange={overviewState.setWindowKey}
           onBarberChange={overviewState.setBarberId}
         />
       )}
+
+      {barbersState.error ? (
+        <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4">
+          <h2 className="font-semibold">No se pudo cargar el listado de barberos</h2>
+          <p className="mt-1 text-sm text-[rgb(var(--muted))]">
+            {barbersState.error}
+          </p>
+        </section>
+      ) : null}
 
       {activeTab === "summary" && overviewState.overview ? (
         <p className="text-xs rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-3 py-2.5 text-[rgb(var(--muted))]">
