@@ -29,7 +29,9 @@ export default async function PanelLayout({
   return (
     <PanelQueryClientProvider>
       <PanelHeader role={panelUser.role} />
-      <main className="page-container py-4 sm:py-6">{children}</main>
+      <main className="page-container py-4 pt-[calc(env(safe-area-inset-top)+84px)] sm:py-6">
+        {children}
+      </main>
     </PanelQueryClientProvider>
   );
 }

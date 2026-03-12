@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "@/components/theme/ThemeToggle";
-import LogoAdaptive from "@/components/ui/LogoAdaptative";
 import { Button } from "@/components/ui/Button";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
@@ -44,16 +43,20 @@ export function PanelHeader({ role }: PanelHeaderProps) {
   }
 
   return (
-    <header className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-3 py-3 shadow-[var(--shadow-soft)] sm:px-5 sm:py-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold sm:text-base">
-              La Sucursal Barber Shop
-            </p>
-            <p className="hidden text-xs text-[rgb(var(--muted))] sm:block">
-              Panel interno
-            </p>
+     <header className="fixed inset-x-0 top-0 z-50 border-b border-[rgb(var(--border))] bg-[rgb(var(--bg))]/90 backdrop-blur-md sm:static">
+      <div className="page-container flex items-center justify-between gap-3 pb-3 pt-[calc(env(safe-area-inset-top)+12px)]">
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-col items-start justify-center gap-0.5">
+            <span className="truncate text-sm font-semibold uppercase tracking-[0.12em] text-[rgb(var(--fg))]">
+              La Sucursal
+            </span>
+            <span className="flex items-center gap-1.5 text-[rgb(var(--muted))] opacity-60">
+              <span className="block h-px w-6 bg-current" />
+              <span className="text-[8px] font-medium uppercase tracking-[0.3em]">
+                Barber Shop
+              </span>
+              <span className="block h-px w-6 bg-current" />
+            </span>
           </div>
         </div>
 
@@ -85,7 +88,7 @@ export function PanelHeader({ role }: PanelHeaderProps) {
 
       {signOutError ? (
         <p
-          className="mt-2 text-sm text-red-500"
+          className="page-container mt-2 text-sm text-[rgb(var(--muted))]"
           role="status"
           aria-live="polite"
         >
