@@ -20,6 +20,8 @@ Antes de mergear cualquier PR, validar estos puntos (checklist verificable):
 6. [ ] Se cubren estados de loading, empty y error en UI.
 7. [ ] UX responsive validada en mobile-first (mínimo 320px, tablet y desktop).
 8. [ ] Accesibilidad base cumplida: labels, aria-label, focus-visible y contraste AA.
+       Diseño alineado con sistema visual: tokens CSS, clases de globals.css,
+       sin colores hardcodeados ni zinc-*/yellow-* en componentes nuevos.
 9. [ ] No se expone información sensible ni claves fuera de entorno seguro.
 10. [ ] Mutaciones con verificación de autenticación + autorización + ownership.
 11. [ ] No hay `console.log` en producción; logs técnicos con contexto.
@@ -440,3 +442,137 @@ SEGURIDAD / RLS:
 - NUNCA saltarse RLS usando service_role key en el cliente
 - Las mutations del panel admin van por Server Actions con validación
   de sesión + role antes de cualquier operación
+
+
+
+════════════════════════════════════════════════════════
+DISEÑO Y SISTEMA VISUAL (obligatorio en todo componente UI)
+════════════════════════════════════════════════════════
+
+TOKENS DE DISEÑO — usar SIEMPRE variables CSS, nunca clases de Tailwind
+hardcodeadas ni valores mágicos:
+
+  Fondos y superficies:
+  - Fondo página:        bg-[rgb(var(--bg))]
+  - Card primaria:       bg-[rgb(var(--surface))]
+  - Card secundaria:     bg-[rgb(var(--surface-2))]
+  - Borde estándar:      border-[rgb(var(--border))]
+
+  Texto:
+  - Primario:            text-[rgb(var(--fg))]
+  - Muted / apoyo:       text-[rgb(var(--muted))]
+
+  Accent dorado:
+  - Fondo accent:        bg-[rgb(var(--primary))]
+  - Texto sobre accent:  text-[rgb(var(--primary-foreground))]
+  - Texto accent directo:text-[rgb(var(--primary))]
+  - Glow/sombra accent:  rgb(var(--primary-glow) / 0.25) — usar en box-shadow inline
+
+  Sombras (usar las variables, no shadow-* de Tailwind):
+  - Suave:               shadow → style={{ boxShadow: 'var(--shadow-soft)' }}
+  - Media:               style={{ boxShadow: 'var(--shadow-medium)' }}
+  - Fuerte:              style={{ boxShadow: 'var(--shadow-strong)' }}
+  - Glow dorado:         class="primary-glow" (ya definido en globals.css)
+
+  Border radius:
+  - Cards y paneles:     rounded-[var(--card-radius)]   ← respeta el responsive token
+  - Botones primarios:   rounded-[var(--btn-radius)]    ← siempre pill
+  - Inputs, chips:       rounded-lg
+
+TIPOGRAFÍA:
+
+  - Fuente del proyecto: Inter (var(--font-inter), ya configurada en layout.tsx)
+  - Nunca importes ni referencíes otras fuentes
+  - Títulos de sección:  font-semibold text-[rgb(var(--fg))]
+  - Labels de filtro:    text-[11px] uppercase tracking-widest
+                         text-[rgb(var(--muted))] font-semibold
+  - Texto de apoyo:      text-xs text-[rgb(var(--muted))]
+
+BOTONES:
+
+  - CTA primario: usar class="btn-gold" (definido en globals.css)
+    Incluye: fondo dorado, border-radius pill, hover brightness + glow, 
+    active scale. No recrear estos estilos inline.
+  - Secundario:  border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))]
+                 text-[rgb(var(--fg))] rounded-lg hover:bg-[rgb(var(--border))]
+                 transition-colors duration-200
+
+ANIMACIONES — usar las clases ya definidas en globals.css:
+
+  - Entrada de elemento nuevo:  class="fade-up"   (fadeUp 300ms ease-out)
+  - Fade simple:                class="fade-in"   (fadeIn 500ms ease-out)
+  - Aparición con escala:       class="pop-in"    (popIn 260ms ease-out)
+  - Error en formulario:        class="shake"     (shake 240ms)
+  - Nunca definir @keyframes nuevos en componentes si ya existe uno equivalente
+  - Para transiciones inline usar: transition-colors duration-200 ease-out
+    o transition-transform duration-200 ease-out (nunca transition-all)
+  - Respetar prefers-reduced-motion: globals.css ya lo maneja globalmente
+
+FOCUS E INTERACCIÓN:
+
+  - El sistema de focus-visible ya está definido globalmente en globals.css:
+    outline: 2px solid rgb(var(--primary)) con outline-offset: 2px
+  - No agregar focus-visible adicional salvo override justificado
+  - Para suprimir outline en casos específicos usar class="no-focus-outline"
+  - Tap highlight ya está suprimido globalmente en a y button
+
+LAYOUT Y CONTENEDOR:
+
+  - Usar class="page-container" para centrar contenido respetando 
+    var(--page-max) y var(--page-px) responsivos
+  - Grids de cards: class="grid-cards" (1 col mobile → 2 tablet → 3 desktop)
+  - Grids de horarios: class="grid-times" (3 → 4 → 6 columnas)
+  - Footer fijo: class="footer-fixed" (blur backdrop ya incluido)
+  - Scroll sin scrollbar: class="no-scrollbar"
+  - Nunca usar max-w-* fijo cuando page-container resuelve el ancho
+
+CARDS Y SUPERFICIES:
+
+  - Card estándar:  class="surface-card"        → border + bg + shadow-soft
+  - Card destacada: class="surface-card-strong" → border + bg + shadow-medium
+  - Ambas ya definidas en globals.css; no recrear los estilos inline
+
+SKELETONS (loading state):
+
+  - Color base:    bg-[rgb(var(--surface-2))]
+  - Animación:     animate-pulse
+  - Border radius: igual al del elemento real
+  - Ejemplo:
+    <div className="h-8 w-24 rounded-full bg-[rgb(var(--surface-2))] animate-pulse" />
+  - Cada widget del dashboard debe tener su propio skeleton,
+    nunca un spinner global que bloquee toda la página
+
+BADGES DE ESTADO — appointments:
+
+  - booked / pendiente:
+    bg-[rgb(var(--primary)/0.12)] text-[rgb(var(--primary))]
+    border border-[rgb(var(--primary)/0.3)]
+  - confirmed:
+    bg-emerald-500/10 text-emerald-400 border border-emerald-500/20
+  - cancelled:
+    bg-red-500/10 text-red-400 border border-red-500/20
+  - rescheduled:
+    bg-sky-500/10 text-sky-400 border border-sky-500/20
+  - Siempre acompañar con dot de color:
+    <span className="inline-block w-1.5 h-1.5 rounded-full
+                     bg-[rgb(var(--primary))] mr-1.5" />
+
+ESTADOS VACÍOS (empty states):
+
+  - Icono:         text-[rgb(var(--border))] w-9 h-9
+  - Texto ppal:    text-sm text-[rgb(var(--muted))] font-medium
+  - Texto apoyo:   text-xs text-[rgb(var(--muted))] opacity-70
+  - Contenedor:    flex flex-col items-center gap-2 py-10 text-center
+  - Sin bordes ni sombras propias; hereda el fondo de la card contenedora
+
+REGLAS DE ORO DEL DISEÑO:
+
+  ✗ Nunca uses clases zinc-*, slate-*, gray-* ni yellow-* en componentes nuevos
+    → Todo color va por variables CSS del sistema
+  ✗ Nunca hardcodees colores en style={{ color: '#...' }}
+  ✗ Nunca definas sombras con shadow-xl/shadow-lg de Tailwind
+    → Usa var(--shadow-*) o las clases surface-card / primary-glow
+  ✗ Nunca uses transition-all
+  ✓ Siempre usá las clases utilitarias de globals.css antes de crear nuevas
+  ✓ Modo oscuro: el proyecto usa class="dark" en <html>; 
+    los tokens ya cambian solos, no uses dark: prefixes de Tailwind para colores
