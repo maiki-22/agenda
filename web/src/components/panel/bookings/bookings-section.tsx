@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { BookingDetailsDrawer } from "@/components/panel/bookings/booking-details-drawer";
 import { Button } from "@/components/ui/Button";
-import { formatDateShortCL } from "@/lib/datetime/ui-date-format";
+import { getAvatarTone, getInitials } from "@/lib/ui/avatar";
 
 import type {
   BookingItem,
@@ -15,7 +15,27 @@ import { STATUS_BADGE, STATUS_LABELS } from "@/types/panel";
 
 
 const CONTROL_STYLES =
-  "rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-3 py-2 text-sm transition hover:border-[rgb(var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary-glow))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] disabled:cursor-not-allowed disabled:opacity-60";
+  "w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-3 py-2 text-sm text-[rgb(var(--fg))] transition-colors duration-200 ease-out hover:border-[rgb(var(--primary))] focus-visible:border-[rgb(var(--primary))] disabled:cursor-not-allowed disabled:opacity-60";
+
+function formatBookingSchedule(date: string, startAt: string, endAt: string): string {
+  const dayMonth = date.split("-").slice(2).reverse().join("/");
+  const startTime = new Date(startAt).toLocaleTimeString("es-CL", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const endTime = new Date(endAt).toLocaleTimeString("es-CL", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
+  return `${dayMonth} · ${startTime} – ${endTime}`;
+}
+
+function canManageBooking(status: BookingStatus): boolean {
+  return status === "booked" || status === "needs_confirmation";
+}
 
 
 interface BookingsSectionProps {
@@ -42,7 +62,7 @@ export function BookingsSection(props: BookingsSectionProps) {
     [props.bookings?.items, selectedBookingId],
   );
 
-    if (props.error) {
+  if (props.error) {
     return (
       <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 sm:p-5">
         <h2 className="font-semibold">No pudimos cargar las reservas</h2>
@@ -64,7 +84,7 @@ export function BookingsSection(props: BookingsSectionProps) {
       </header>
 
       <div className="sticky top-2 z-20 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]/95 p-2 backdrop-blur sm:top-3">
-        <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-[1fr_auto]">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
           <label htmlFor="booking-search" className="sr-only">
             Buscar reservas por nombre o teléfono
           </label>
@@ -106,43 +126,56 @@ export function BookingsSection(props: BookingsSectionProps) {
             className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-3 sm:p-4"
           >
             <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="text-sm font-semibold">{booking.customer_name}</p>
-                <p className="text-xs text-[rgb(var(--muted))] mt-0.5">
-                  {formatDateShortCL(booking.date)} · {booking.time} · {booking.barber_name}
-                </p>
-              </div>
+              <p className="text-xs text-[rgb(var(--muted))]">
+                {formatBookingSchedule(booking.date, booking.start_at, booking.end_at)}
+              </p>
               <span
                 className={`rounded-full px-2 py-1 text-[11px] font-medium ${STATUS_BADGE[booking.status]}`}
               >
                 {STATUS_LABELS[booking.status]}
               </span>
             </div>
-            <p className="mt-2 text-xs text-[rgb(var(--muted))]">
-              {booking.service_name}
+            <p className="mt-2 text-sm font-semibold text-[rgb(var(--fg))]">{booking.customer_name}</p>
+            <p className="mt-0.5 text-xs text-[rgb(var(--muted))]">{booking.customer_phone}</p>
+
+            <p className="mt-2 inline-flex items-center gap-2 text-xs text-[rgb(var(--muted))]">
+              <span
+                className={[
+                  "inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold",
+                  getAvatarTone(booking.barber_name),
+                ].join(" ")}
+                aria-hidden="true"
+              >
+                {getInitials(booking.barber_name)}
+              </span>
+              <span>{booking.barber_name}</span>
+              <span aria-hidden="true">•</span>
+              <span>{booking.service_name}</span>
             </p>
 
             <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2">
-              <Button
-                variant="primary"
-                size="md"
-                onClick={() => props.onUpdateStatus(booking.id, "confirmed")}
-                disabled={booking.status === "confirmed"}
-                className="px-3 py-2 text-xs"
-                aria-label={`Confirmar reserva de ${booking.customer_name}`}
-              >
-                Confirmar
-              </Button>
-              <Button
-                variant="secondary"
-                size="md"
-                onClick={() => props.onUpdateStatus(booking.id, "cancelled")}
-                disabled={booking.status === "cancelled"}
-                className="px-3 py-2 text-xs"
-                aria-label={`Cancelar reserva de ${booking.customer_name}`}
-              >
-                Cancelar
-              </Button>
+{canManageBooking(booking.status) ? (
+                <>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={() => props.onUpdateStatus(booking.id, "confirmed")}
+                    className="btn-gold rounded-[var(--btn-radius)] px-3 py-2 text-xs"
+                    aria-label={`Confirmar reserva de ${booking.customer_name}`}
+                  >
+                    Confirmar
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={() => props.onUpdateStatus(booking.id, "cancelled")}
+                    className="px-3 py-2 text-xs"
+                    aria-label={`Ver detalle de reserva de ${booking.customer_name}`}
+                  >
+                    Cancelar
+                  </Button>
+                </>
+              ) : null}
               <Button
                 variant="ghost"
                 size="md"
@@ -163,8 +196,12 @@ export function BookingsSection(props: BookingsSectionProps) {
         </p>
       ) : null}
       {!props.loading && (props.bookings?.items.length ?? 0) === 0 ? (
-        <section className="rounded-2xl border border-dashed border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 text-sm text-[rgb(var(--muted))]">
-          <p>Sin resultados para los filtros actuales.</p>
+       <section className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] py-10 text-center">
+          <span className="h-9 w-9 text-[rgb(var(--border))]" aria-hidden="true">
+            ⌕
+          </span>
+          <p className="text-sm font-medium text-[rgb(var(--muted))]">Sin resultados para los filtros actuales.</p>
+          <p className="text-xs text-[rgb(var(--muted))] opacity-70">Prueba con otro estado o limpia la búsqueda.</p>
           <Button className="mt-3" variant="secondary" onClick={props.onRetry}>
             Reintentar carga
           </Button>

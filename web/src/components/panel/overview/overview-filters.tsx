@@ -1,4 +1,5 @@
 import { WINDOW_LABELS, type Barber, type WindowOption } from "@/types/panel";
+import { getAvatarTone, getInitials } from "@/lib/ui/avatar";
 
 type DateRange = { startDate: string; endDate: string };
 
@@ -21,26 +22,6 @@ const WINDOW_OPTIONS: Array<{ value: WindowOption; label: string }> = [
 
 const BARBER_ALL_OPTION = { id: "all", name: "Todos" } as const;
 
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
-
-function getAvatarTone(name: string): string {
-  const tones = [
-    "bg-[rgb(var(--primary)/0.18)] text-[rgb(var(--primary))]",
-    "bg-[rgb(var(--surface-2))] text-[rgb(var(--fg))]",
-  ] as const;
-
-  const hash = Array.from(name).reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 997, 0);
-
-  return tones[hash % tones.length];
-}
 
 function WindowPills({ value, onChange }: { value: WindowOption; onChange: (nextValue: WindowOption) => void }) {
   return (
