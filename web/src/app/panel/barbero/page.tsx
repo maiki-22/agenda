@@ -86,7 +86,6 @@ export default async function BarberPanelPage({
       initialBookings={initialBookings}
       initialBlocks={initialBlocks}
       initialDaysOff={initialDaysOff}
-      role="barber"
     />
   );
 }

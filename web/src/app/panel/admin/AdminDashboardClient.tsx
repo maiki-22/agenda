@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { AdminDashboardOperations } from "@/components/panel/admin/admin-dashboard-operations";
-import { PanelHeader } from "@/components/panel/panel-header";
 import {
   DashboardTabs,
   type DashboardTabKey,
@@ -27,7 +26,6 @@ import type {
 interface AdminDashboardClientProps {
   initialOverview: OverviewResponse | null;
   initialBookings: BookingsResponse | null;
-  role: "admin";
 }
 
 function SummaryStatsSkeleton() {
@@ -75,7 +73,6 @@ function UpcomingBookingsSkeleton() {
 export function AdminDashboardClient({
   initialOverview,
   initialBookings,
-  role,
 }: AdminDashboardClientProps) {
   const toast = useToast();
   const [liveMessage, setLiveMessage] = useState<string>("");
@@ -121,7 +118,6 @@ export function AdminDashboardClient({
         {liveMessage}
       </p>
 
-      <PanelHeader role={role} />
 
       <DashboardTabs activeTab={activeTab} onChange={setActiveTab} />
 

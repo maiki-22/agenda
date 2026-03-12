@@ -6,7 +6,6 @@ import {
   type DashboardTabKey,
 } from "@/components/panel/admin/dashboard-tabs";
 import { BookingsSection } from "@/components/panel/bookings/bookings-section";
-import { PanelHeader } from "@/components/panel/panel-header";
 import { DashboardStatsCards } from "@/components/panel/overview/dashboard-stats-cards";
 import { UpcomingBookingsPanel } from "@/components/panel/overview/upcoming-bookings-panel";
 import { BarberBlockForm } from "@/components/panel/scheduling/barber-block-form";
@@ -30,7 +29,6 @@ interface BarberDashboardClientProps {
   initialBookings: BookingsResponse | null;
   initialBlocks: BarberBlocksResponse | null;
   initialDaysOff: BarberDaysOffResponse | null;
-  role: "barber";
 }
 
 export function BarberDashboardClient({
@@ -40,7 +38,6 @@ export function BarberDashboardClient({
   initialBookings,
   initialBlocks,
   initialDaysOff,
-  role,
 }: BarberDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<DashboardTabKey>("summary");
   const [upcomingFilter, setUpcomingFilter] = useState<"today" | "all">(
@@ -71,7 +68,6 @@ export function BarberDashboardClient({
 
   return (
     <main className="page-container space-y-5 py-5 pb-24 sm:space-y-6 sm:py-8 sm:pb-8">
-      <PanelHeader role={role} />
       <DashboardTabs activeTab={activeTab} onChange={setActiveTab} />
 
       {activeTab === "summary" ? (
