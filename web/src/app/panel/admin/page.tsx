@@ -40,7 +40,7 @@ export default async function AdminPanelPage() {
     redirect("/");
   }
 
-  const overviewResult = await getOverview({ window: "next_7_days" });
+  const overviewResult = await getOverview({ window: "today" });
   const initialOverview: OverviewResponse | null = overviewResult.success
     ? overviewResult.data
     : null;

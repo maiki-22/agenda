@@ -3,7 +3,7 @@ import { requestJson } from "./http";
 import type { OverviewResponse, ServiceResult, WindowOption } from "@/types/panel";
 
 const overviewSchema: z.ZodType<OverviewResponse> = z.object({
-  window: z.enum(["next_7_days", "next_30_days", "last_7_days", "last_30_days"]),
+  window: z.enum(["today", "next_7_days", "next_30_days", "custom"]),
   date_window: z.object({ startDate: z.string(), endDate: z.string() }),
   totals: z.object({
     total: z.number(),
@@ -41,17 +41,24 @@ const overviewSchema: z.ZodType<OverviewResponse> = z.object({
 export async function getOverview(params: {
   window: WindowOption;
   barberId?: string;
+  startDate?: string;
+  endDate?: string;
 }): Promise<ServiceResult<OverviewResponse>> {
   const searchParams = new URLSearchParams({ window: params.window });
+
   if (params.barberId && params.barberId !== "all") {
     searchParams.set("barberId", params.barberId);
+  }
+  if (params.window === "custom" && params.startDate && params.endDate) {
+    searchParams.set("startDate", params.startDate);
+    searchParams.set("endDate", params.endDate);
   }
 
   return requestJson(
     `/api/panel/overview?${searchParams.toString()}`,
     { cache: "no-store", credentials: "include" },
     overviewSchema,
-  );;
+  );
 }
 
 export async function toggleBarberStatus(
@@ -65,6 +72,8 @@ export async function toggleBarberStatus(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ active }),
     },
-    z.object({ ok: z.literal(true) }).or(z.object({ success: z.literal(true) }).transform(() => ({ ok: true }))),
+     z
+      .object({ ok: z.literal(true) })
+      .or(z.object({ success: z.literal(true) }).transform(() => ({ ok: true }))),
   );
 }

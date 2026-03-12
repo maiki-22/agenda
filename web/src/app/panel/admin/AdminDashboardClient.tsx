@@ -132,6 +132,8 @@ export function AdminDashboardClient({
           barbers={barbersState.barbers}
           onWindowChange={overviewState.setWindowKey}
           onBarberChange={overviewState.setBarberId}
+          customRange={overviewState.customRange}
+          onCustomRangeChange={overviewState.setCustomRange}
         />
       )}
 

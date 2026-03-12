@@ -1,23 +1,22 @@
-import type { Barber, WindowOption } from "@/types/panel";
+import { WINDOW_LABELS, type Barber, type WindowOption } from "@/types/panel";
+
+type DateRange = { startDate: string; endDate: string };
 
 type DashboardFiltersProps = {
   windowKey: WindowOption;
   barberId: string;
   barbers: Barber[];
+  customRange: DateRange;
   onWindowChange: (value: WindowOption) => void;
   onBarberChange: (value: string) => void;
-  };
-
-type FilterOption<T extends string> = {
-  value: T;
-  label: string;
+  onCustomRangeChange: (value: DateRange) => void;
 };
 
-const WINDOW_OPTIONS: FilterOption<WindowOption>[] = [
-  { value: "next_7_days", label: "Próximos 7 días" },
-  { value: "next_30_days", label: "Próximos 30 días" },
-  { value: "last_7_days", label: "Últimos 7 días" },
-  { value: "last_30_days", label: "Últimos 30 días" },
+const WINDOW_OPTIONS: Array<{ value: WindowOption; label: string }> = [
+  { value: "today", label: "Hoy" },
+  { value: "next_7_days", label: "7 días" },
+  { value: "next_30_days", label: "30 días" },
+  { value: "custom", label: "Personalizado" },
 ];
 
 const BARBER_ALL_OPTION = { id: "all", name: "Todos" } as const;
@@ -38,20 +37,12 @@ function getAvatarTone(name: string): string {
     "bg-[rgb(var(--surface-2))] text-[rgb(var(--fg))]",
   ] as const;
 
-  const hash = Array.from(name).reduce((acc, char) => {
-    return (acc * 31 + char.charCodeAt(0)) % 997;
-  }, 0);
+  const hash = Array.from(name).reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 997, 0);
 
   return tones[hash % tones.length];
 }
 
-function WindowPills({
-  value,
-  onChange,
-}: {
-  value: WindowOption;
-  onChange: (nextValue: WindowOption) => void;
-}) {
+function WindowPills({ value, onChange }: { value: WindowOption; onChange: (nextValue: WindowOption) => void }) {
   return (
     <div className="flex flex-wrap gap-2">
       {WINDOW_OPTIONS.map((option) => {
@@ -78,15 +69,35 @@ function WindowPills({
   );
 }
 
-function BarberPills({
-  barbers,
-  value,
-  onChange,
-}: {
-  barbers: Barber[];
-  value: string;
-  onChange: (nextValue: string) => void;
-}) {
+function CustomDateRange({ value, onChange }: { value: DateRange; onChange: (nextValue: DateRange) => void }) {
+  return (
+    <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <label className="flex flex-col gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[rgb(var(--muted))]">
+        Desde
+        <input
+          type="date"
+          value={value.startDate}
+          onChange={(event) => onChange({ startDate: event.target.value, endDate: value.endDate })}
+          className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-3 py-2 text-sm text-[rgb(var(--fg))]"
+          aria-label="Fecha de inicio"
+        />
+      </label>
+      <label className="flex flex-col gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[rgb(var(--muted))]">
+        Hasta
+        <input
+          type="date"
+          min={value.startDate}
+          value={value.endDate}
+          onChange={(event) => onChange({ startDate: value.startDate, endDate: event.target.value })}
+          className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-3 py-2 text-sm text-[rgb(var(--fg))]"
+          aria-label="Fecha de fin"
+        />
+      </label>
+    </div>
+  );
+}
+
+function BarberPills({ barbers, value, onChange }: { barbers: Barber[]; value: string; onChange: (nextValue: string) => void }) {
   const options = [BARBER_ALL_OPTION, ...barbers];
   return (
     <div className="flex flex-wrap gap-2">
@@ -107,24 +118,13 @@ function BarberPills({
             ].join(" ")}
           >
             {barber.id === BARBER_ALL_OPTION.id ? (
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[rgb(var(--surface-2))] text-xs font-bold text-[rgb(var(--muted))]">
-                ✦
-              </span>
+               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[rgb(var(--surface-2))] text-xs font-bold text-[rgb(var(--muted))]">✦</span>
             ) : (
-              <span
-                className={[
-                  "inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold",
-                  getAvatarTone(barber.name),
-                ].join(" ")}
-                aria-hidden="true"
-              >
+              <span className={["inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold", getAvatarTone(barber.name)].join(" ")} aria-hidden="true">
                 {getInitials(barber.name)}
               </span>
             )}
-            <span>
-              {barber.name}
-              {"active" in barber && !barber.active ? " (inactivo)" : ""}
-            </span>
+            <span>{barber.name}</span>
           </button>
         );
       })}
@@ -132,35 +132,26 @@ function BarberPills({
   );
 }
 
-export function DashboardFilters({
-  windowKey,
-  barberId,
-  barbers,
-  onWindowChange,
-  onBarberChange,
-}: DashboardFiltersProps) {
+export function DashboardFilters({ windowKey, barberId, barbers, customRange, onWindowChange, onBarberChange, onCustomRangeChange }: DashboardFiltersProps) {
+  const selectedWindow = WINDOW_LABELS[windowKey];
+  const selectedBarber = barberId === "all" ? "Todos los barberos" : (barbers.find((barber) => barber.id === barberId)?.name ?? "Barbero");
   return (
     <section className="w-full surface-card rounded-[var(--card-radius)] p-4 fade-up sm:mx-auto sm:max-w-2xl sm:p-5 lg:mx-0 lg:max-w-none">
       <div className="space-y-2.5">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-[rgb(var(--muted))]">
-          Ventana
-        </p>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-[rgb(var(--muted))]">Ventana</p>
         <WindowPills value={windowKey} onChange={onWindowChange} />
+          {windowKey === "custom" ? <CustomDateRange value={customRange} onChange={onCustomRangeChange} /> : null}
       </div>
-
       <div className="my-4 border-t border-[rgb(var(--border))]" />
-
       <div className="space-y-2.5">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-[rgb(var(--muted))]">
-          Barbero
-        </p>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-[rgb(var(--muted))]">Barbero</p>
         <BarberPills barbers={barbers} value={barberId} onChange={onBarberChange} />
       </div>
       <p className="mt-3 text-xs text-[rgb(var(--muted))]">
-        <span className="inline-block w-1.5 h-1.5 rounded-full bg-[rgb(var(--primary))] mr-1.5 align-middle" />
-          {WINDOW_OPTIONS.find(o => o.value === windowKey)?.label}
-          {" · "}
-          {barberId === "all" ? "Todos los barberos" : barbers.find(b => b.id === barberId)?.name}
+        <span className="mr-1.5 inline-block h-1.5 w-1.5 align-middle rounded-full bg-[rgb(var(--primary))]" />
+        Mostrando <span className="font-semibold text-[rgb(var(--fg))]">{selectedWindow}</span>
+        {" · "}
+        <span className="font-semibold text-[rgb(var(--fg))]">{selectedBarber}</span>
       </p>
 
     </section>

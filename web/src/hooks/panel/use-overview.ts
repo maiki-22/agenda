@@ -9,6 +9,31 @@ type MutationError = {
   code?: string;
 };
 
+type DateRange = {
+  startDate: string;
+  endDate: string;
+};
+
+function getCurrentDateIso(): string {
+  const now = new Date();
+  const year = String(now.getFullYear());
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getInitialDateRange(initialOverview: OverviewResponse | null): DateRange {
+  if (initialOverview?.window === "custom") {
+    return {
+      startDate: initialOverview.date_window.startDate,
+      endDate: initialOverview.date_window.endDate,
+    };
+  }
+
+  const today = getCurrentDateIso();
+  return { startDate: today, endDate: today };
+}
+
 export function useOverview(initialOverview: OverviewResponse | null): {
   windowKey: WindowOption;
   barberId: string;
@@ -16,8 +41,10 @@ export function useOverview(initialOverview: OverviewResponse | null): {
   overview: OverviewResponse | null;
   loading: boolean;
   error: string;
+  customRange: DateRange;
   setWindowKey: (windowKey: WindowOption) => void;
   setBarberId: (barberId: string) => void;
+  setCustomRange: (range: DateRange) => void;
   reloadOverview: () => Promise<void>;
   onToggleBarberStatus: (
     barberId: string,
@@ -26,9 +53,12 @@ export function useOverview(initialOverview: OverviewResponse | null): {
 } {
   const queryClient = useQueryClient();
   const [windowKey, setWindowKey] = useState<WindowOption>(
-    initialOverview?.window ?? "next_7_days",
+    initialOverview?.window ?? "today",
   );
   const [barberId, setBarberId] = useState<string>("all");
+  const [customRange, setCustomRange] = useState<DateRange>(
+    getInitialDateRange(initialOverview),
+  );
 
   const selectedBarber = useMemo<string>(
     () => (barberId === "all" ? "" : barberId),
@@ -36,11 +66,19 @@ export function useOverview(initialOverview: OverviewResponse | null): {
   );
 
   const overviewQuery = useQuery<OverviewResponse, MutationError>({
-    queryKey: ["panel-overview", windowKey, barberId],
+    queryKey: [
+      "panel-overview",
+      windowKey,
+      barberId,
+      customRange.startDate,
+      customRange.endDate,
+    ],
     queryFn: async (): Promise<OverviewResponse> => {
       const result = await getOverview({
         window: windowKey,
         barberId: barberId === "all" ? undefined : barberId,
+        startDate: customRange.startDate,
+        endDate: customRange.endDate,
       });
 
       if (!result.success) {
@@ -106,8 +144,10 @@ export function useOverview(initialOverview: OverviewResponse | null): {
     overview: overviewQuery.data ?? null,
     loading: overviewQuery.isLoading || overviewQuery.isFetching,
     error: overviewQuery.error?.message ?? "",
+    customRange,
     setWindowKey,
     setBarberId,
+    setCustomRange,
     reloadOverview,
     onToggleBarberStatus,
   };

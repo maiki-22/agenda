@@ -5,8 +5,10 @@ export type ServiceResult<T> =
 export type Barber = { id: string; name: string; active: boolean };
 
 export type WindowOption =
+  | "today"
   | "next_7_days"
   | "next_30_days"
+  | "custom"
   | "last_7_days"
   | "last_30_days";
 
@@ -103,10 +105,12 @@ export type SchedulingPayload = {
 };
 
 export const WINDOW_LABELS: Record<WindowOption, string> = {
+  today: "Hoy",
   next_7_days: "Próximos 7 días",
   next_30_days: "Próximos 30 días",
   last_7_days: "Últimos 7 días",
   last_30_days: "Últimos 30 días",
+  custom: "Personalizado",
 };
 
 export const STATUS_LABELS: Record<BookingStatus, string> = {
