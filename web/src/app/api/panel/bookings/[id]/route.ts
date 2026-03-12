@@ -4,13 +4,19 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { getAuthenticatedPanelUser } from "@/lib/auth/get-authenticated-panel-user";
 
 const UpdateBookingSchema = z.object({
-  status: z.enum(["booked", "needs_confirmation", "confirmed", "cancelled"]),
+  status: z.enum([
+    "booked",
+    "needs_confirmation",
+    "confirmed",
+    "cancelled",
+    "rescheduled",
+  ]),
 });
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
-) {
+): Promise<Response> {
   const supabase = await supabaseServer();
   const panelUser = await getAuthenticatedPanelUser(supabase);
 

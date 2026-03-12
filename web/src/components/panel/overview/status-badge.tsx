@@ -1,4 +1,8 @@
-import type { BookingStatus } from "@/types/panel";
+import {
+  STATUS_LABELS,
+  type BookingStatus,
+} from "@/types/panel";
+
 
 interface StatusBadgeProps {
   status: BookingStatus;
@@ -6,18 +10,14 @@ interface StatusBadgeProps {
 
 const STATUS_STYLES: Record<BookingStatus, string> = {
   needs_confirmation:
-    "bg-amber-500/10 text-amber-700 dark:text-amber-300 [&>span]:bg-amber-500",
+    "border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--muted))] [&>span]:bg-[rgb(var(--muted))]",
   confirmed:
-    "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 [&>span]:bg-emerald-500",
-  booked: "bg-sky-500/10 text-sky-700 dark:text-sky-300 [&>span]:bg-sky-500",
-  cancelled: "bg-zinc-500/10 text-zinc-700 dark:text-zinc-300 [&>span]:bg-zinc-500",
-};
-
-const STATUS_LABELS: Record<BookingStatus, string> = {
-  needs_confirmation: "Pendiente",
-  confirmed: "Confirmada",
-  booked: "Reservada",
-  cancelled: "Cancelada",
+"border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 [&>span]:bg-emerald-400",
+  booked:
+    "border border-[rgb(var(--primary)/0.3)] bg-[rgb(var(--primary)/0.12)] text-[rgb(var(--primary))] [&>span]:bg-[rgb(var(--primary))]",
+  cancelled: "border border-red-500/20 bg-red-500/10 text-red-400 [&>span]:bg-red-400",
+  rescheduled:
+    "border border-sky-500/20 bg-sky-500/10 text-sky-400 [&>span]:bg-sky-400",
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {

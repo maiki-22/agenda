@@ -6,6 +6,7 @@ const STATUS_VALUES = [
   "needs_confirmation",
   "confirmed",
   "cancelled",
+  "rescheduled",
 ] as const;
 
 const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;

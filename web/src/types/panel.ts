@@ -16,7 +16,8 @@ export type BookingStatus =
   | "booked"
   | "needs_confirmation"
   | "confirmed"
-  | "cancelled";
+  | "cancelled"
+  | "rescheduled";
 
 export type BookingStatusFilter = "all" | BookingStatus;
 
@@ -118,14 +119,16 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
   needs_confirmation: "Por confirmar",
   confirmed: "Confirmada",
   cancelled: "Cancelada",
+  rescheduled: "Reagendada",
 };
 
 export const STATUS_BADGE: Record<BookingStatus, string> = {
   booked:
-    "bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-200",
+    "border border-[rgb(var(--primary)/0.3)] bg-[rgb(var(--primary)/0.12)] text-[rgb(var(--primary))]",
   needs_confirmation:
-    "bg-orange-100 text-orange-900 dark:bg-orange-500/20 dark:text-orange-200",
+    "border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--muted))]",
   confirmed:
-    "bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200",
-  cancelled: "bg-rose-100 text-rose-900 dark:bg-rose-500/20 dark:text-rose-200",
+     "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
+  cancelled: "border border-red-500/20 bg-red-500/10 text-red-400",
+  rescheduled: "border border-sky-500/20 bg-sky-500/10 text-sky-400",
 };

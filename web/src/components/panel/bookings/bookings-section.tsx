@@ -94,6 +94,7 @@ export function BookingsSection(props: BookingsSectionProps) {
             <option value="needs_confirmation">Por confirmar</option>
             <option value="confirmed">Confirmada</option>
             <option value="cancelled">Cancelada</option>
+            <option value="rescheduled">Reagendada</option>
           </select>
         </div>
       </div>
