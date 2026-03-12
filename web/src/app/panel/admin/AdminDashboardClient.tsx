@@ -46,29 +46,6 @@ function SummaryStatsSkeleton() {
   );
 }
 
-function UpcomingBookingsSkeleton() {
-  return (
-    <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-5">
-      <div className="h-5 w-44 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
-      <div className="mt-6 space-y-3">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div
-            key={`booking-skeleton-${index}`}
-            className="grid grid-cols-[96px_minmax(0,1fr)_auto] items-center gap-4 py-3"
-          >
-            <div className="h-4 w-14 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
-            <div className="space-y-2">
-              <div className="h-4 w-2/3 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
-              <div className="h-3 w-1/2 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
-            </div>
-            <div className="h-6 w-20 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export function AdminDashboardClient({
   initialOverview,
   initialBookings,
@@ -116,7 +93,6 @@ export function AdminDashboardClient({
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {liveMessage}
       </p>
-
 
       <DashboardTabs activeTab={activeTab} onChange={setActiveTab} />
 
@@ -168,12 +144,11 @@ export function AdminDashboardClient({
                 {bookingsState.error}
               </p>
             </section>
-          ) : bookingsState.loading ? (
-            <UpcomingBookingsSkeleton />
           ) : (
             <UpcomingBookingsPanel
               bookings={bookingsState.bookings?.items ?? []}
               filter={upcomingFilter}
+              loading={bookingsState.loading}
               onFilterChange={setUpcomingFilter}
               onViewFullAgenda={() => setActiveTab("bookings")}
             />

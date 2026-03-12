@@ -76,6 +76,7 @@ export function BarberDashboardClient({
           <UpcomingBookingsPanel
             bookings={panel.bookings?.items ?? []}
             filter={upcomingFilter}
+            loading={panel.bookingsLoading}
             onFilterChange={setUpcomingFilter}
             onViewFullAgenda={() => setActiveTab("bookings")}
           />

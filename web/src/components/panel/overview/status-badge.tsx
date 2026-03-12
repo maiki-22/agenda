@@ -10,9 +10,9 @@ interface StatusBadgeProps {
 
 const STATUS_STYLES: Record<BookingStatus, string> = {
   needs_confirmation:
-    "border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--muted))] [&>span]:bg-[rgb(var(--muted))]",
+    "border border-[rgb(var(--primary)/0.3)] bg-[rgb(var(--primary)/0.12)] text-[rgb(var(--primary))] [&>span]:bg-[rgb(var(--primary))]",
   confirmed:
-"border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 [&>span]:bg-emerald-400",
+    "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 [&>span]:bg-emerald-400",
   booked:
     "border border-[rgb(var(--primary)/0.3)] bg-[rgb(var(--primary)/0.12)] text-[rgb(var(--primary))] [&>span]:bg-[rgb(var(--primary))]",
   cancelled: "border border-red-500/20 bg-red-500/10 text-red-400 [&>span]:bg-red-400",
