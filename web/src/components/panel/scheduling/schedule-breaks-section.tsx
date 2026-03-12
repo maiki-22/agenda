@@ -1,21 +1,26 @@
-import { Trash2 } from "lucide-react";
+"use client";
+
+import { useState } from "react";
 import type { ScheduleBreak } from "@/types/panel";
 
 interface ScheduleBreaksSectionProps {
   dayLabel: string;
   breaks: ScheduleBreak[];
-  onChangeBreak: (index: number, key: "startTime" | "endTime", value: string) => void;
   onRemoveBreak: (index: number) => void;
-  onAddBreak: () => void;
+  onAddBreak: (input: { startTime: string; endTime: string; name: string }) => void;
 }
 
 export function ScheduleBreaksSection({
   dayLabel,
   breaks,
-  onChangeBreak,
   onRemoveBreak,
   onAddBreak,
 }: ScheduleBreaksSectionProps) {
+  const [showForm, setShowForm] = useState<boolean>(false);
+  const [name, setName] = useState<string>("");
+  const [startTime, setStartTime] = useState<string>("13:00");
+  const [endTime, setEndTime] = useState<string>("14:00");
+
   return (
     <section className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4">
       <h3 className="text-sm font-semibold text-[rgb(var(--fg))]">Pausas y descansos</h3>
@@ -24,50 +29,101 @@ export function ScheduleBreaksSection({
       {breaks.length === 0 ? (
         <p className="mt-4 text-xs text-[rgb(var(--muted))]">Sin pausas registradas.</p>
       ) : (
-        <ul className="mt-4 space-y-2">
+        <ul className="mt-4 flex flex-wrap gap-2">
           {breaks.map((breakItem, index) => (
-            <li key={`${dayLabel}-break-${index}`} className="flex items-center gap-2">
-              <span className="min-w-20 text-xs text-[rgb(var(--muted))]">Pausa {index + 1}</span>
-              <input
-                type="time"
-                value={breakItem.startTime}
-                onChange={(event) => {
-                  onChangeBreak(index, "startTime", event.target.value);
-                }}
-                aria-label={`Inicio de pausa ${index + 1} ${dayLabel}`}
-                className="w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--fg))]"
-              />
-              <input
-                type="time"
-                value={breakItem.endTime}
-                onChange={(event) => {
-                  onChangeBreak(index, "endTime", event.target.value);
-                }}
-                aria-label={`Fin de pausa ${index + 1} ${dayLabel}`}
-                className="w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--fg))]"
-              />
+            <li
+              key={`${dayLabel}-break-${index}`}
+              className="inline-flex items-center gap-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-xs text-[rgb(var(--fg))]"
+            >
+              <span className="font-medium">{`Pausa ${index + 1}`}</span>
+              <span className="text-[rgb(var(--muted))]">
+                {breakItem.startTime} - {breakItem.endTime}
+              </span>
               <button
                 type="button"
-                onClick={() => {
-                  onRemoveBreak(index);
-                }}
+                onClick={() => onRemoveBreak(index)}
                 aria-label={`Eliminar pausa ${index + 1}`}
-                className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-2 text-red-400 transition-colors duration-200 ease-out hover:bg-[rgb(var(--border))]"
+                className="text-sm text-[rgb(var(--muted))] transition-colors duration-200 ease-out hover:text-[rgb(var(--fg))]"
               >
-                <Trash2 className="h-4 w-4" />
+                ×
               </button>
             </li>
           ))}
         </ul>
       )}
 
-      <button
-        type="button"
-        onClick={onAddBreak}
-        className="mt-4 w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-4 py-2 text-sm font-medium text-[rgb(var(--fg))] transition-colors duration-200 ease-out hover:bg-[rgb(var(--border))]"
-      >
-        + Agregar pausa
-      </button>
+      {showForm ? (
+        <div className="mt-4 space-y-3 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-3">
+          <div>
+            <label htmlFor={`break-name-${dayLabel}`} className="text-xs text-[rgb(var(--muted))]">
+              Nombre
+            </label>
+            <input
+              id={`break-name-${dayLabel}`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Almuerzo"
+              className="mt-1 w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-3 py-2 text-sm text-[rgb(var(--fg))]"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label htmlFor={`break-start-${dayLabel}`} className="text-xs text-[rgb(var(--muted))]">
+                Desde
+              </label>
+              <input
+                id={`break-start-${dayLabel}`}
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-3 py-2 text-sm text-[rgb(var(--fg))]"
+              />
+            </div>
+            <div>
+              <label htmlFor={`break-end-${dayLabel}`} className="text-xs text-[rgb(var(--muted))]">
+                Hasta
+              </label>
+              <input
+                id={`break-end-${dayLabel}`}
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-3 py-2 text-sm text-[rgb(var(--fg))]"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-3 py-2 text-sm text-[rgb(var(--fg))]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onAddBreak({ startTime, endTime, name });
+                setShowForm(false);
+                setName("");
+              }}
+              className="btn-gold px-3 py-2 text-sm"
+            >
+              Guardar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowForm(true)}
+          className="mt-4 w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-4 py-2 text-sm font-medium text-[rgb(var(--fg))] transition-colors duration-200 ease-out hover:bg-[rgb(var(--border))]"
+        >
+          + Agregar pausa
+        </button>
+      )}
     </section>
   );
 }

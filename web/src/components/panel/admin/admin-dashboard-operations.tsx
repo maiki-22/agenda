@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { BarberPills } from "@/components/panel/overview/barber-pills";
 import { ScheduleEditor } from "@/components/panel/scheduling/schedule-editor";
 import { BarberBlockForm } from "@/components/panel/scheduling/barber-block-form";
@@ -13,6 +14,7 @@ import type { Barber } from "@/types/panel";
 type BlocksState = ReturnType<typeof useBarberBlocks>;
 type DaysOffState = ReturnType<typeof useDaysOff>;
 type ToastState = ReturnType<typeof useToast>;
+type OperationTab = "block" | "day-off" | "shop-closed";
 
 interface AdminDashboardOperationsProps {
   barbers: Barber[];
@@ -24,6 +26,12 @@ interface AdminDashboardOperationsProps {
   setLiveMessage: (message: string) => void;
 }
 
+const OPERATION_TABS: { key: OperationTab; label: string }[] = [
+  { key: "block", label: "Bloquear horario" },
+  { key: "day-off", label: "Día libre" },
+  { key: "shop-closed", label: "Cierre general" },
+];
+
 export function AdminDashboardOperations({
   barbers,
   selectedBarber,
@@ -33,6 +41,9 @@ export function AdminDashboardOperations({
   toast,
   setLiveMessage,
 }: AdminDashboardOperationsProps) {
+  const [activeTab, setActiveTab] = useState<OperationTab>("block");
+  const [clearVersion, setClearVersion] = useState<number>(0);
+
   const notifyError = (message: string): void => {
     toast.error(message);
     setLiveMessage(message);
@@ -57,96 +68,101 @@ export function AdminDashboardOperations({
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="surface-card rounded-[var(--card-radius)] p-4 sm:col-span-2">
-          <section>
-            <h3 className="text-sm font-semibold text-[rgb(var(--fg))]">
-              Bloquear horario
-            </h3>
-            <p className="mt-1 text-xs text-[rgb(var(--muted))]">
-              Reservá bloques para pausas o eventos puntuales.
-            </p>
-            <div className="mt-4">
-              <BarberBlockForm
-                selectedBarber={selectedBarber}
-                loading={blocksState.loading}
-                onSubmit={async (input) => {
-                  if (!selectedBarber) {
-                    notifyError("Selecciona un barbero para bloquear horario");
-                    return;
-                  }
-
-                  const error = await blocksState.submitBlock(input);
-                  if (error) {
-                    notifyError(`No se pudo bloquear el horario: ${error}`);
-                    return;
-                  }
-
-                  notifySuccess("Horario bloqueado correctamente");
+      <div className="surface-card rounded-[var(--card-radius)] p-4">
+        <header className="mb-4 border-b border-[rgb(var(--border))]">
+          <nav className="flex gap-2 overflow-x-auto pb-3 no-scrollbar">
+            {OPERATION_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => {
+                  setActiveTab(tab.key);
                 }}
-              />
-            </div>
-          </section>
+                className={[
+                  "shrink-0 rounded-lg border px-3 py-2 text-sm transition-colors duration-200 ease-out",
+                  activeTab === tab.key
+                    ? "border-[rgb(var(--primary))] bg-[rgb(var(--primary)/0.15)] text-[rgb(var(--primary))]"
+                    : "border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] text-[rgb(var(--muted))] hover:text-[rgb(var(--fg))]",
+                ].join(" ")}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </header>
 
-          <section className="mt-4 border-t border-[rgb(var(--border))] pt-4">
-            <h3 className="text-sm font-semibold text-[rgb(var(--fg))]">
-              Día libre
-            </h3>
-            <p className="mt-1 text-xs text-[rgb(var(--muted))]">
-              Configurá ausencias de barberos por día completo.
-            </p>
-            <div className="mt-4">
-              <DayOffForm
-                selectedBarber={selectedBarber}
-                loading={daysOffState.loading}
-                onSubmit={async (input) => {
-                  if (!selectedBarber) {
-                    notifyError("Selecciona un barbero para día libre");
-                    return;
-                  }
-
-                  const error = await daysOffState.submitBarberDayOff(input);
-                  if (error) {
-                    notifyError(`No se pudo agregar el día libre: ${error}`);
-                    return;
-                  }
-
-                  notifySuccess("Día libre agregado correctamente");
-                }}
-              />
-            </div>
-          </section>
-
-          <section className="mt-4 border-t border-[rgb(var(--border))] pt-4">
-            <h3 className="text-sm font-semibold text-[rgb(var(--fg))]">
-              Cierre general
-            </h3>
-            <p className="mt-1 text-xs text-[rgb(var(--muted))]">
-              Marcá días cerrados para toda la barbería.
-            </p>
-            <div className="mt-4">
-              <ShopClosedForm
-                loading={daysOffState.loading}
-                onSubmit={async (input) => {
-                  const error = await daysOffState.submitShopClosedDay(input);
-                  if (error) {
-                    notifyError(`No se pudo crear el cierre general: ${error}`);
-                    return;
-                  }
-
-                  notifySuccess("Día cerrado agregado correctamente");
-                }}
-              />
-            </div>
-          </section>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-[rgb(var(--fg))]">
+            {OPERATION_TABS.find((tab) => tab.key === activeTab)?.label}
+          </h3>
+          <button
+            type="button"
+            onClick={() => {
+              setClearVersion((current) => current + 1);
+            }}
+            className="text-xs font-medium text-[rgb(var(--primary))]"
+          >
+            Limpiar
+          </button>
         </div>
 
-        {selectedBarber ? (
-          <div className="sm:col-span-2">
-            <ScheduleEditor key={selectedBarber} barberId={selectedBarber} />
-          </div>
+        {activeTab === "block" ? (
+          <BarberBlockForm
+            key={`block-${clearVersion}`}
+            selectedBarber={selectedBarber}
+            loading={blocksState.loading}
+            onSubmit={async (input) => {
+              if (!selectedBarber) {
+                notifyError("Selecciona un barbero para bloquear horario");
+                return;
+              }
+              const error = await blocksState.submitBlock(input);
+              if (error) {
+                notifyError(`No se pudo bloquear el horario: ${error}`);
+                return;
+              }
+              notifySuccess("Horario bloqueado correctamente");
+            }}
+          />
+        ) : null}
+
+        {activeTab === "day-off" ? (
+          <DayOffForm
+            key={`day-off-${clearVersion}`}
+            selectedBarber={selectedBarber}
+            loading={daysOffState.loading}
+            onSubmit={async (input) => {
+              if (!selectedBarber) {
+                notifyError("Selecciona un barbero para día libre");
+                return;
+              }
+              const error = await daysOffState.submitBarberDayOff(input);
+              if (error) {
+                notifyError(`No se pudo agregar el día libre: ${error}`);
+                return;
+              }
+              notifySuccess("Día libre agregado correctamente");
+            }}
+          />
+        ) : null}
+
+        {activeTab === "shop-closed" ? (
+          <ShopClosedForm
+            key={`shop-closed-${clearVersion}`}
+            loading={daysOffState.loading}
+            onSubmit={async (input) => {
+              const error = await daysOffState.submitShopClosedDay(input);
+              if (error) {
+                notifyError(`No se pudo crear el cierre general: ${error}`);
+                return;
+              }
+              notifySuccess("Día cerrado agregado correctamente");
+            }}
+          />
         ) : null}
       </div>
+
+      {selectedBarber ? <ScheduleEditor key={selectedBarber} barberId={selectedBarber} /> : null}
     </section>
   );
 }

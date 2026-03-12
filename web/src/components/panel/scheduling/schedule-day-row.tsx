@@ -1,3 +1,4 @@
+import { Toggle } from "@/components/ui/Toggle";
 import type { ScheduleDay } from "@/types/panel";
 
 interface ScheduleDayRowProps {
@@ -12,24 +13,14 @@ export function ScheduleDayRow({ day, dayLabel, onChange }: ScheduleDayRowProps)
   return (
     <div className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
-        <button
-          type="button"
-          role="switch"
-          aria-checked={day.active}
-          aria-label={`Activar ${dayLabel}`}
-          onClick={() => {
+        <Toggle
+          checked={day.active}
+          onChange={() => {
             onChange({ ...day, active: !day.active });
           }}
-          className={`relative h-6 w-11 rounded-full transition-colors duration-200 ease-out ${
-            day.active ? "bg-[rgb(var(--primary))]" : "bg-[rgb(var(--border))]"
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 h-5 w-5 rounded-full bg-[rgb(var(--primary-foreground))] transition-transform duration-200 ease-out ${
-              day.active ? "translate-x-5" : "translate-x-0.5"
-            }`}
-          />
-        </button>
+          label={`Activar ${dayLabel}`}
+          aria-label={`Activar ${dayLabel}`}
+        />
         <p className="text-sm font-medium text-[rgb(var(--fg))]">{dayLabel}</p>
       </div>
 

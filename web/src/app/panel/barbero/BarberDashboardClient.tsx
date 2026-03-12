@@ -11,17 +11,19 @@ import { UpcomingBookingsPanel } from "@/components/panel/overview/upcoming-book
 import { BarberBlockForm } from "@/components/panel/scheduling/barber-block-form";
 import { DayOffForm } from "@/components/panel/scheduling/day-off-form";
 import { ScheduleEditor } from "@/components/panel/scheduling/schedule-editor";
+import { ShopClosedForm } from "@/components/panel/scheduling/shop-closed-form";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/toast-provider";
-import { useBarberPanel } from "@/hooks/panel/use-barber-panel";
 import { formatDateShortCL } from "@/lib/datetime/ui-date-format";
+import { createShopClosedDay } from "@/services/panel/scheduling";
 
 import type {
   BarberBlocksResponse,
   BarberDaysOffResponse,
-  BookingStatus,
   BookingsResponse,
+  BookingStatus,
 } from "@/types/panel";
+import { useBarberPanel } from "@/hooks/panel/use-barber-panel";
 
 interface BarberDashboardClientProps {
   barberId: string;
@@ -32,6 +34,14 @@ interface BarberDashboardClientProps {
   initialDaysOff: BarberDaysOffResponse | null;
 }
 
+type OperationsTab = "block" | "day-off" | "shop-closed";
+
+const OPERATION_TABS: { key: OperationsTab; label: string }[] = [
+  { key: "block", label: "Bloquear horario" },
+  { key: "day-off", label: "Día libre" },
+  { key: "shop-closed", label: "Cierre general" },
+];
+
 export function BarberDashboardClient({
   barberId,
   dateFrom,
@@ -41,7 +51,9 @@ export function BarberDashboardClient({
   initialDaysOff,
 }: BarberDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<DashboardTabKey>("summary");
-  
+  const [operationsTab, setOperationsTab] = useState<OperationsTab>("block");
+  const [clearVersion, setClearVersion] = useState<number>(0);
+
   const toast = useToast();
   const panel = useBarberPanel({
     barberId,
@@ -74,9 +86,7 @@ export function BarberDashboardClient({
           <DashboardStatsCards bookings={panel.bookings?.items ?? []} />
           <UpcomingBookingsPanel
             bookings={panel.bookings?.items ?? []}
-
             loading={panel.bookingsLoading}
-
             onViewFullAgenda={() => setActiveTab("bookings")}
           />
         </section>
@@ -99,79 +109,142 @@ export function BarberDashboardClient({
       ) : null}
 
       {activeTab === "operations" ? (
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <ScheduleEditor key={barberId} barberId={barberId} />
-          <div className="surface-card rounded-[var(--card-radius)] p-5">
-            <BarberBlockForm
-              selectedBarber={barberId}
-              loading={panel.schedulingLoading}
-              onSubmit={async (input): Promise<void> => {
-                const error = await panel.createBlock(input);
-                if (error) {
-                  toast.error(`No se pudo crear el bloqueo: ${error}`);
-                  return;
-                }
-                toast.success("Bloqueo creado correctamente");
-              }}
-            />
-
-            <ModuleState
-              title="Bloqueos próximos"
-              loading={panel.blocksLoading}
-              error={panel.blocksError}
-              empty={panel.blocks.length === 0}
-              onRetry={async (): Promise<void> => {
-                await panel.retryBlocks();
-              }}
-            >
-              <ul className="space-y-2">
-                {panel.blocks.map((block) => (
-                  <li
-                    key={block.id}
-                    className="rounded-lg border border-[rgb(var(--border))] p-3 text-sm"
+        <section className="space-y-4">
+          <div className="surface-card rounded-[var(--card-radius)] p-4">
+            <header className="mb-4 border-b border-[rgb(var(--border))]">
+              <nav className="flex gap-2 overflow-x-auto pb-3 no-scrollbar">
+                {OPERATION_TABS.map((tab) => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => {
+                      setOperationsTab(tab.key);
+                    }}
+                    className={[
+                      "shrink-0 rounded-lg border px-3 py-2 text-sm transition-colors duration-200 ease-out",
+                      operationsTab === tab.key
+                        ? "border-[rgb(var(--primary))] bg-[rgb(var(--primary)/0.15)] text-[rgb(var(--primary))]"
+                        : "border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] text-[rgb(var(--muted))] hover:text-[rgb(var(--fg))]",
+                    ].join(" ")}
                   >
-                    {formatDateShortCL(block.date)} · {block.start_at.slice(11, 16)}-
-                    {block.end_at.slice(11, 16)}
-                  </li>
+                    {tab.label}
+                  </button>
                 ))}
-              </ul>
-            </ModuleState>
+              </nav>
+            </header>
+
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-[rgb(var(--fg))]">
+                {OPERATION_TABS.find((tab) => tab.key === operationsTab)?.label}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setClearVersion((current) => current + 1);
+                }}
+                className="text-xs font-medium text-[rgb(var(--primary))]"
+              >
+                Limpiar
+              </button>
+            </div>
+
+            {operationsTab === "block" ? (
+              <BarberBlockForm
+                key={`barber-block-${clearVersion}`}
+                selectedBarber={barberId}
+                loading={panel.schedulingLoading}
+                onSubmit={async (input): Promise<void> => {
+                  const error = await panel.createBlock(input);
+                  if (error) {
+                    toast.error(`No se pudo crear el bloqueo: ${error}`);
+                    return;
+                  }
+                  toast.success("Bloqueo creado correctamente");
+                }}
+              />
+            ) : null}
+
+            {operationsTab === "day-off" ? (
+              <DayOffForm
+                key={`barber-day-off-${clearVersion}`}
+                selectedBarber={barberId}
+                loading={panel.schedulingLoading}
+                onSubmit={async (input): Promise<void> => {
+                  const error = await panel.createDayOff(input);
+                  if (error) {
+                    toast.error(`No se pudo crear el día libre: ${error}`);
+                    return;
+                  }
+                  toast.success("Día libre creado correctamente");
+                }}
+              />
+            ) : null}
+
+            {operationsTab === "shop-closed" ? (
+              <ShopClosedForm
+                key={`barber-shop-closed-${clearVersion}`}
+                loading={panel.schedulingLoading}
+                onSubmit={async (input): Promise<void> => {
+                  const result = await createShopClosedDay(input);
+                  if (!result.success) {
+                    toast.error(`No se pudo crear el cierre general: ${result.error}`);
+                    return;
+                  }
+                  toast.success("Cierre general creado correctamente");
+                }}
+              />
+            ) : null}
           </div>
 
-          <div className="surface-card rounded-[var(--card-radius)] p-5">
-            <DayOffForm
-              selectedBarber={barberId}
-              loading={panel.schedulingLoading}
-              onSubmit={async (input): Promise<void> => {
-                const error = await panel.createDayOff(input);
-                if (error) {
-                  toast.error(`No se pudo crear el día libre: ${error}`);
-                  return;
-                }
-                toast.success("Día libre creado correctamente");
-              }}
-            />
+          <ScheduleEditor key={barberId} barberId={barberId} />
 
-            <ModuleState
-              title="Días libres registrados"
-              loading={panel.daysOffLoading}
-              error={panel.daysOffError}
-              empty={panel.daysOff.length === 0}
-              onRetry={async (): Promise<void> => {
-                await panel.retryDaysOff();
-              }}
-            >
-              <ul className="space-y-2">
-                {panel.daysOff.map((dayOff) => (
-                  <li
-                    key={dayOff.id}
-                    className="rounded-lg border border-[rgb(var(--border))] p-3 text-sm"
-                  >
-                    {formatDateShortCL(dayOff.date)} {dayOff.reason ? `· ${dayOff.reason}` : ""}
-                  </li>
-                ))}
-              </ul>
-            </ModuleState>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="surface-card rounded-[var(--card-radius)] p-5">
+              <ModuleState
+                title="Bloqueos próximos"
+                loading={panel.blocksLoading}
+                error={panel.blocksError}
+                empty={panel.blocks.length === 0}
+                onRetry={async (): Promise<void> => {
+                  await panel.retryBlocks();
+                }}
+              >
+                <ul className="space-y-2">
+                  {panel.blocks.map((block) => (
+                    <li
+                      key={block.id}
+                      className="rounded-lg border border-[rgb(var(--border))] p-3 text-sm"
+                    >
+                      {formatDateShortCL(block.date)} · {block.start_at.slice(11, 16)}-
+                      {block.end_at.slice(11, 16)}
+                    </li>
+                  ))}
+                </ul>
+              </ModuleState>
+            </div>
+
+            <div className="surface-card rounded-[var(--card-radius)] p-5">
+              <ModuleState
+                title="Días libres registrados"
+                loading={panel.daysOffLoading}
+                error={panel.daysOffError}
+                empty={panel.daysOff.length === 0}
+                onRetry={async (): Promise<void> => {
+                  await panel.retryDaysOff();
+                }}
+              >
+                <ul className="space-y-2">
+                  {panel.daysOff.map((dayOff) => (
+                    <li
+                      key={dayOff.id}
+                      className="rounded-lg border border-[rgb(var(--border))] p-3 text-sm"
+                    >
+                      {formatDateShortCL(dayOff.date)} {dayOff.reason ? `· ${dayOff.reason}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              </ModuleState>
+            </div>
           </div>
         </section>
       ) : null}
@@ -197,11 +270,7 @@ function ModuleState({
   children,
 }: ModuleStateProps) {
   if (loading) {
-    return (
-      <p className="text-sm text-[rgb(var(--muted))]">
-        Cargando {title.toLowerCase()}...
-      </p>
-    );
+    return <p className="text-sm text-[rgb(var(--muted))]">Cargando {title.toLowerCase()}...</p>;
   }
 
   if (error) {
@@ -217,11 +286,7 @@ function ModuleState({
   }
 
   if (empty) {
-    return (
-      <p className="text-sm text-[rgb(var(--muted))]">
-        No hay {title.toLowerCase()}.
-      </p>
-    );
+    return <p className="text-sm text-[rgb(var(--muted))]">No hay {title.toLowerCase()}.</p>;
   }
 
   return children;

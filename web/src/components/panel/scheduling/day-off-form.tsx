@@ -1,8 +1,10 @@
+"use client";
+
 import { FormEvent, useState } from "react";
+import { PanelDateScroller } from "@/components/panel/scheduling/PanelDateScroller";
 
 const CONTROL_STYLES =
-  "w-full rounded-2xl border border-[rgb(var(--border))] px-3 py-2 transition hover:border-[rgb(var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary-glow))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] disabled:cursor-not-allowed disabled:opacity-60";
-
+  "w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--fg))] placeholder:text-[rgb(var(--muted))] transition-colors duration-200 ease-out hover:bg-[rgb(var(--surface-2))] disabled:cursor-not-allowed disabled:opacity-60";
 
 interface DayOffFormProps {
   selectedBarber: string;
@@ -22,45 +24,45 @@ export function DayOffForm({
   const [date, setDate] = useState<string>("");
   const [reason, setReason] = useState<string>("");
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ): Promise<void> {
     event.preventDefault();
     await onSubmit({ barberId: selectedBarber, date, reason });
   }
 
   return (
-     <form
-      className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 space-y-2 shadow-[var(--shadow-soft)]"
-      onSubmit={handleSubmit}
-      aria-live="polite"
-    >
-      <h3 className="font-semibold">Día libre por barbero</h3>
-      <label htmlFor="day-off-date" className="text-xs text-[rgb(var(--muted))]">
-        Fecha del día libre
-      </label>
-      <input
-        id="day-off-date"
-        type="date"
+    <form className="space-y-3" onSubmit={handleSubmit} aria-live="polite">
+      <h3 className="text-sm font-semibold text-[rgb(var(--fg))]">
+        Día libre por barbero
+      </h3>
+      <PanelDateScroller
         value={date}
-        onChange={(event) => setDate(event.target.value)}
-        className={CONTROL_STYLES}
-        disabled={loading}
-        required
+        onChange={setDate}
+        minDate={new Date().toISOString().slice(0, 10)}
       />
-      <label htmlFor="day-off-reason" className="text-xs text-[rgb(var(--muted))]">
-        Motivo (opcional)
-      </label>
-      <input
-        id="day-off-reason"
-        type="text"
-        value={reason}
-        onChange={(event) => setReason(event.target.value)}
-        placeholder="Motivo"
-        className={CONTROL_STYLES}
-        disabled={loading}
-      />
+
+      <div className="space-y-1">
+        <label
+          htmlFor="day-off-reason"
+          className="text-xs text-[rgb(var(--muted))]"
+        >
+          Motivo (opcional)
+        </label>
+        <input
+          id="day-off-reason"
+          type="text"
+          value={reason}
+          onChange={(event) => setReason(event.target.value)}
+          placeholder="Motivo"
+          className={CONTROL_STYLES}
+          disabled={loading}
+        />
+      </div>
+
       <button
-        disabled={loading}
-        className="rounded-2xl bg-[rgb(var(--primary))] text-[rgb(var(--on-primary))] px-3 py-2 transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary-glow))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={loading || !date}
+        className="btn-gold w-full px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "Guardando..." : "Guardar"}
       </button>

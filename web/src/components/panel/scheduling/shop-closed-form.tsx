@@ -1,8 +1,10 @@
+"use client";
+
 import { FormEvent, useState } from "react";
+import { PanelDateScroller } from "@/components/panel/scheduling/PanelDateScroller";
 
 const CONTROL_STYLES =
-  "w-full rounded-2xl border border-[rgb(var(--border))] px-3 py-2 transition hover:border-[rgb(var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary-glow))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] disabled:cursor-not-allowed disabled:opacity-60";
-
+  "w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--fg))] placeholder:text-[rgb(var(--muted))] transition-colors duration-200 ease-out hover:bg-[rgb(var(--surface-2))] disabled:cursor-not-allowed disabled:opacity-60";
 
 interface ShopClosedFormProps {
   loading: boolean;
@@ -19,39 +21,33 @@ export function ShopClosedForm({ loading, onSubmit }: ShopClosedFormProps) {
   }
 
   return (
-    <form
-      className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 space-y-2 shadow-[var(--shadow-soft)]"
-      onSubmit={handleSubmit}
-      aria-live="polite"
-    >
-      <h3 className="font-semibold">Cerrar barbería (día completo)</h3>
-       <label htmlFor="shop-closed-date" className="text-xs text-[rgb(var(--muted))]">
-        Fecha de cierre
-      </label>
-      <input
-        id="shop-closed-date"
-        type="date"
-        value={date}
-        onChange={(event) => setDate(event.target.value)}
-        className={CONTROL_STYLES}
-        disabled={loading}
-        required
+    <form className="space-y-3" onSubmit={handleSubmit} aria-live="polite">
+      <h3 className="text-sm font-semibold text-[rgb(var(--fg))]">Cerrar barbería (día completo)</h3>
+      
+      <PanelDateScroller 
+        value={date} 
+        onChange={setDate} 
+        minDate={new Date().toISOString().slice(0, 10)} 
       />
-      <label htmlFor="shop-closed-reason" className="text-xs text-[rgb(var(--muted))]">
-        Motivo (opcional)
-      </label>
-      <input
-        id="shop-closed-reason"
-        type="text"
-        value={reason}
-        onChange={(event) => setReason(event.target.value)}
-        placeholder="Motivo (feriado, imprevisto...)"
-        className={CONTROL_STYLES}
-        disabled={loading}
-      />
+
+      <div className="space-y-1">
+        <label htmlFor="shop-closed-reason" className="text-xs text-[rgb(var(--muted))]">
+          Motivo (opcional)
+        </label>
+        <input
+          id="shop-closed-reason"
+          type="text"
+          value={reason}
+          onChange={(event) => setReason(event.target.value)}
+          placeholder="Motivo (feriado, imprevisto...)"
+          className={CONTROL_STYLES}
+          disabled={loading}
+        />
+      </div>
+
       <button
-        disabled={loading}
-        className="rounded-2xl bg-[rgb(var(--primary))] text-[rgb(var(--on-primary))] px-3 py-2 transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary-glow))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--surface))] disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={loading || !date}
+        className="btn-gold w-full px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "Guardando..." : "Guardar"}
       </button>

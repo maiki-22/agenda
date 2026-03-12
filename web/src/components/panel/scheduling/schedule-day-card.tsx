@@ -14,21 +14,13 @@ export function ScheduleDayCard({ day, dayLabel, onChange }: ScheduleDayCardProp
       <ScheduleDayRow day={day} dayLabel={dayLabel} onChange={onChange} />
 
       {day.active ? (
-       <ScheduleBreaksSection
+        <ScheduleBreaksSection
           dayLabel={dayLabel}
           breaks={day.breaks}
-          onAddBreak={() => {
+          onAddBreak={({ startTime, endTime }) => {
             onChange({
               ...day,
-              breaks: [...day.breaks, { startTime: "13:00", endTime: "14:00" }],
-            });
-          }}
-          onChangeBreak={(index, key, value) => {
-            onChange({
-              ...day,
-              breaks: day.breaks.map((item, breakIndex) =>
-                breakIndex === index ? { ...item, [key]: value } : item,
-              ),
+              breaks: [...day.breaks, { startTime, endTime }],
             });
           }}
           onRemoveBreak={(index) => {
