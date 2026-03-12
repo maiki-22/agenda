@@ -8,7 +8,7 @@ import {
   type DashboardTabKey,
 } from "@/components/panel/admin/dashboard-tabs";
 import { BookingsSection } from "@/components/panel/bookings/bookings-section";
-import { OverviewFilters } from "@/components/panel/overview/overview-filters";
+import { DashboardFilters } from "@/components/panel/overview/overview-filters";
 import { DashboardStatsCards } from "@/components/panel/overview/dashboard-stats-cards";
 import { UpcomingBookingsPanel } from "@/components/panel/overview/upcoming-bookings-panel";
 import { useToast } from "@/components/ui/toast-provider";
@@ -124,7 +124,7 @@ export function AdminDashboardClient({
       <DashboardTabs activeTab={activeTab} onChange={setActiveTab} />
 
       {(activeTab === "summary" || activeTab === "bookings") && (
-        <OverviewFilters
+        <DashboardFilters
           windowKey={overviewState.windowKey}
           barberId={overviewState.barberId}
           barbers={overviewState.overview?.barbers ?? []}
