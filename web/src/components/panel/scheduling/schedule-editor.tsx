@@ -10,15 +10,17 @@ interface ScheduleEditorProps {
   barberId: string;
 }
 
-const WEEK_DAYS = [
-  "Domingo",
-  "Lunes",
-  "Martes",
-  "Miércoles",
-  "Jueves",
-  "Viernes",
-  "Sábado",
-] as const;
+const WEEK_DAYS: Record<number, string> = {
+  0: "Domingo",
+  1: "Lunes",
+  2: "Martes",
+  3: "Miércoles",
+  4: "Jueves",
+  5: "Viernes",
+  6: "Sábado",
+};
+
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;
 
 function cloneDay(day: ScheduleDay): ScheduleDay {
   return {
@@ -31,12 +33,24 @@ export function ScheduleEditor({ barberId }: ScheduleEditorProps) {
   const toast = useToast();
   const scheduleState = useSchedule(barberId);
   const [draftDays, setDraftDays] = useState<ScheduleDay[] | null>(null);
-  const activeDraftDays =
-    draftDays ?? scheduleState.schedule?.days.map(cloneDay) ?? [];
+  const activeDraftDays = useMemo<ScheduleDay[]>(
+    () => draftDays ?? scheduleState.schedule?.days.map(cloneDay) ?? [],
+    [draftDays, scheduleState.schedule?.days],
+  );
+
+  const sortedDays = useMemo<ScheduleDay[]>(() => {
+    const dayByDow = new Map(activeDraftDays.map((day) => [day.dow, day]));
+    return WEEK_ORDER.map((dow) => dayByDow.get(dow)).filter(
+      (day): day is ScheduleDay => Boolean(day),
+    );
+  }, [activeDraftDays]);
 
   const canSave = useMemo<boolean>(
-    () => activeDraftDays.length === 7 && !scheduleState.loading && !scheduleState.saving,
-    [activeDraftDays.length, scheduleState.loading, scheduleState.saving],
+    () =>
+      sortedDays.length === 7 &&
+      !scheduleState.loading &&
+      !scheduleState.saving,
+    [sortedDays.length, scheduleState.loading, scheduleState.saving],
   );
 
   const onSave = async (): Promise<void> => {
@@ -56,7 +70,10 @@ export function ScheduleEditor({ barberId }: ScheduleEditorProps) {
       <section className="surface-card rounded-[var(--card-radius)] p-5">
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, index) => (
-            <div key={`schedule-loading-${index}`} className="h-16 rounded-lg bg-[rgb(var(--surface-2))] animate-pulse" />
+            <div
+              key={`schedule-loading-${index}`}
+              className="h-16 animate-pulse rounded-lg bg-[rgb(var(--surface-2))]"
+            />
           ))}
         </div>
       </section>
@@ -66,8 +83,12 @@ export function ScheduleEditor({ barberId }: ScheduleEditorProps) {
   if (scheduleState.error) {
     return (
       <section className="surface-card rounded-[var(--card-radius)] p-5">
-        <p className="text-sm font-medium text-[rgb(var(--fg))]">No se pudo cargar el horario</p>
-        <p className="mt-1 text-xs text-[rgb(var(--muted))]">{scheduleState.error}</p>
+        <p className="text-sm font-medium text-[rgb(var(--fg))]">
+          No se pudo cargar el horario
+        </p>
+        <p className="mt-1 text-xs text-[rgb(var(--muted))]">
+          {scheduleState.error}
+        </p>
         <button
           type="button"
           onClick={() => {
@@ -83,8 +104,24 @@ export function ScheduleEditor({ barberId }: ScheduleEditorProps) {
 
   return (
     <section className="surface-card rounded-[var(--card-radius)] p-5">
-      <div className="space-y-4">
-        {activeDraftDays.map((day) => (
+      <header className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-[rgb(var(--fg))]">
+          Horarios de atención
+        </h2>
+        <button
+          type="button"
+          disabled={!canSave}
+          onClick={() => {
+            void onSave();
+          }}
+          className="btn-gold px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {scheduleState.saving ? "Guardando..." : "Guardar cambios"}
+        </button>
+      </header>
+
+      <div className="space-y-1">
+        {sortedDays.map((day) => (
           <ScheduleDayCard
             key={day.dow}
             day={day}
@@ -99,17 +136,6 @@ export function ScheduleEditor({ barberId }: ScheduleEditorProps) {
           />
         ))}
       </div>
-
-      <button
-        type="button"
-        disabled={!canSave}
-        onClick={() => {
-          void onSave();
-        }}
-        className="btn-gold mt-4 w-full px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {scheduleState.saving ? "Guardando..." : "Guardar cambios"}
-      </button>
     </section>
   );
 }
