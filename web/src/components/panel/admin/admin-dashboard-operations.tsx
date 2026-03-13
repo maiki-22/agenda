@@ -83,17 +83,13 @@ export function AdminDashboardOperations({
             </button>
           </div>
 
-          {blocksState.error ? (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400">
-              {blocksState.error}
-            </div>
-          ) : null}
-
           <ActiveBlocksList
             items={blocksState.blocks}
             barbers={barbers}
             loading={blocksState.loading}
+            error={blocksState.error}
             deleting={blocksState.deleting}
+            onRetry={blocksState.reloadBlocks}
             onDelete={async (values): Promise<void> => {
               const error = await blocksState.removeBlock(values);
               if (error) {

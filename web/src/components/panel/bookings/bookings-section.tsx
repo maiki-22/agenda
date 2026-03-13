@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactElement } from "react";
 import { BookingDetailsDrawer } from "@/components/panel/bookings/booking-details-drawer";
 import { Button } from "@/components/ui/Button";
 import { getAvatarTone, getInitials } from "@/lib/ui/avatar";
@@ -54,18 +54,57 @@ interface BookingsSectionProps {
   actionMode?: "admin" | "barber";
 }
 
+function BookingsSectionSkeleton(): ReactElement {
+  return (
+    <div className="space-y-3" aria-label="Cargando reservas">
+      <div className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 sm:p-5">
+        <div className="h-4 w-44 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
+        <div className="mt-2 h-3 w-64 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
+      </div>
+
+      <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="h-10 rounded-lg bg-[rgb(var(--surface-2))] animate-pulse" />
+          <div className="h-10 rounded-lg bg-[rgb(var(--surface-2))] animate-pulse sm:w-52" />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <article
+            key={`booking-skeleton-${index}`}
+            className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-3 sm:p-4"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="h-3 w-40 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
+              <div className="h-6 w-24 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
+            </div>
+            <div className="mt-3 h-4 w-48 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
+            <div className="mt-2 h-3 w-36 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
+            <div className="mt-3 h-3 w-56 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:flex">
+              <div className="h-9 rounded-[var(--btn-radius)] bg-[rgb(var(--surface))] animate-pulse sm:w-24" />
+              <div className="h-9 rounded-lg bg-[rgb(var(--surface))] animate-pulse sm:w-24" />
+              <div className="col-span-2 h-9 rounded-lg bg-[rgb(var(--surface))] animate-pulse sm:ml-auto sm:w-28" />
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function BookingsSection(props: BookingsSectionProps) {
   const actionMode = props.actionMode ?? "admin";
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
-  
+
   const items = useMemo<BookingItem[]>(
     () => props.bookings?.items ?? [],
     [props.bookings],
   );
-  
+
   const selectedBooking = useMemo<BookingItem | null>(
-    () =>
-      items.find((booking) => booking.id === selectedBookingId) ?? null,
+    () => items.find((booking) => booking.id === selectedBookingId) ?? null,
     [items, selectedBookingId],
   );
 
@@ -73,7 +112,7 @@ export function BookingsSection(props: BookingsSectionProps) {
     return (
       <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 sm:p-5">
         <h2 className="font-semibold">No pudimos cargar las reservas</h2>
-        <p className="text-sm text-[rgb(var(--muted))] mt-1">{props.error}</p>
+        <p className="mt-1 text-sm text-[rgb(var(--muted))]">{props.error}</p>
         <Button className="mt-3" variant="secondary" onClick={props.onRetry}>
           Reintentar reservas
         </Button>
@@ -81,11 +120,15 @@ export function BookingsSection(props: BookingsSectionProps) {
     );
   }
 
+  if (props.loading) {
+    return <BookingsSectionSkeleton />;
+  }
+
   return (
     <section className="space-y-3">
       <header className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 sm:p-5 shadow-[var(--shadow-soft)]">
         <h2 className="font-semibold">Gestión de reservas</h2>
-        <p className="text-xs text-[rgb(var(--muted))] mt-1">
+        <p className="mt-1 text-xs text-[rgb(var(--muted))]">
           Acciones rápidas para confirmar/cancelar y detalle completo en drawer.
         </p>
       </header>
@@ -188,11 +231,14 @@ export function BookingsSection(props: BookingsSectionProps) {
         ))}
       </div>
 
-      {!props.loading && items.length === 0 ? (
+      {items.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-10 text-center">
           <p className="text-sm font-medium text-[rgb(var(--muted))]">
             {props.emptyMessage ?? "No hay reservas para los filtros seleccionados"}
           </p>
+          <Button variant="secondary" size="md" onClick={props.onRetry}>
+            Reintentar carga
+          </Button>
         </div>
       ) : null}
 

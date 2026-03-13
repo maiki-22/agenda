@@ -15,7 +15,9 @@ interface ActiveBlocksListProps {
   items: Array<ActiveBlockItem>;
   barbers: Array<Barber>;
   loading: boolean;
+  error: string | null;
   deleting: boolean;
+  onRetry: () => Promise<void>;
   onDelete: (input: { id: string; type: PanelBlockType }) => Promise<void>;
 }
 
@@ -31,16 +33,53 @@ function formatTimeRange(item: ActiveBlockItem): string {
   return `${start} - ${end}`;
 }
 
-export function ActiveBlocksList({ items, barbers, loading, deleting, onDelete }: ActiveBlocksListProps) {
+export function ActiveBlocksList({
+  items,
+  barbers,
+  loading,
+  error,
+  deleting,
+  onRetry,
+  onDelete,
+}: ActiveBlocksListProps) {
   if (loading) {
     return (
       <div className="space-y-3" aria-label="Cargando bloqueos activos">
         {Array.from({ length: 3 }).map((_, index) => (
           <div
             key={`active-block-skeleton-${index}`}
-            className="h-20 rounded-[var(--card-radius)] bg-[rgb(var(--surface-2))] animate-pulse"
-          />
+            className="rounded-[var(--card-radius)] border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-3"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="h-8 w-8 rounded-lg bg-[rgb(var(--surface))] animate-pulse" />
+                <div className="space-y-2">
+                  <div className="h-3 w-28 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
+                  <div className="h-3 w-44 rounded-full bg-[rgb(var(--surface))] animate-pulse" />
+                </div>
+              </div>
+              <div className="h-8 w-8 rounded-lg bg-[rgb(var(--surface))] animate-pulse" />
+            </div>
+          </div>
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3">
+        <p className="text-sm font-medium text-red-400">No se pudieron cargar los bloqueos.</p>
+        <p className="mt-1 text-xs text-red-300">{error}</p>
+        <Button
+          type="button"
+          variant="secondary"
+          size="md"
+          className="mt-3"
+          onClick={onRetry}
+        >
+          Reintentar bloqueos
+        </Button>
       </div>
     );
   }
@@ -51,6 +90,9 @@ export function ActiveBlocksList({ items, barbers, loading, deleting, onDelete }
         <CalendarMinus2 className="h-9 w-9 text-[rgb(var(--border))]" aria-hidden="true" />
         <p className="text-sm font-medium text-[rgb(var(--muted))]">No hay bloqueos activos</p>
         <p className="text-xs text-[rgb(var(--muted))] opacity-70">Crea un bloqueo para verlo reflejado aquí.</p>
+        <Button type="button" variant="secondary" size="md" onClick={onRetry}>
+          Reintentar carga
+        </Button>
       </div>
     );
   }
