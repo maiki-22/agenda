@@ -52,8 +52,9 @@ export function AdminDashboardClient({
 }: AdminDashboardClientProps) {
   const toast = useToast();
   const [liveMessage, setLiveMessage] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<DashboardTabKey>("summary");
+  const [activeTab, setActiveTab] = useState<DashboardTabKey>("agenda");
   const [operationsBarberId, setOperationsBarberId] = useState<string>("");
+  
   const barbersState = useBarbers();
   const overviewState = useOverview(initialOverview);
   const bookingsState = useBookings({
@@ -97,7 +98,8 @@ export function AdminDashboardClient({
 
       <DashboardTabs activeTab={activeTab} onChange={setActiveTab} />
 
-      {(activeTab === "summary" || activeTab === "bookings") && (
+      {/* Los filtros se muestran tanto en la agenda resumida como en la gestión de reservas */}
+      {(activeTab === "agenda" || activeTab === "bookings") && (
         <DashboardFilters
           windowKey={overviewState.windowKey}
           barberId={overviewState.barberId}
@@ -109,24 +111,23 @@ export function AdminDashboardClient({
         />
       )}
 
-      {barbersState.error ? (
+      {barbersState.error && (
         <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4">
-          <h2 className="font-semibold">No se pudo cargar el listado de barberos</h2>
+          <h2 className="font-semibold text-red-500">No se pudo cargar el listado de barberos</h2>
           <p className="mt-1 text-sm text-[rgb(var(--muted))]">
             {barbersState.error}
           </p>
         </section>
-      ) : null}
-      {activeTab === "summary" ? (
+      )}
+
+      {activeTab === "agenda" && (
         <section className="space-y-3">
-          {overviewState.error ? (
-            <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4">
+          {overviewState.error && (
+            <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 text-red-500">
               <h2 className="font-semibold">No se pudo cargar el resumen</h2>
-              <p className="mt-1 text-sm text-[rgb(var(--muted))]">
-                {overviewState.error}
-              </p>
+              <p className="mt-1 text-sm">{overviewState.error}</p>
             </section>
-          ) : null}
+          )}
 
           {overviewState.loading || bookingsState.loading ? (
             <SummaryStatsSkeleton />
@@ -137,27 +138,21 @@ export function AdminDashboardClient({
           )}
 
           {bookingsState.error ? (
-            <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4">
-              <h2 className="font-semibold">
-                No se pudieron cargar las próximas citas
-              </h2>
-              <p className="mt-1 text-sm text-[rgb(var(--muted))]">
-                {bookingsState.error}
-              </p>
+            <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 text-red-500">
+              <h2 className="font-semibold">No se pudieron cargar las próximas citas</h2>
+              <p className="mt-1 text-sm">{bookingsState.error}</p>
             </section>
           ) : (
             <UpcomingBookingsPanel
               bookings={bookingsState.bookings?.items ?? []}
-
               loading={bookingsState.loading}
-
               onViewFullAgenda={() => setActiveTab("bookings")}
             />
           )}
         </section>
-      ) : null}
+      )}
 
-      {activeTab === "bookings" ? (
+      {activeTab === "bookings" && (
         <BookingsSection
           bookings={bookingsState.bookings}
           loading={bookingsState.loading}
@@ -169,9 +164,9 @@ export function AdminDashboardClient({
           onStatusChange={bookingsState.setBookingStatus}
           onUpdateStatus={handleBookingStatus}
         />
-      ) : null}
+      )}
 
-      {activeTab === "operations" ? (
+      {activeTab === "blocks" && (
         <AdminDashboardOperations
           barbers={barbersState.barbers}
           selectedBarber={selectedOperationsBarberId}
@@ -181,7 +176,7 @@ export function AdminDashboardClient({
           toast={toast}
           setLiveMessage={setLiveMessage}
         />
-      ) : null}
+      )}
     </main>
   );
 }

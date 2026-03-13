@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { BookingsSection } from "@/components/panel/bookings/bookings-section";
+import { getPanelNavItems } from "@/components/panel/navigation/nav-config";
 import { useToast } from "@/components/ui/toast-provider";
 
 import type {
@@ -34,6 +35,8 @@ const BARBER_BOOKINGS_TABS: { key: BarberBookingsTab; label: string }[] = [
   { key: "today", label: "Hoy" },
   { key: "next-days", label: "Próximos días" },
 ];
+
+const BARBER_NAV_ITEMS = getPanelNavItems("barber");
 
 function getLocalDateISO(): string {
   return new Intl.DateTimeFormat("en-CA", {
@@ -103,6 +106,24 @@ export function BarberDashboardClient({
 
   return (
     <main className="page-container space-y-5 py-5 pb-24 sm:space-y-6 sm:py-8 sm:pb-8">
+      {/* Navegación de Secciones (Configuración Centralizada) */}
+      <section className="surface-card rounded-[var(--card-radius)] p-4">
+        <nav aria-label="Secciones del panel del barbero" className="flex gap-2">
+          {BARBER_NAV_ITEMS.map((tab) => (
+            <a
+              key={tab.key}
+              href="/panel/barbero"
+              aria-current="page"
+              aria-label={tab.ariaLabel}
+              className="min-h-11 rounded-lg border border-[rgb(var(--primary))] bg-[rgb(var(--primary)/0.15)] px-3 py-2 text-sm text-[rgb(var(--primary))] transition-colors duration-200 ease-out"
+            >
+              {tab.label}
+            </a>
+          ))}
+        </nav>
+      </section>
+
+      {/* Filtros de Tiempo (Tabs locales) */}
       <section className="surface-card rounded-[var(--card-radius)] p-4">
         <nav className="flex gap-2 overflow-x-auto no-scrollbar" aria-label="Vista de citas del barbero">
           {BARBER_BOOKINGS_TABS.map((tab) => (
