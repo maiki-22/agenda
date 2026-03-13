@@ -44,6 +44,7 @@ interface BookingsSectionProps {
   bookings: BookingsResponse | null;
   loading: boolean;
   error: string;
+  emptyMessage?: string;
   bookingSearch: string;
   bookingStatus: BookingStatusFilter;
   onSearchChange: (value: string) => void;
@@ -57,12 +58,15 @@ export function BookingsSection(props: BookingsSectionProps) {
   const actionMode = props.actionMode ?? "admin";
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   
+  const items = useMemo<BookingItem[]>(
+    () => props.bookings?.items ?? [],
+    [props.bookings],
+  );
+  
   const selectedBooking = useMemo<BookingItem | null>(
     () =>
-      (props.bookings?.items ?? []).find(
-        (booking) => booking.id === selectedBookingId,
-      ) ?? null,
-    [props.bookings?.items, selectedBookingId],
+      items.find((booking) => booking.id === selectedBookingId) ?? null,
+    [items, selectedBookingId],
   );
 
   if (props.error) {
@@ -86,7 +90,6 @@ export function BookingsSection(props: BookingsSectionProps) {
         </p>
       </header>
 
-      {/* ... (Filtros de búsqueda y estado se mantienen igual) ... */}
       <div className="sticky top-2 z-20 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]/95 p-2 backdrop-blur sm:top-3">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
           <input
@@ -115,7 +118,7 @@ export function BookingsSection(props: BookingsSectionProps) {
       </div>
 
       <div className="space-y-2">
-        {(props.bookings?.items ?? []).map((booking) => (
+        {items.map((booking) => (
           <article
             key={booking.id}
             className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-3 sm:p-4"
@@ -185,7 +188,14 @@ export function BookingsSection(props: BookingsSectionProps) {
         ))}
       </div>
 
-      {/* ... (Loading y Empty states) ... */}
+      {!props.loading && items.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-10 text-center">
+          <p className="text-sm font-medium text-[rgb(var(--muted))]">
+            {props.emptyMessage ?? "No hay reservas para los filtros seleccionados"}
+          </p>
+        </div>
+      ) : null}
+
       <BookingDetailsDrawer
         booking={selectedBooking}
         open={selectedBooking !== null}

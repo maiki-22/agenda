@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getBookings, updateBookingStatus } from "@/services/panel/bookings";
 import {
@@ -13,6 +14,7 @@ import type {
   BarberDaysOffResponse,
   BookingsResponse,
   BookingStatus,
+  BookingStatusFilter,
 } from "@/types/panel";
 
 type MutationError = {
@@ -24,6 +26,8 @@ interface UseBarberPanelParams {
   barberId: string;
   dateFrom: string;
   dateTo: string;
+  bookingStatus: BookingStatusFilter;
+  bookingSearch: string;
   initialBookings: BookingsResponse | null;
   initialBlocks: BarberBlocksResponse | null;
   initialDaysOff: BarberDaysOffResponse | null;
@@ -32,20 +36,27 @@ interface UseBarberPanelParams {
 export function useBarberPanel(params: UseBarberPanelParams) {
   const queryClient = useQueryClient();
 
+  const normalizedSearch = useMemo<string>(
+    () => params.bookingSearch.trim(),
+    [params.bookingSearch],
+  );
+
   const bookingsQuery = useQuery<BookingsResponse, MutationError>({
     queryKey: [
       "barber-panel-bookings",
       params.barberId,
       params.dateFrom,
       params.dateTo,
+      params.bookingStatus,
+      normalizedSearch,
     ],
     queryFn: async (): Promise<BookingsResponse> => {
       const result = await getBookings({
         dateFrom: params.dateFrom,
         dateTo: params.dateTo,
         barberId: params.barberId,
-        status: "all",
-        query: "",
+        status: params.bookingStatus,
+        query: normalizedSearch,
       });
 
       if (!result.success) {
@@ -57,7 +68,12 @@ export function useBarberPanel(params: UseBarberPanelParams) {
 
       return result.data;
     },
-    initialData: params.initialBookings ?? undefined,
+    initialData:
+      params.initialBookings &&
+      params.bookingStatus === "all" &&
+      normalizedSearch.length === 0
+        ? params.initialBookings
+        : undefined,
     staleTime: 30_000,
   });
 

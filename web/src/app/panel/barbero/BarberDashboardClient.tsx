@@ -9,6 +9,7 @@ import type {
   BarberDaysOffResponse,
   BookingsResponse,
   BookingStatus,
+  BookingStatusFilter,
 } from "@/types/panel";
 import { useBarberPanel } from "@/hooks/panel/use-barber-panel";
 
@@ -23,6 +24,12 @@ interface BarberDashboardClientProps {
 
 type BarberBookingsTab = "today" | "next-days";
 
+type BarberBookingsFilters = {
+  period: BarberBookingsTab;
+  search: string;
+  status: BookingStatusFilter;
+};
+
 const BARBER_BOOKINGS_TABS: { key: BarberBookingsTab; label: string }[] = [
   { key: "today", label: "Hoy" },
   { key: "next-days", label: "Próximos días" },
@@ -34,24 +41,16 @@ function getLocalDateISO(): string {
   }).format(new Date());
 }
 
-function getFilteredBookings(
-  bookings: BookingsResponse | null,
-  activeTab: BarberBookingsTab,
-): BookingsResponse | null {
-  if (!bookings) {
-    return null;
+function getRangePreset(
+  period: BarberBookingsTab,
+  defaultRange: { dateFrom: string; dateTo: string },
+): { dateFrom: string; dateTo: string } {
+  const today = getLocalDateISO();
+  if (period === "today") {
+    return { dateFrom: today, dateTo: today };
   }
 
-  const today = getLocalDateISO();
-  const items = bookings.items.filter((booking) =>
-    activeTab === "today" ? booking.date === today : booking.date > today,
-  );
-
-  return {
-    ...bookings,
-    items,
-    total: items.length,
-  };
+  return defaultRange;
 }
 
 export function BarberDashboardClient({
@@ -62,22 +61,32 @@ export function BarberDashboardClient({
   initialBlocks,
   initialDaysOff,
 }: BarberDashboardClientProps) {
-  const [activeTab, setActiveTab] = useState<BarberBookingsTab>("today");
+  const [filters, setFilters] = useState<BarberBookingsFilters>({
+    period: "today",
+    search: "",
+    status: "all",
+  });
 
   const toast = useToast();
+  
+  const rangePreset = useMemo<{ dateFrom: string; dateTo: string }>(
+    () => getRangePreset(filters.period, { dateFrom, dateTo }),
+    [dateFrom, dateTo, filters.period],
+  );
+
   const panel = useBarberPanel({
     barberId,
-    dateFrom,
-    dateTo,
+    dateFrom: rangePreset.dateFrom,
+    dateTo: rangePreset.dateTo,
+    bookingStatus: filters.status,
+    bookingSearch: filters.search,
     initialBookings,
     initialBlocks,
     initialDaysOff,
   });
 
-  const filteredBookings = useMemo<BookingsResponse | null>(
-    () => getFilteredBookings(panel.bookings, activeTab),
-    [activeTab, panel.bookings],
-  );
+  const emptyMessage =
+    filters.period === "today" ? "Sin citas por hoy" : "Sin citas en los próximos días";
 
   async function handleBookingStatus(
     id: string,
@@ -100,11 +109,16 @@ export function BarberDashboardClient({
             <button
               key={tab.key}
               type="button"
-              onClick={() => setActiveTab(tab.key)}
-              aria-current={activeTab === tab.key ? "page" : undefined}
+              onClick={() =>
+                setFilters((prev) => ({
+                  ...prev,
+                  period: tab.key,
+                }))
+              }
+              aria-current={filters.period === tab.key ? "page" : undefined}
               className={[
                 "shrink-0 rounded-lg border px-3 py-2 text-sm transition-colors duration-200 ease-out",
-                activeTab === tab.key
+                filters.period === tab.key
                   ? "border-[rgb(var(--primary))] bg-[rgb(var(--primary)/0.15)] text-[rgb(var(--primary))]"
                   : "border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] text-[rgb(var(--muted))] hover:text-[rgb(var(--fg))]",
               ].join(" ")}
@@ -116,18 +130,29 @@ export function BarberDashboardClient({
       </section>
 
       <BookingsSection
-        bookings={filteredBookings}
+        bookings={panel.bookings}
         loading={panel.bookingsLoading}
         error={panel.bookingsError}
-        bookingSearch=""
-        bookingStatus="all"
-        onSearchChange={() => undefined}
-        onStatusChange={() => undefined}
+        bookingSearch={filters.search}
+        bookingStatus={filters.status}
+        onSearchChange={(value: string) =>
+          setFilters((prev) => ({
+            ...prev,
+            search: value,
+          }))
+        }
+        onStatusChange={(status: BookingStatusFilter) =>
+          setFilters((prev) => ({
+            ...prev,
+            status,
+          }))
+        }
         onRetry={async (): Promise<void> => {
           await panel.retryBookings();
         }}
         onUpdateStatus={handleBookingStatus}
         actionMode="barber"
+        emptyMessage={emptyMessage}
       />
     </main>
   );
