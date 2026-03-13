@@ -39,14 +39,18 @@ type GetBookingsParams = {
   barberId?: string;
   status: BookingStatusFilter;
   query: string;
+  page?: number;
+  pageSize?: number;
 };
 
-export async function getBookings(params: GetBookingsParams): Promise<ServiceResult<BookingsResponse>> {
+export async function getBookings(
+  params: GetBookingsParams,
+): Promise<ServiceResult<BookingsResponse>> {
   const searchParams = new URLSearchParams({
     dateFrom: params.dateFrom,
     dateTo: params.dateTo,
-    page: "1",
-    pageSize: "8",
+    page: String(params.page ?? 1),
+    pageSize: String(params.pageSize ?? 8),
   });
 
   if (params.barberId) {
@@ -59,7 +63,11 @@ export async function getBookings(params: GetBookingsParams): Promise<ServiceRes
     searchParams.set("q", params.query.trim());
   }
 
-  return requestJson(`/api/panel/bookings?${searchParams.toString()}`, { cache: "no-store" }, bookingsSchema);
+  return requestJson(
+    `/api/panel/bookings?${searchParams.toString()}`,
+    { cache: "no-store" },
+    bookingsSchema,
+  );
 }
 
 export async function updateBookingStatus(
