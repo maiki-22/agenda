@@ -15,6 +15,10 @@ const createBarberBlockSchema = z.object({
   reason: z.string().optional().nullable(),
 });
 
+const deleteBarberBlockSchema = z.object({
+  id: z.string().min(1),
+});
+
 export async function GET(req: Request) {
   const supabase = await supabaseServer();
   const panelUser = await getAuthenticatedPanelUser(supabase);
@@ -89,4 +93,42 @@ export async function POST(req: Request) {
   if (error)
     return NextResponse.json({ error: error.message }, { status: 403 });
   return NextResponse.json({ ok: true, block: data }, { status: 201 });
+}
+
+export async function DELETE(req: Request) {
+  const supabase = await supabaseServer();
+  const panelUser = await getAuthenticatedPanelUser(supabase);
+
+  if (!isAuthenticatedPanelUser(panelUser)) {
+    return NextResponse.json(
+      { error: panelUser.error },
+      { status: panelUser.status },
+    );
+  }
+
+  const { searchParams } = new URL(req.url);
+  const parsedParams = deleteBarberBlockSchema.safeParse({
+    id: searchParams.get("id"),
+  });
+
+  if (!parsedParams.success) {
+    return NextResponse.json({ error: "Id inválido" }, { status: 400 });
+  }
+
+  let deleteQuery = supabase
+    .from("barber_blocks")
+    .delete()
+    .eq("id", parsedParams.data.id);
+
+  if (panelUser.role === "barber") {
+    deleteQuery = deleteQuery.eq("barber_id", panelUser.barberId);
+  }
+
+  const { error } = await deleteQuery;
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 403 });
+  }
+
+  return NextResponse.json({ ok: true }, { status: 200 });
 }

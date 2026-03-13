@@ -11,10 +11,8 @@ import { DashboardFilters } from "@/components/panel/overview/overview-filters";
 import { DashboardStatsCards } from "@/components/panel/overview/dashboard-stats-cards";
 import { UpcomingBookingsPanel } from "@/components/panel/overview/upcoming-bookings-panel";
 import { useToast } from "@/components/ui/toast-provider";
-import { useBarberBlocks } from "@/hooks/panel/use-barber-blocks";
 import { useBarbers } from "@/hooks/panel/use-barbers";
 import { useBookings } from "@/hooks/panel/use-bookings";
-import { useDaysOff } from "@/hooks/panel/use-days-off";
 import { useOverview } from "@/hooks/panel/use-overview";
 import type {
   BookingStatus,
@@ -54,7 +52,7 @@ export function AdminDashboardClient({
   const [liveMessage, setLiveMessage] = useState<string>("");
   const [activeTab, setActiveTab] = useState<DashboardTabKey>("agenda");
   const [operationsBarberId, setOperationsBarberId] = useState<string>("");
-  
+
   const barbersState = useBarbers();
   const overviewState = useOverview(initialOverview);
   const bookingsState = useBookings({
@@ -62,8 +60,6 @@ export function AdminDashboardClient({
     selectedBarber: overviewState.selectedBarber,
     initialBookings,
   });
-  const blocksState = useBarberBlocks();
-  const daysOffState = useDaysOff();
 
   const selectedOperationsBarberId =
     operationsBarberId || barbersState.barbers[0]?.id || "";
@@ -113,7 +109,9 @@ export function AdminDashboardClient({
 
       {barbersState.error && (
         <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4">
-          <h2 className="font-semibold text-red-500">No se pudo cargar el listado de barberos</h2>
+          <h2 className="font-semibold text-red-500">
+            No se pudo cargar el listado de barberos
+          </h2>
           <p className="mt-1 text-sm text-[rgb(var(--muted))]">
             {barbersState.error}
           </p>
@@ -139,7 +137,9 @@ export function AdminDashboardClient({
 
           {bookingsState.error ? (
             <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 text-red-500">
-              <h2 className="font-semibold">No se pudieron cargar las próximas citas</h2>
+              <h2 className="font-semibold">
+                No se pudieron cargar las próximas citas
+              </h2>
               <p className="mt-1 text-sm">{bookingsState.error}</p>
             </section>
           ) : (
@@ -171,8 +171,6 @@ export function AdminDashboardClient({
           barbers={barbersState.barbers}
           selectedBarber={selectedOperationsBarberId}
           onSelectBarber={setOperationsBarberId}
-          blocksState={blocksState}
-          daysOffState={daysOffState}
           toast={toast}
           setLiveMessage={setLiveMessage}
         />
