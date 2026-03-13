@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
+import type { ReactElement } from "react";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getAuthenticatedPanelUser } from "@/lib/auth/get-authenticated-panel-user";
+import { resolveAdminRouteRedirect } from "@/lib/auth/admin-route-access";
 import { getBookings } from "@/services/panel/bookings";
 import { getOverview } from "@/services/panel/overview";
 import type { BookingsResponse, OverviewResponse } from "@/types/panel";
 import { AdminDashboardClient } from "./AdminDashboardClient";
-
 
 function getCurrentWeekDateRange(): { dateFrom: string; dateTo: string } {
   const now = new Date();
@@ -25,10 +26,7 @@ function getCurrentWeekDateRange(): { dateFrom: string; dateTo: string } {
   return { dateFrom, dateTo };
 }
 
-
-
-
-export default async function AdminPanelPage() {
+export default async function AdminPanelPage(): Promise<ReactElement> {
   const supabase = await supabaseServer();
   const panelUser = await getAuthenticatedPanelUser(supabase);
 
@@ -36,8 +34,9 @@ export default async function AdminPanelPage() {
     redirect("/");
   }
 
-  if (panelUser.role !== "admin") {
-    redirect("/");
+  const redirectPath = resolveAdminRouteRedirect(panelUser);
+  if (redirectPath) {
+    redirect(redirectPath);
   }
 
   const overviewResult = await getOverview({ window: "today" });

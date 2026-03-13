@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { PanelQueryClientProvider } from "@/components/providers/query-client-provider";
+import { resolveAdminRouteRedirect } from "@/lib/auth/admin-route-access";
 import { PanelHeader } from "@/components/panel/panel-header";
 import { getAuthenticatedPanelUser } from "@/lib/auth/get-authenticated-panel-user";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -24,6 +25,10 @@ export default async function PanelLayout({
 
   if (userError || !userEmail) {
     redirect("/panel/login");
+  }
+  const redirectPath = resolveAdminRouteRedirect(panelUser);
+  if (redirectPath) {
+    redirect(redirectPath);
   }
 
   return (
