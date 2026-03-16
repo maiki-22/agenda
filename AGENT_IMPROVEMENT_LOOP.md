@@ -27,6 +27,45 @@ Este archivo documenta el ciclo de mejora continua que debe seguirse después de
 
 ## Registro de mejoras
 
+### 2026-03-15 — Documentacion operativa y setup versionable
+
+#### 1. Setup real del repo no documentado
+
+- Error detectado:
+  - `README.md`
+  - `web/README.md`
+- Causa raiz:
+  - El README raiz era minimo y el README de `web/` seguia casi en formato base de `create-next-app`, sin reflejar el setup real, scripts, dependencias externas ni zonas sensibles del proyecto.
+- Solucion aplicada:
+  - Se reescribio la documentacion raiz y la de `web/` con:
+    - stack actual
+    - variables de entorno requeridas
+    - scripts reales
+    - notas de build, testing y dependencias externas
+    - aclaracion de que no hay una configuracion completa de Supabase local versionada
+- Verificacion:
+  - revision manual de contenido
+
+#### 2. `.env.example` no versionable por `.gitignore`
+
+- Error detectado:
+  - `web/.gitignore`
+- Causa raiz:
+  - La regla `.env*` tambien ignoraba `web/.env.example`, impidiendo dejar un ejemplo trackeado en el repo.
+- Solucion aplicada:
+  - Se agrego `!.env.example` a `web/.gitignore`.
+  - Se creo `web/.env.example` con placeholders seguros y notas de uso.
+- Verificacion:
+  - `git status --short`
+
+#### 3. Estado final
+
+- Resultado:
+  - El repo ahora documenta mejor como correrlo y testearlo.
+  - `web/.env.example` ya puede versionarse correctamente.
+- Deuda residual:
+  - Falta decidir si el proyecto va a soportar Supabase local completo dentro del repo o si seguira operando contra una instancia remota documentada.
+
 ### 2026-03-15 — Limpieza de lint y estabilización de tests en Windows
 
 #### 1. `react-hooks/set-state-in-effect` en hidratación de UI
