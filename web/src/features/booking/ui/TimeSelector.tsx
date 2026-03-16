@@ -86,7 +86,7 @@ export function TimeSelector({
         <div className="rounded-2xl border border-amber-400/60 bg-[rgb(var(--surface-2))] p-4 text-sm text-amber-200">
           No se pudo validar disponibilidad en este momento.
           <div className="mt-2 text-xs">
-            Intenta nuevamente. Este estado es distinto a "sin horarios disponibles".
+            Intenta nuevamente. Este estado es distinto a &quot;sin horarios disponibles&quot;.
           </div>
         </div>
       ) : filteredSlots.length === 0 ? (

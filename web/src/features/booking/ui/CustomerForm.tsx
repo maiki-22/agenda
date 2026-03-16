@@ -15,8 +15,8 @@ export function CustomerForm({
   shakeKey?: number;
 }) {
   const nameRef = useRef<HTMLInputElement | null>(null);
+  const phoneFieldRef = useRef<HTMLDivElement | null>(null);
   const [touchedPhone, setTouchedPhone] = useState(false);
-  const [shake, setShake] = useState(false);
   const [nameFocused, setNameFocused] = useState(false);
   const [phoneFocused, setPhoneFocused] = useState(false);
 
@@ -25,16 +25,29 @@ export function CustomerForm({
     if (!isTouch) nameRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    if (shakeKey == null) return;
-    setShake(true);
-    const t = setTimeout(() => setShake(false), 280);
-    return () => clearTimeout(t);
-  }, [shakeKey]);
-
   const phoneDisplay = useMemo(() => toChileDisplay(phone), [phone]);
   const phoneValid = useMemo(() => isValidChileMobileE164(phone), [phone]);
   const showPhoneError = touchedPhone && !phoneValid;
+
+  useEffect(() => {
+    const phoneField = phoneFieldRef.current;
+
+    if (!phoneField) return;
+    if (!showPhoneError || shakeKey == null) {
+      phoneField.classList.remove("shake");
+      return;
+    }
+
+    phoneField.classList.remove("shake");
+    void phoneField.offsetWidth;
+    phoneField.classList.add("shake");
+
+    const timeoutId = window.setTimeout(() => {
+      phoneField.classList.remove("shake");
+    }, 280);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [shakeKey, showPhoneError]);
 
   return (
     <div className="space-y-5">
@@ -102,10 +115,10 @@ export function CustomerForm({
         </label>
 
         <div
+          ref={phoneFieldRef}
           className={[
             "flex items-center gap-2 rounded-2xl border px-3 py-2 transition-all duration-200",
             "bg-[rgb(var(--surface-2))]",
-            shake && showPhoneError ? "shake" : "",
             showPhoneError
               ? "border-red-500/60 ring-2 ring-red-500/60"
               : phoneFocused

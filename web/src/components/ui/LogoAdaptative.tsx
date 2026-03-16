@@ -1,19 +1,22 @@
 "use client";
-import { useEffect, useState } from "react";
 import LogoSvg from "@/../public/logo.svg";
+import { useIsClient } from "@/hooks/use-is-client";
 
 export default function LogoAdaptive({
   className = "",
 }: {
   className?: string;
 }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return <div className={className} />;
+  const isClient = useIsClient();
+
+  if (!isClient) return <div className={className} />;
 
   return (
     <div className={`text-[rgb(var(--fg))] ${className}`}>
-  <LogoSvg className="block w-full h-auto" aria-label="La Sucursal Barber Shop" />
-</div>
+      <LogoSvg
+        className="block h-auto w-full"
+        aria-label="La Sucursal Barber Shop"
+      />
+    </div>
   );
 }

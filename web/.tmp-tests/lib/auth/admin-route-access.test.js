@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { resolveAdminRouteRedirect } from "./admin-route-access";
+import { resolveAdminRouteRedirect } from "./admin-route-access.js";
 test("admin puede acceder a rutas de administración", () => {
     const redirectPath = resolveAdminRouteRedirect({
         ok: true,

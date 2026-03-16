@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "ci": "npm run typecheck && npm run lint && npm run build",
-    "test": "rm -rf .tmp-tests && tsc --skipLibCheck --moduleResolution bundler --module esnext --target es2022 --outDir .tmp-tests src/proxy.ts src/lib/auth/panel-route-protection.ts src/proxy.test.ts src/lib/auth/get-authenticated-panel-user.ts src/lib/auth/admin-route-access.ts src/lib/auth/admin-route-access.test.ts && node --test .tmp-tests/proxy.test.js .tmp-tests/lib/auth/admin-route-access.test.js"
+    "test": "node -e \"require('fs').rmSync('.tmp-tests',{ recursive: true, force: true })\" && tsc --skipLibCheck --moduleResolution bundler --module esnext --target es2022 --outDir .tmp-tests src/proxy.ts src/lib/auth/panel-route-protection.ts src/proxy.test.ts src/lib/auth/get-authenticated-panel-user.ts src/lib/auth/admin-route-access.ts src/lib/auth/admin-route-access.test.ts && node .tmp-tests/proxy.test.js && node .tmp-tests/lib/auth/admin-route-access.test.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",

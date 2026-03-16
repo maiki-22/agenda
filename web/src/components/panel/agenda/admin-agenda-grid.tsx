@@ -1,15 +1,12 @@
 "use client";
 
-import { useMemo, useState, type ReactElement } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getBookings, updateBookingStatus } from "@/services/panel/bookings";
+import { useMemo, type ReactElement } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getBookings } from "@/services/panel/bookings";
 import { getActiveBlocks, type ActiveBlockItem } from "@/services/panel/blocks";
-import { formatDateShortCL } from "@/lib/datetime/ui-date-format";
 import {
-  STATUS_LABELS,
   type Barber,
   type BookingItem,
-  type BookingStatus,
 } from "@/types/panel";
 
 interface AdminAgendaGridProps {
@@ -84,10 +81,6 @@ export function AdminAgendaGrid({
   selectedBarberId,
   barbers,
 }: AdminAgendaGridProps) {
-  const queryClient = useQueryClient();
-  const [selectedBooking, setSelectedBooking] = useState<BookingItem | null>(
-    null,
-  );
   const dateFrom = date;
   const dateTo = view === "week" ? addDays(date, 6) : date;
 
@@ -144,31 +137,6 @@ export function AdminAgendaGrid({
       );
     },
     staleTime: 30_000,
-  });
-
-  const updateMutation = useMutation<
-    { ok: boolean },
-    QueryError,
-    { bookingId: string; status: BookingStatus }
-  >({
-    mutationFn: async (input) => {
-      const response = await updateBookingStatus(input.bookingId, input.status);
-      if (!response.success) {
-        throw {
-          message: response.error,
-          code: response.code,
-        } satisfies QueryError;
-      }
-      return response.data;
-    },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["panel-agenda"] }),
-        queryClient.invalidateQueries({ queryKey: ["panel-bookings"] }),
-        queryClient.invalidateQueries({ queryKey: ["panel-overview"] }),
-      ]);
-      setSelectedBooking(null);
-    },
   });
 
   const visibleBarbers = selectedBarberId

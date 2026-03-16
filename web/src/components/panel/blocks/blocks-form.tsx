@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -85,7 +85,10 @@ export function BlocksForm({ barbers, loading, selectedBarber, onSave }: BlocksF
     },
   });
 
-  const blockType = form.watch("type");
+  const blockType = useWatch({
+    control: form.control,
+    name: "type",
+  });
 
   return (
     <form

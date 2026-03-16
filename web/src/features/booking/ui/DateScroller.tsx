@@ -240,7 +240,7 @@ export function DateScroller({
       {availabilityError ? (
         <p className="text-sm text-amber-300">
           No se pudo validar disponibilidad para algunos días. Esto es distinto a
-          "sin cupos". Intenta nuevamente en unos segundos.
+          &quot;sin cupos&quot;. Intenta nuevamente en unos segundos.
         </p>
       ) : null}
 

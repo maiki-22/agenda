@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
+import { useIsClient } from "@/hooks/use-is-client";
 import MoonHalf from "../icons/MoonHalf";
 import SunIcon from "../icons/SunIcon";
 
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const isClient = useIsClient();
 
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
+  if (!isClient) return null;
 
   const isDark = theme === "dark";
 
