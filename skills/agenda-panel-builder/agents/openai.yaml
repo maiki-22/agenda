@@ -1,0 +1,7 @@
+interface:
+  display_name: "Agenda Panel"
+  short_description: "Admin/barber panel workflows"
+  default_prompt: "Use $agenda-panel-builder to implement or refactor the admin or barber panel in this repo."
+
+policy:
+  allow_implicit_invocation: true

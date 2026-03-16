@@ -1,0 +1,7 @@
+interface:
+  display_name: "Agenda Booking"
+  short_description: "Booking flow and DB rules"
+  default_prompt: "Use $agenda-booking-domain to modify the booking flow, availability, or confirmation logic in this repo."
+
+policy:
+  allow_implicit_invocation: true

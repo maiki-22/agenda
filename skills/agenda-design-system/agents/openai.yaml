@@ -1,0 +1,7 @@
+interface:
+  display_name: "Agenda Design"
+  short_description: "Repo visual system rules"
+  default_prompt: "Use $agenda-design-system to design or refactor UI in this repo with the existing visual system."
+
+policy:
+  allow_implicit_invocation: true
