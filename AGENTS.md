@@ -50,19 +50,28 @@ Subsecciones por dominio (criterios específicos):
 - Confirmación con datos consistentes (barbero/servicio/fecha/hora) y fallback robusto.
 - Acciones críticas (crear/cancelar) con validación de ownership y mensajes claros.
 
-Estado actual vs estándar (gaps conocidos):
+Estado actual verificado del repositorio:
 
-| Dominio       | Estado actual                                                                                                                                              | Estándar esperado                                                                                    | Gap conocido                                                                          |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `panel/admin` | `web/src/app/panel/admin/AdminDashboardClient.tsx` usa `fetch` en cliente con `useEffect/useState` y concentra múltiples responsabilidades.                | Server Component para carga inicial + Client con TanStack Query (`initialData`) y módulos separados. | Migrar a patrón SSR + Query y dividir archivo (actualmente >200 líneas).              |
-| `panel/login` | `web/src/app/panel/login/PanelLoginForm.tsx` usa `useState` por campo y validación HTML mínima.                                                            | React Hook Form + Zod, validación inline y manejo de errores por caso.                               | Refactor de formulario para escalabilidad y consistencia con estándar de formularios. |
-| `booking`     | `web/src/app/(booking)/reservar/page.tsx` y `.../confirmacion/ConfirmacionClient.tsx` consumen APIs con `fetch` directo en cliente y componentes extensos. | TanStack Query para lecturas en cliente + separación por hooks/services/componentes pequeños.        | Extraer hooks de datos, introducir Query y segmentar componentes para mantenibilidad. |
+| Dominio       | Estado actual verificado                                                                                                                                      | Estándar esperado                                                                                  | Gap vigente                                                                                         |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `panel/admin` | Ya usa `page.tsx` server-side con `initialData` + TanStack Query en cliente mediante hooks y services.                                                      | Mantener patrón SSR + Query y `queryKey` completos.                                                | Seguir reduciendo complejidad en widgets grandes y aumentar cobertura de pruebas del panel.         |
+| `panel/login` | Ya usa React Hook Form + Zod, `fieldset` deshabilitado durante submit, toasts y resolución de destino por rol.                                              | Mantener consistencia de errores, auth server-side y UX de envío.                                  | Centralizar más el fetch/login en service/hook reutilizable y mejorar logging estructurado.         |
+| `booking`     | Ya usa carga inicial server-side para catálogo y TanStack Query en hooks de lectura (`catalog`, `availability`, `confirmación`).                            | Mantener validación por schema, manejo de colisiones y separación por capas.                       | `ReservarClient.tsx` y `ConfirmacionClient.tsx` siguen largos; conviene segmentarlos más.           |
+| `tooling`     | `lint`, `typecheck` y `test` están verdes; `build` depende de conectividad saliente porque `next/font/google` descarga Inter durante compilación.           | Scripts reproducibles, cross-platform y CI-friendly.                                               | Documentar mejor setup local/CI, agregar `.env.example` y decidir estrategia de fuente para offline. |
 
-Prioridades Q2 (orden recomendado):
+Prioridades recomendadas (estado actual):
 
-1. **Login UX**: estandarizar formulario de `panel/login` con RHF + Zod, errores por caso y feedback de envío.
-2. **Admin responsive**: mejorar layout y estados del dashboard para mobile/tablet, con skeletons y errores por bloque.
-3. **Refactor arquitectura panel**: migrar fetch client-side a patrón Server + TanStack Query y dividir componentes/servicios.
+1. **Documentación operativa**: crear README real de setup y `.env.example`, y aclarar estrategia local de Supabase/Upstash.
+2. **Booking maintainability**: dividir `ReservarClient.tsx` y `ConfirmacionClient.tsx` en módulos más pequeños.
+3. **Observabilidad y errores**: consolidar logger estructurado, error boundaries y backlog de monitoreo.
+
+Bucle de mejora automática:
+
+1. Después de cada cambio relevante, ejecutar en `web/`: `npm run typecheck`, `npm run lint`, `npm test` y, si el entorno lo permite, `npm run build`.
+2. Si un check falla, corregir primero la causa raíz y recién después continuar con nuevas tareas.
+3. Si el fallo depende del entorno externo (por ejemplo, red para `next/font/google`), documentarlo explícitamente como bloqueo externo y proponer mitigación.
+4. Registrar cada corrección en `AGENT_IMPROVEMENT_LOOP.md` con: fecha, error detectado, causa raíz, solución aplicada y verificación ejecutada.
+5. No mezclar en el mismo commit correcciones funcionales con ruido de artefactos generados (`.tmp-tests`, lockfiles, builds) salvo que la actualización sea intencional y documentada.
 
 ════════════════════════════════════════════════════════
 IDENTIDAD Y FORMA DE TRABAJAR
@@ -113,7 +122,8 @@ Client Component → TanStack Query con la misma data como initialData → UI
 TYPESCRIPT (estricto, sin excepciones)
 ════════════════════════════════════════════════════════
 
-- tsconfig: strict: true, noUncheckedIndexedAccess: true, exactOptionalPropertyTypes: true
+- tsconfig actual del repo: `strict: true`.
+- `noUncheckedIndexedAccess` y `exactOptionalPropertyTypes` siguen siendo objetivo recomendado; si un cambio toca áreas sensibles, deja el código compatible y propone PR dedicado para activarlos de forma global.
 - Nunca uses `any`. Si necesitas un escape, usa `unknown` y luego narrowing.
 - Nunca uses non-null assertion (!) salvo que tengas 100% de certeza y lo expliques.
 - Prefiere `type` sobre `interface` para objetos de datos.
@@ -163,10 +173,10 @@ REGLAS DE ERRORES:
 
 - Todos los errores que llegan al usuario son mensajes legibles en español.
 - Todos los errores técnicos se loguean con contexto (qué función, qué parámetros).
-- Las Server Actions SIEMPRE retornan `{ success: boolean; error?: string }`.
+- Las Route Handlers y Server Actions deben retornar contratos estables y tipados (`success/error` o `ok/error`) acordes al módulo.
 - Los componentes muestran estados de error específicos, nunca pantallas en blanco.
-- Usa error.tsx de Next.js en cada segmento de ruta importante.
-- Usa Sentry (o similar) para capturar errores en producción.
+- Si un segmento importante no tiene `error.tsx`, documenta el gap y evita dejarlo implícito.
+- Si no existe Sentry (o similar) en el alcance actual, deja explícito el backlog de observabilidad en lugar de asumirlo resuelto.
 
 ════════════════════════════════════════════════════════
 SEGURIDAD (no negociable)
@@ -174,9 +184,9 @@ SEGURIDAD (no negociable)
 
 AUTENTICACIÓN Y AUTORIZACIÓN:
 
-- Verificación de sesión en el middleware de Next.js (capa de edge).
+- Verificación de sesión en `proxy.ts` o middleware equivalente de Next.js (capa de edge).
 - Verificación de rol en cada layout protegido (capa de servidor).
-- Verificación de ownership en cada Server Action que muta datos.
+- Verificación de ownership en cada mutación server-side (Route Handler o Server Action).
   Ejemplo: antes de cancelar un turno, verificar que el barbero autenticado
   es dueño de ese turno. No confiar en el frontend.
 - NUNCA usar el `service_role` key de Supabase en Client Components o código
@@ -186,7 +196,7 @@ AUTENTICACIÓN Y AUTORIZACIÓN:
 VALIDACIÓN:
 
 - Todos los inputs del usuario pasan por Zod antes de tocar la DB.
-- Las Server Actions reciben `unknown` y validan con Zod como primer paso.
+- Las Route Handlers y Server Actions reciben `unknown` y validan con Zod como primer paso.
 - Los parámetros de URL (searchParams, params) se validan con Zod.
 - Nunca construyas queries SQL con string interpolation.
 
@@ -330,7 +340,9 @@ CUANDO HAGAS UN CAMBIO EN EL REPOSITORIO
    - ¿Hay alguna mutación sin verificar autorización?
    - ¿El componente funciona en mobile?
    - ¿Hay estados de loading y error?
-6. EXPLICA: Resume qué cambiaste, qué mejoró y si hay pasos adicionales
+6. AUTO-MEJORA: Ejecuta `typecheck`, `lint`, `test` y, si aplica, `build`; registra errores corregidos en `AGENT_IMPROVEMENT_LOOP.md`.
+7. DOCUMENTA: Si cambias scripts, setup o variables de entorno, actualiza README y `.env.example` en el mismo trabajo o deja el gap explicitado.
+8. EXPLICA: Resume qué cambiaste, qué mejoró y si hay pasos adicionales
    que el desarrollador debe hacer (migraciones, variables de entorno, etc.)
 
 ════════════════════════════════════════════════════════
@@ -349,6 +361,9 @@ LO QUE NUNCA HARÁS
 ✗ Crear un componente que haga más de una cosa
 ✗ Saltarte RLS o autenticación "temporalmente"
 ✗ Generar código que funcione pero que no escale
+✗ Dejar scripts rotos en Windows/macOS/Linux por usar comandos no portables como `rm -rf`
+✗ Commitear artefactos generados (`.tmp-tests`, `.next`, builds) sin intención explícita y sin documentarlo
+✗ Exponer o copiar valores reales de `.env` en respuestas, logs o documentación
 
 ## Patrones por fases (implementación incremental)
 
@@ -440,7 +455,7 @@ SEGURIDAD / RLS:
 - RLS habilitado en: appointments, profiles (verificar resto)
 - Policies en: `supabase/schema.md` sección RLS Policies
 - NUNCA saltarse RLS usando service_role key en el cliente
-- Las mutations del panel admin van por Server Actions con validación
+- Las mutations del panel admin van por Route Handlers o Server Actions con validación
   de sesión + role antes de cualquier operación
 
 
@@ -572,7 +587,7 @@ REGLAS DE ORO DEL DISEÑO:
   ✗ Nunca hardcodees colores en style={{ color: '#...' }}
   ✗ Nunca definas sombras con shadow-xl/shadow-lg de Tailwind
     → Usa var(--shadow-*) o las clases surface-card / primary-glow
-  ✗ Nunca uses transition-all
+  ✗ Evita `transition-all`; en componentes nuevos usa transiciones específicas y, si encuentras un caso legacy, no expandas ese patrón
   ✓ Siempre usá las clases utilitarias de globals.css antes de crear nuevas
-  ✓ Modo oscuro: el proyecto usa class="dark" en <html>; 
-    los tokens ya cambian solos, no uses dark: prefixes de Tailwind para colores
+  ✓ Modo oscuro: el proyecto usa class="dark" en <html>;
+    prioriza tokens del sistema y evita introducir un tercer esquema; si un componente legacy ya usa `dark:`, mantén consistencia hasta refactorizarlo
